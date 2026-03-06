@@ -663,15 +663,76 @@ function signOut() {
             </select>
           </div>
           <div class="form-group"><label>عدد الموظفين</label><input class="input" id="f-employees" inputmode="numeric" placeholder="0"></div>
-          <div class="form-group full" id="customPeriodWrap" style="display:none;">
-            <label>تحديد الفترة</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">من</label>
-                <input class="input" type="date" id="f-date-from">
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">إلى</label>
+          <div class="form-grouid="customPeriodWrap" style="display:none;">
+          <label>تحديد الفترة</label>
+
+          <!-- يومي -->
+          <div id="wrap-يومي" style="display:none">
+            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">اليوم</label>
+            <input class="input" type="date" id="f-single-date">
+          </div>
+
+          <!-- أسبوعي -->
+          <div id="wrap-أسبوعي" style="display:none">
+            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الأسبوع</label>
+            <input class="input" type="week" id="f-week">
+          </div>
+
+          <!-- شهري -->
+          <div id="wrap-شهري" style="display:none">
+            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الشهر والسنة</label>
+            <input class="input" type="month" id="f-month">
+          </div>
+
+          <!-- ربع سنوي -->
+          <div id="wrap-ربع سنوي" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الربع</label>
+              <select class="input" id="f-quarter">
+                <option value="الأول">الأول</option>
+                <option value="الثاني">الثاني</option>
+                <option value="الثالث">الثالث</option>
+                <option value="الرابع">الرابع</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
+              <input class="input" type="number" id="f-quarter-year" placeholder="2025" min="2020" max="2030">
+            </div>
+          </div>
+
+          <!-- نصف سنوي -->
+          <div id="wrap-نصف سنوي" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">النصف</label>
+              <select class="input" id="f-half">
+                <option value="الأول">الأول</option>
+                <option value="الثاني">الثاني</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
+              <input class="input" type="number" id="f-half-year" placeholder="2025" min="2020" max="2030">
+            </div>
+          </div>
+
+          <!-- سنوي -->
+          <div id="wrap-سنوي" style="display:none">
+            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
+            <input class="input" type="number" id="f-year" placeholder="2025" min="2020" max="2030">
+          </div>
+
+          <!-- مخصص -->
+          <div id="wrap-مخصص" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">من</label>
+              <input class="input" type="date" id="f-date-from">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">إلى</label>
+              <input class="input" type="date" id="f-date-to">
+            </div>
+          </div>font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">إلى</label>
                 <input class="input" type="date" id="f-date-to">
               </div>
             </div>
@@ -1714,14 +1775,43 @@ function initChart() {
 function toggleCustomPeriod() {
   const val = document.getElementById('f-period').value;
   const wrap = document.getElementById('customPeriodWrap');
-  wrap.style.display = val === 'مخصص' ? 'block' : 'none';
-  if(val === 'مخصص') {
-    // Set defaults: last 30 days
-    const today = new Date();
-    const from  = new Date(today); from.setDate(today.getDate()-30);
-    document.getElementById('f-date-to').value   = today.toISOString().slice(0,10);
-    document.getElementById('f-date-from').value = from.toISOString().slice(0,10);
+  const types = ['يومي','أسبوعي','شهري','ربع سنوي','نصف سنوي','سنوي','مخصص'];
+
+  // أخفِ كل الحقول أولاً
+  types.forEach(t => {
+    const el = document.getElementById('wrap-' + t);
+    if (el) el.style.display = 'none';
+  });
+
+  if (val === 'يومي' || val === 'أسبوعي' || val === 'شهري' ||
+      val === 'ربع سنوي' || val === 'نصف سنوي' || val === 'سنوي' || val === 'مخصص') {
+    wrap.style.display = 'block';
+    const target = document.getElementById('wrap-' + val);
+    if (target) target.style.display = val.includes('ربع') || val.includes('نصف') || val === 'مخصص' ? 'grid' : 'block';
+    // تعيين قيمة افتراضية لشهري وسنوي
+    if (val === 'شهري') {
+      const el = document.getElementById('f-month');
+      if (el && !el.value) { const d = new Date(); el.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+    }
+    if (val === 'سنوي') {
+      const el = document.getElementById('f-year');
+      if (el && !el.value) el.value = new Date().getFullYear();
+    }
+    if (val === 'يومي') {
+      const el = document.getElementById('f-single-date');
+      if (el && !el.value) el.value = new Date().toISOString().slice(0,10);
+    }
+    if (val === 'مخصص') {
+      const today = new Date();
+      const from  = new Date(today); from.setDate(today.getDate()-30);
+      const toEl   = document.getElementById('f-date-to');
+      const fromEl = document.getElementById('f-date-from');
+      if (toEl && !toEl.value)   toEl.value   = today.toISOString().slice(0,10);
+      if (fromEl && !fromEl.value) fromEl.value = from.toISOString().slice(0,10);
+    }
     updateCustomPeriodLabel();
+  } else {
+    wrap.style.display = 'none';
   }
 }
 
@@ -1740,13 +1830,48 @@ document.addEventListener('change', e => {
 
 function getPeriodLabel() {
   const val = document.getElementById('f-period').value;
-  if(val !== 'مخصص') return val;
-  const from = document.getElementById('f-date-from').value;
-  const to   = document.getElementById('f-date-to').value;
-  if(!from || !to) return 'مخصص';
-  const f = new Date(from), t = new Date(to);
-  const days = Math.round((t-f)/(1000*60*60*24));
-  return `${days} يوم (${f.toLocaleDateString('ar-SA')} — ${t.toLocaleDateString('ar-SA')})`;
+  if (val === 'مخصص') {
+    const from = document.getElementById('f-date-from').value;
+    const to   = document.getElementById('f-date-to').value;
+    if (!from || !to) return 'مخصص';
+    const f = new Date(from), t = new Date(to);
+    const days = Math.round((t-f)/(1000*60*60*24));
+    return `${days} يوم (${f.toLocaleDateString('ar-SA')} — ${t.toLocaleDateString('ar-SA')})`;
+  }
+  if (val === 'يومي') {
+    const date = document.getElementById('f-single-date')?.value;
+    if (!date) return 'يومي';
+    return new Date(date).toLocaleDateString('ar-SA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  }
+  if (val === 'أسبوعي') {
+    const week = document.getElementById('f-week')?.value;
+    if (!week) return 'أسبوعي';
+    return 'أسبوع: ' + week;
+  }
+  if (val === 'شهري') {
+    const month = document.getElementById('f-month')?.value;
+    if (!month) return 'شهري';
+    const [y, m] = month.split('-');
+    return new Date(y, m-1).toLocaleDateString('ar-SA', {year:'numeric', month:'long'});
+  }
+  if (val === 'ربع سنوي') {
+    const q = document.getElementById('f-quarter')?.value;
+    const qy = document.getElementById('f-quarter-year')?.value;
+    if (!q || !qy) return 'ربع سنوي';
+    return `الربع ${q} - ${qy}`;
+  }
+  if (val === 'نصف سنوي') {
+    const h = document.getElementById('f-half')?.value;
+    const hy = document.getElementById('f-half-year')?.value;
+    if (!h || !hy) return 'نصف سنوي';
+    return `النصف ${h} - ${hy}`;
+  }
+  if (val === 'سنوي') {
+    const year = document.getElementById('f-year')?.value;
+    if (!year) return 'سنوي';
+    return 'سنة ' + year;
+  }
+  return val;
 }
 
 function toggleCustomChart() {
@@ -1943,6 +2068,31 @@ async function runAnalysis() {
   STATE.currentReport = report;
   STATE.savedReports.unshift(report);
   localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
+
+  // حفظ في Supabase
+  try {
+    const token = window.__AUTH_TOKEN__;
+    if (token) {
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (user) {
+        await window.supabase.from('reports').insert({
+          user_id:        user.id,
+          biz_name:       report.bizName,
+          biz_type:       report.bizType,
+          period:         report.period,
+          revenue:        report.metrics?.revenue || 0,
+          total_expenses: report.metrics?.totalExpenses || 0,
+          net_profit:     report.metrics?.netProfit || 0,
+          net_margin:     report.metrics?.netMargin || 0,
+          health_score:   report.scoreData?.total || 0,
+          report_json:    report
+        });
+        await window.supabase.from('profiles').update({
+          analyses_used: (window._profileUsed || 0) + 1
+        }).eq('id', user.id);
+      }
+    }
+  } catch(saveErr) { console.warn('Supabase save error:', saveErr); }
 
   document.getElementById('loadingOverlay').classList.remove('show');
 
