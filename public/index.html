@@ -1916,7 +1916,7 @@ async function runAnalysis() {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+(window.__AUTH_TOKEN__||'')},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
+        model:"gpt-4o-mini",
         max_tokens:1000,
         messages:[{role:"user",content:prompt}]
       })
