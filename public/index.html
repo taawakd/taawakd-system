@@ -1,34 +1,31 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>توكّد — تشخيص مالي ذكي</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-:root {
-  --bg:#07080a;--s1:#0f1014;--s2:#16171c;--s3:#1e1f26;
-  --border:rgba(255,255,255,0.06);--bg:rgba(255,255,255,0.04);
-  --gold:#c8a45a;--gold2:#e8c97a;--gold-d:rgba(200,164,90,0.12);--gold-b:rgba(200,164,90,0.22);
-  --white:#edeae2;--gray:#7a7670;--gray2:#a8a49c;
-  --red:#d95f5f;--red-d:rgba(217,95,95,0.12);
-  --green:#4caf82;--green-d:rgba(76,175,130,0.12);
-  --blue:#5b8fcc;--blue-d:rgba(91,143,204,0.12);
-  --warn:#d4893a;--warn-d:rgba(212,137,58,0.12);
-}
-*{margin:0;padding:0;box-sizing:border-box;}
+supabase.auth.onAuthStateChange((event, session) => {
+    window.__AUTH_TOKEN__ = session?.access_token ?? null;
+    if (event === 'SIGNED_IN') {
+      currentUser = session.user;
+      initializeApp();
+    }
+    if (event === 'SIGNED_OUT') {
+      window.__AUTH_TOKEN__ = null;
+      window.location.href = '/auth.html';
+    }
+  });
+
+  // ✅ تحميل التوكن فوراً عند بدء الصفحة
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    window.__AUTH_TOKEN__ = session?.access_token ?? null;
+    if (!session) {
+      window.location.href = '/auth.html';
+    }
+  })*{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(--white);min-height:100vh;direction:rtl;overflow-x:hidden;}
 
-/* ── LAYOUT ── */
+/* ââ LAYOUT ââ */
 .app{display:flex;min-height:100vh;}
 .sidebar{width:240px;background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:100;}
 .main-area{margin-right:240px;flex:1;min-height:100vh;}
 
-/* ── SIDEBAR ── */
+/* ââ SIDEBAR ââ */
 .sb-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
 .sb-logo-mark{display:flex;align-items:center;gap:10px;}
 .sb-icon{width:36px;height:36px;background:var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#000;flex-shrink:0;}
@@ -50,13 +47,13 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(
 .sb-user-name{font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sb-user-plan{font-size:11px;color:var(--gray);}
 
-/* ── HEADER ── */
+/* ââ HEADER ââ */
 .page-header{padding:28px 36px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
 .page-title h1{font-size:22px;font-weight:700;color:var(--white);margin-bottom:4px;}
 .page-title p{font-size:13px;color:var(--gray);}
 .header-actions{display:flex;gap:10px;align-items:center;flex-shrink:0;}
 
-/* ── BUTTONS ── */
+/* ââ BUTTONS ââ */
 .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;}
 .btn-primary{background:var(--gold);color:#000;}
 .btn-primary:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,164,90,0.3);}
@@ -67,17 +64,17 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(
 .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important;}
 .btn-sm{padding:7px 14px;font-size:12px;}
 
-/* ── PAGES ── */
+/* ââ PAGES ââ */
 .page{display:none;padding:28px 36px 60px;}
 .page.active{display:block;}
 
-/* ── CARDS ── */
+/* ââ CARDS ââ */
 .card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;}
 .card-sm{padding:18px;}
 .card-title{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
 .card-title-icon{width:26px;height:26px;background:var(--gold-d);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;}
 
-/* ── KPI GRID ── */
+/* ââ KPI GRID ââ */
 .kpi-row{display:grid;gap:14px;margin-bottom:20px;}
 .kpi-row-4{grid-template-columns:repeat(4,1fr);}
 .kpi-row-3{grid-template-columns:repeat(3,1fr);}
@@ -93,12 +90,12 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(
 .kpi-label{font-size:12px;color:var(--gray);line-height:1.4;}
 .kpi-sub{font-size:11px;color:var(--gray);margin-top:4px;}
 
-/* ── GRID LAYOUTS ── */
+/* ââ GRID LAYOUTS ââ */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
 .col-span-2{grid-column:1/-1;}
 
-/* ── FORM ── */
+/* ââ FORM ââ */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .form-group{display:flex;flex-direction:column;gap:7px;}
 .form-group.full{grid-column:1/-1;}
@@ -109,12 +106,12 @@ label{font-size:12px;font-weight:600;color:var(--gray);letter-spacing:0.3px;}
 select.input option{background:#1a1a1a;}
 textarea.input{resize:vertical;min-height:80px;}
 
-/* ── TABS ── */
+/* ââ TABS ââ */
 .tabs{display:flex;gap:4px;background:var(--s2);border-radius:12px;padding:4px;margin-bottom:24px;}
 .tab{flex:1;padding:9px;background:transparent;border:none;border-radius:9px;color:var(--gray);font-family:'IBM Plex Sans Arabic',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
 .tab.active{background:var(--s1);color:var(--white);box-shadow:0 2px 8px rgba(0,0,0,0.4);}
 
-/* ── BENCHMARK ── */
+/* ââ BENCHMARK ââ */
 .bench-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--s2);border-radius:12px;margin-bottom:10px;border-right:3px solid transparent;}
 .bench-item.good{border-right-color:var(--green);}
 .bench-item.warn{border-right-color:var(--warn);}
@@ -127,13 +124,13 @@ textarea.input{resize:vertical;min-height:80px;}
 .badge-warn{background:var(--warn-d);color:var(--warn);}
 .badge-bad{background:var(--red-d);color:var(--red);}
 
-/* ── PROGRESS BAR ── */
+/* ââ PROGRESS BAR ââ */
 .progress-wrap{margin-bottom:12px;}
 .progress-head{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;}
 .progress-track{height:6px;background:var(--s3);border-radius:10px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:10px;transition:width 0.8s ease;}
 
-/* ── PRODUCTS TABLE ── */
+/* ââ PRODUCTS TABLE ââ */
 .prod-head{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 38px;gap:10px;padding:0 4px;margin-bottom:10px;}
 .prod-head span{font-size:11px;color:var(--gray);font-weight:600;letter-spacing:0.5px;}
 .prod-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 38px;gap:10px;margin-bottom:10px;align-items:center;}
@@ -141,7 +138,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .btn-rm{background:var(--red-d);border:1px solid rgba(217,95,95,0.2);color:var(--red);border-radius:8px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;flex-shrink:0;padding:0;}
 .btn-rm:hover{background:rgba(217,95,95,0.25);}
 
-/* ── ALERTS ── */
+/* ââ ALERTS ââ */
 .alert{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;margin-bottom:10px;font-size:13px;line-height:1.6;}
 .alert-warn{background:var(--warn-d);border:1px solid rgba(212,137,58,0.25);color:var(--warn);}
 .alert-danger{background:var(--red-d);border:1px solid rgba(217,95,95,0.25);color:var(--red);}
@@ -149,7 +146,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .alert-info{background:var(--blue-d);border:1px solid rgba(91,143,204,0.25);color:var(--blue);}
 .alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
 
-/* ── SCORE RING ── */
+/* ââ SCORE RING ââ */
 .score-wrap{display:flex;flex-direction:column;align-items:center;padding:20px;}
 .score-ring{position:relative;width:140px;height:140px;}
 .score-ring svg{transform:rotate(-90deg);}
@@ -160,7 +157,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .score-max{font-size:12px;color:var(--gray);}
 .score-label{font-size:13px;color:var(--gray2);margin-top:12px;font-weight:500;}
 
-/* ── SCENARIO ── */
+/* ââ SCENARIO ââ */
 .scenario-card{background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all 0.2s;}
 .scenario-card:hover{border-color:var(--gold-b);}
 .scenario-card.active-sc{border-color:var(--gold);background:var(--gold-d);}
@@ -171,7 +168,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .sc-result.neg{color:var(--red);}
 .sc-delta{font-size:12px;margin-top:4px;}
 
-/* ── COMPARE ── */
+/* ââ COMPARE ââ */
 .compare-row{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-bottom:10px;}
 .compare-period{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
 .compare-period-label{font-size:11px;color:var(--gold);font-weight:600;letter-spacing:0.5px;margin-bottom:8px;}
@@ -183,10 +180,10 @@ textarea.input{resize:vertical;min-height:80px;}
 .delta-negative{color:var(--red);}
 .delta-neutral{color:var(--gray);}
 
-/* ── CHART CONTAINER ── */
+/* ââ CHART CONTAINER ââ */
 .chart-wrap{position:relative;height:240px;margin-top:8px;}
 
-/* ── INSIGHTS LIST ── */
+/* ââ INSIGHTS LIST ââ */
 .insight-list{display:flex;flex-direction:column;gap:10px;}
 .insight-item{display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;background:rgba(255,255,255,0.025);border-right:3px solid transparent;font-size:13px;line-height:1.7;color:rgba(237,234,226,0.82);}
 .insight-item.g{border-right-color:var(--green);}
@@ -194,7 +191,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .insight-item.r{border-right-color:var(--red);}
 .ii-icon{font-size:14px;flex-shrink:0;margin-top:2px;}
 
-/* ── PROD ANALYSIS ── */
+/* ââ PROD ANALYSIS ââ */
 .prod-analysis-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--s2);border-radius:12px;margin-bottom:10px;}
 .prod-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
 .rank-1{background:rgba(200,164,90,0.2);color:var(--gold);}
@@ -206,7 +203,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .prod-an-bar{height:4px;background:var(--s3);border-radius:10px;margin-top:6px;overflow:hidden;}
 .prod-an-fill{height:100%;border-radius:10px;}
 
-/* ── LOADING ── */
+/* ââ LOADING ââ */
 .loading-overlay{display:none;position:fixed;inset:0;background:rgba(7,8,10,0.85);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
 .loading-overlay.show{display:flex;}
 .loading-box{text-align:center;}
@@ -215,32 +212,32 @@ textarea.input{resize:vertical;min-height:80px;}
 .loading-box p{color:var(--gray2);font-size:15px;}
 .loading-box small{font-size:12px;color:var(--gray);display:block;margin-top:6px;}
 
-/* ── TOAST ── */
+/* ââ TOAST ââ */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--gold-b);color:var(--gold);border-radius:12px;padding:12px 24px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 
-/* ── ERROR/SUCCESS MSG ── */
+/* ââ ERROR/SUCCESS MSG ââ */
 .msg{font-size:13px;padding:12px 16px;border-radius:10px;margin-top:12px;display:none;}
 .msg.error{background:var(--red-d);border:1px solid rgba(217,95,95,0.25);color:var(--red);}
 .msg.success{background:var(--green-d);border:1px solid rgba(76,175,130,0.25);color:var(--green);}
 
-/* ── SPINNER INLINE ── */
+/* ââ SPINNER INLINE ââ */
 .spin-sm{width:16px;height:16px;border:2px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:spin 0.8s linear infinite;display:none;}
 
-/* ── EXCEL ZONE ── */
+/* ââ EXCEL ZONE ââ */
 .excel-zone{border:1px dashed var(--gold-b);border-radius:14px;padding:28px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--gold-d);margin-bottom:20px;position:relative;overflow:hidden;}
 .excel-zone:hover,.excel-zone.drag-over{border-color:var(--gold);background:rgba(200,164,90,0.08);}
 .excel-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .excel-zone h3{font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;}
 .excel-zone p{font-size:12px;color:var(--gray);}
 
-/* ── LIVE CALC ── */
+/* ââ LIVE CALC ââ */
 .live-bar{display:none;background:var(--s2);border-radius:12px;padding:16px 20px;margin-top:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;border:1px solid var(--border);}
 .live-item{text-align:center;}
 .live-val{font-size:17px;font-weight:700;color:var(--gold);}
 .live-lbl{font-size:11px;color:var(--gray);margin-top:3px;}
 
-/* ── MOBILE ── */
+/* ââ MOBILE ââ */
 @media(max-width:768px){
   .sidebar{display:none;}
   .main-area{margin-right:0;}
@@ -254,7 +251,7 @@ textarea.input{resize:vertical;min-height:80px;}
   .live-bar{grid-template-columns:1fr 1fr;}
 }
 
-/* ── AI CFO ── */
+/* ââ AI CFO ââ */
 .cfo-wrap{display:flex;flex-direction:column;height:calc(100vh - 130px);min-height:500px;}
 .cfo-messages{flex:1;overflow-y:auto;padding:20px 0;display:flex;flex-direction:column;gap:16px;}
 .cfo-msg{display:flex;gap:12px;animation:fadeUp 0.3s ease;}
@@ -284,7 +281,7 @@ textarea.input{resize:vertical;min-height:80px;}
 .cfo-context-bar{background:var(--s2);border:1px solid var(--gold-b);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;}
 .cfo-context-dot{width:8px;height:8px;background:var(--green);border-radius:50%;flex-shrink:0;}
 
-/* ── NEW FEATURE PAGES ── */
+/* ââ NEW FEATURE PAGES ââ */
 .feature-empty{text-align:center;padding:60px 20px;color:var(--gray);font-size:14px;}
 .feature-empty .fe-icon{font-size:48px;margin-bottom:16px;opacity:0.3;}
 
@@ -367,49 +364,49 @@ textarea.input{resize:vertical;min-height:80px;}
 .decision-impact{display:inline-flex;align-items:center;gap:6px;background:var(--green-d);border:1px solid rgba(76,175,130,0.25);color:var(--green);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-top:10px;}
 </style>
 <script>
-// Supabase config — injected by server or set here as fallback
+// Supabase config â injected by server or set here as fallback
 window.__SUPABASE_URL__  = window.__SUPABASE_URL__  || '';
 window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 </script>
 <script src="/api/config.js" async></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ── Auth Guard — يمنع الدخول بدون تسجيل ──
+// ââ Auth Guard â ÙÙÙØ¹ Ø§ÙØ¯Ø®ÙÙ Ø¨Ø¯ÙÙ ØªØ³Ø¬ÙÙ ââ
 (async function() {
-  // انتظر config.js يحمّل المتغيرات
+  // Ø§ÙØªØ¸Ø± config.js ÙØ­ÙÙÙ Ø§ÙÙØªØºÙØ±Ø§Øª
   await new Promise(r => setTimeout(r, 300));
 
   const url  = window.__SUPABASE_URL__  || '';
   const anon = window.__SUPABASE_ANON__ || '';
-  if (!url || !anon) return; // لو Supabase مش مهيّأ، اشتغل بدون auth
+  if (!url || !anon) return; // ÙÙ Supabase ÙØ´ ÙÙÙÙØ£Ø Ø§Ø´ØªØºÙ Ø¨Ø¯ÙÙ auth
 
   const sb = window.supabase.createClient(url, anon);
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    // مافي جلسة — حوّل لصفحة الدخول
+    // ÙØ§ÙÙ Ø¬ÙØ³Ø© â Ø­ÙÙÙ ÙØµÙØ­Ø© Ø§ÙØ¯Ø®ÙÙ
     window.location.href = '/auth.html';
     return;
   }
 
-  // ✅ جلسة موجودة — خزّن التوكن للاستخدام في API calls
+  // â Ø¬ÙØ³Ø© ÙÙØ¬ÙØ¯Ø© â Ø®Ø²ÙÙ Ø§ÙØªÙÙÙ ÙÙØ§Ø³ØªØ®Ø¯Ø§Ù ÙÙ API calls
   window.__AUTH_TOKEN__ = session.access_token;
   window.__USER__ = session.user;
 
-  // تحديث التوكن تلقائياً عند انتهائه
-  // تتبع المستخدم الحالي لكشف تبديل الحسابات
+  // ØªØ­Ø¯ÙØ« Ø§ÙØªÙÙÙ ØªÙÙØ§Ø¦ÙØ§Ù Ø¹ÙØ¯ Ø§ÙØªÙØ§Ø¦Ù
+  // ØªØªØ¨Ø¹ Ø§ÙÙØ³ØªØ®Ø¯Ù Ø§ÙØ­Ø§ÙÙ ÙÙØ´Ù ØªØ¨Ø¯ÙÙ Ø§ÙØ­Ø³Ø§Ø¨Ø§Øª
   const prevUserId = localStorage.getItem('tw_user_id');
   const currUserId = session.user.id;
 
   if (prevUserId && prevUserId !== currUserId) {
-    // مستخدم مختلف — امسح بيانات المستخدم السابق
+    // ÙØ³ØªØ®Ø¯Ù ÙØ®ØªÙÙ â Ø§ÙØ³Ø­ Ø¨ÙØ§ÙØ§Øª Ø§ÙÙØ³ØªØ®Ø¯Ù Ø§ÙØ³Ø§Ø¨Ù
     const keysToKeep = ['tw_user_id'];
     const allKeys = Object.keys(localStorage);
     allKeys.forEach(k => {
       if (!keysToKeep.includes(k)) localStorage.removeItem(k);
     });
   }
-  // حفظ ID المستخدم الحالي
+  // Ø­ÙØ¸ ID Ø§ÙÙØ³ØªØ®Ø¯Ù Ø§ÙØ­Ø§ÙÙ
   localStorage.setItem('tw_user_id', currUserId);
 
   sb.auth.onAuthStateChange((event, session) => {
@@ -419,7 +416,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     } else if (event === 'SIGNED_IN' && session) {
       const prev = localStorage.getItem('tw_user_id');
       if (prev && prev !== session.user.id) {
-        // حساب مختلف — امسح البيانات القديمة
+        // Ø­Ø³Ø§Ø¨ ÙØ®ØªÙÙ â Ø§ÙØ³Ø­ Ø§ÙØ¨ÙØ§ÙØ§Øª Ø§ÙÙØ¯ÙÙØ©
         Object.keys(localStorage).forEach(k => {
           if (k !== 'tw_user_id') localStorage.removeItem(k);
         });
@@ -429,15 +426,15 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     }
   });
 
-  // إظهار اسم المستخدم في الواجهة
+  // Ø¥Ø¸ÙØ§Ø± Ø§Ø³Ù Ø§ÙÙØ³ØªØ®Ø¯Ù ÙÙ Ø§ÙÙØ§Ø¬ÙØ©
   const name = session.user?.user_metadata?.full_name
     || session.user?.email?.split('@')[0]
-    || 'مستخدم';
+    || 'ÙØ³ØªØ®Ø¯Ù';
   const greetEl = document.getElementById('userName');
   if (greetEl) greetEl.textContent = name;
 })();
 
-// ── تسجيل الخروج ──
+// ââ ØªØ³Ø¬ÙÙ Ø§ÙØ®Ø±ÙØ¬ ââ
 function signOut() {
   const url  = window.__SUPABASE_URL__  || '';
   const anon = window.__SUPABASE_ANON__ || '';
@@ -451,79 +448,79 @@ function signOut() {
 
 <div class="app">
 
-<!-- ══ SIDEBAR ══ -->
+<!-- ââ SIDEBAR ââ -->
 <aside class="sidebar">
   <div class="sb-logo">
     <div class="sb-logo-mark">
-      <div class="sb-icon">ت</div>
+      <div class="sb-icon">Øª</div>
       <div>
-        <div class="sb-name"><span>توكّد</span></div>
-        <div class="sb-tagline">يقين قبل الاستثمار</div>
+        <div class="sb-name"><span>ØªÙÙÙØ¯</span></div>
+        <div class="sb-tagline">ÙÙÙÙ ÙØ¨Ù Ø§ÙØ§Ø³ØªØ«ÙØ§Ø±</div>
       </div>
     </div>
   </div>
 
   <nav class="sb-nav">
-    <div class="sb-section">الرئيسية</div>
+    <div class="sb-section">Ø§ÙØ±Ø¦ÙØ³ÙØ©</div>
     <div class="nav-item active" onclick="showPage('dashboard')">
-      <span class="nav-icon">📊</span> لوحة التحكم
+      <span class="nav-icon">ð</span> ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ
     </div>
     <div class="nav-item" onclick="showPage('analysis')">
-      <span class="nav-icon">🔍</span> تحليل جديد
+      <span class="nav-icon">ð</span> ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯
     </div>
     <div class="nav-item" onclick="showPage('reports')">
-      <span class="nav-icon">📁</span> التقارير المحفوظة
+      <span class="nav-icon">ð</span> Ø§ÙØªÙØ§Ø±ÙØ± Ø§ÙÙØ­ÙÙØ¸Ø©
     </div>
 
-    <div class="sb-section" style="margin-top:16px;">الأدوات</div>
+    <div class="sb-section" style="margin-top:16px;">Ø§ÙØ£Ø¯ÙØ§Øª</div>
     <div class="nav-item" onclick="showPage('benchmark')">
-      <span class="nav-icon">📈</span> مقارنة السوق
+      <span class="nav-icon">ð</span> ÙÙØ§Ø±ÙØ© Ø§ÙØ³ÙÙ
     </div>
     <div class="nav-item" onclick="showPage('scenarios')">
-      <span class="nav-icon">🎯</span> سيناريوهات
+      <span class="nav-icon">ð¯</span> Ø³ÙÙØ§Ø±ÙÙÙØ§Øª
     </div>
     <div class="nav-item" onclick="showPage('compare')">
-      <span class="nav-icon">⚖️</span> مقارنة الفترات
+      <span class="nav-icon">âï¸</span> ÙÙØ§Ø±ÙØ© Ø§ÙÙØªØ±Ø§Øª
     </div>
 
-    <div class="sb-section" style="margin-top:16px;">ذكاء اصطناعي</div>
+    <div class="sb-section" style="margin-top:16px;">Ø°ÙØ§Ø¡ Ø§ØµØ·ÙØ§Ø¹Ù</div>
     <div class="nav-item" id="nav-cfo" onclick="showPage('cfo')">
-      <span class="nav-icon">🤖</span> <span>AI CFO</span>
-      <span style="font-size:10px;background:var(--gold);color:#000;padding:2px 7px;border-radius:10px;font-weight:700;margin-right:auto;">جديد</span>
+      <span class="nav-icon">ð¤</span> <span>AI CFO</span>
+      <span style="font-size:10px;background:var(--gold);color:#000;padding:2px 7px;border-radius:10px;font-weight:700;margin-right:auto;">Ø¬Ø¯ÙØ¯</span>
     </div>
-    <div class="nav-item" onclick="showPage('actionplan')"><span class="nav-icon">📋</span> خطة العمل</div>
-    <div class="nav-item" onclick="showPage('cashflow')"><span class="nav-icon">💧</span> التدفق النقدي</div>
-    <div class="nav-item" onclick="showPage('integrations')"><span class="nav-icon">🔌</span> الربط والاستيراد</div>
-    <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon">💲</span> تحليل التسعير</div>
-    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">🔮</span> التوقعات الذكية</div>
-    <div class="nav-item" onclick="showPage('healthadvisor')"><span class="nav-icon">❤️</span> مستشار الصحة</div>
+    <div class="nav-item" onclick="showPage('actionplan')"><span class="nav-icon">ð</span> Ø®Ø·Ø© Ø§ÙØ¹ÙÙ</div>
+    <div class="nav-item" onclick="showPage('cashflow')"><span class="nav-icon">ð§</span> Ø§ÙØªØ¯ÙÙ Ø§ÙÙÙØ¯Ù</div>
+    <div class="nav-item" onclick="showPage('integrations')"><span class="nav-icon">ð</span> Ø§ÙØ±Ø¨Ø· ÙØ§ÙØ§Ø³ØªÙØ±Ø§Ø¯</div>
+    <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon">ð²</span> ØªØ­ÙÙÙ Ø§ÙØªØ³Ø¹ÙØ±</div>
+    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">ð®</span> Ø§ÙØªÙÙØ¹Ø§Øª Ø§ÙØ°ÙÙØ©</div>
+    <div class="nav-item" onclick="showPage('healthadvisor')"><span class="nav-icon">â¤ï¸</span> ÙØ³ØªØ´Ø§Ø± Ø§ÙØµØ­Ø©</div>
   </nav>
 
   <div class="sb-bottom">
     <div class="sb-user">
-      <div class="sb-user-av" id="sbAvatar">م</div>
+      <div class="sb-user-av" id="sbAvatar">Ù</div>
       <div class="sb-user-info">
-        <div class="sb-user-name" id="sbName">مستخدم</div>
-        <div class="sb-user-plan">النسخة المجانية</div>
+        <div class="sb-user-name" id="sbName">ÙØ³ØªØ®Ø¯Ù</div>
+        <div class="sb-user-plan">Ø§ÙÙØ³Ø®Ø© Ø§ÙÙØ¬Ø§ÙÙØ©</div>
       </div>
     </div>
   </div>
 </aside>
 
-<!-- ══ MAIN ══ -->
+<!-- ââ MAIN ââ -->
 <div class="main-area">
 
-<!-- ════ DASHBOARD PAGE ════ -->
+<!-- ââââ DASHBOARD PAGE ââââ -->
 <div class="page active" id="page-dashboard">
   <div class="page-header">
     <div class="page-title">
-      <h1 id="dashGreeting">مرحباً 👋</h1>
-      <p id="dashDate">لوحة التحكم الرئيسية</p>
+      <h1 id="dashGreeting">ÙØ±Ø­Ø¨Ø§Ù ð</h1>
+      <p id="dashDate">ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ Ø§ÙØ±Ø¦ÙØ³ÙØ©</p>
     </div>
     <div class="header-actions" style="display:flex;align-items:center;gap:10px;">
       <span id="userName" style="font-size:12px;color:var(--gray);"></span>
-      <button class="btn btn-ghost btn-sm" onclick="showPage('analysis')">+ تحليل جديد</button>
-      <button class="btn btn-ghost btn-sm" onclick="signOut()" style="color:var(--gray);">خروج</button>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button>
+      <button class="btn btn-ghost btn-sm" onclick="signOut()" style="color:var(--gray);">Ø®Ø±ÙØ¬</button>
     </div>
   </div>
 
@@ -531,17 +528,17 @@ function signOut() {
 
     <!-- KPIs -->
     <div class="kpi-row kpi-row-4" id="dashKpis">
-      <div class="kpi"><div class="kpi-val neu" id="dk-rev">—</div><div class="kpi-label">إجمالي الإيرادات</div></div>
-      <div class="kpi gold"><div class="kpi-val" id="dk-profit">—</div><div class="kpi-label">صافي الربح</div></div>
-      <div class="kpi"><div class="kpi-val" id="dk-margin">—</div><div class="kpi-label">هامش الربح</div></div>
-      <div class="kpi"><div class="kpi-val" id="dk-health">—</div><div class="kpi-label">مؤشر الصحة</div></div>
+      <div class="kpi"><div class="kpi-val neu" id="dk-rev">â</div><div class="kpi-label">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª</div></div>
+      <div class="kpi gold"><div class="kpi-val" id="dk-profit">â</div><div class="kpi-label">ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­</div></div>
+      <div class="kpi"><div class="kpi-val" id="dk-margin">â</div><div class="kpi-label">ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­</div></div>
+      <div class="kpi"><div class="kpi-val" id="dk-health">â</div><div class="kpi-label">ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø©</div></div>
     </div>
 
     <div class="grid-2">
       <!-- Score + Alerts -->
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">💯</div>مؤشر صحة المشروع</div>
+          <div class="card-title"><div class="card-title-icon">ð¯</div>ÙØ¤Ø´Ø± ØµØ­Ø© Ø§ÙÙØ´Ø±ÙØ¹</div>
           <div class="score-wrap">
             <div class="score-ring">
               <svg width="140" height="140" viewBox="0 0 140 140">
@@ -549,19 +546,19 @@ function signOut() {
                 <circle class="score-ring-fill" id="scoreRingFill" cx="70" cy="70" r="60" stroke="#c8a45a" stroke-dasharray="377" stroke-dashoffset="377"/>
               </svg>
               <div class="score-num">
-                <div class="score-val" id="scoreVal" style="color:var(--gold);">—</div>
+                <div class="score-val" id="scoreVal" style="color:var(--gold);">â</div>
                 <div class="score-max">/100</div>
               </div>
             </div>
-            <div class="score-label" id="scoreLabel">أدخل بياناتك للحصول على المؤشر</div>
+            <div class="score-label" id="scoreLabel">Ø£Ø¯Ø®Ù Ø¨ÙØ§ÙØ§ØªÙ ÙÙØ­ØµÙÙ Ø¹ÙÙ Ø§ÙÙØ¤Ø´Ø±</div>
           </div>
           <div id="scoreBreakdown"></div>
         </div>
 
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">⚠️</div>التنبيهات المالية</div>
+          <div class="card-title"><div class="card-title-icon">â ï¸</div>Ø§ÙØªÙØ¨ÙÙØ§Øª Ø§ÙÙØ§ÙÙØ©</div>
           <div id="alertsContainer">
-            <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">لا توجد تنبيهات حالياً</div>
+            <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">ÙØ§ ØªÙØ¬Ø¯ ØªÙØ¨ÙÙØ§Øª Ø­Ø§ÙÙØ§Ù</div>
           </div>
         </div>
       </div>
@@ -569,27 +566,27 @@ function signOut() {
       <!-- Chart -->
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">📉</div>تطور الأداء</div>
+          <div class="card-title"><div class="card-title-icon">ð</div>ØªØ·ÙØ± Ø§ÙØ£Ø¯Ø§Ø¡</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;">
-            <button class="btn btn-ghost btn-sm" id="chartBtn-day"   onclick="switchChart('day')">اليوم</button>
-            <button class="btn btn-ghost btn-sm" id="chartBtn-week"  onclick="switchChart('week')">أسبوع</button>
-            <button class="btn btn-ghost btn-sm" id="chartBtn-month" onclick="switchChart('month')">شهر</button>
-            <button class="btn btn-primary btn-sm" id="chartBtn-6m"  onclick="switchChart('6m')">6 أشهر</button>
-            <button class="btn btn-ghost btn-sm" id="chartBtn-year"  onclick="switchChart('year')">سنة</button>
-            <button class="btn btn-ghost btn-sm" id="chartBtn-custom" onclick="toggleCustomChart()">📅 مخصص</button>
+            <button class="btn btn-ghost btn-sm" id="chartBtn-day"   onclick="switchChart('day')">Ø§ÙÙÙÙ</button>
+            <button class="btn btn-ghost btn-sm" id="chartBtn-week"  onclick="switchChart('week')">Ø£Ø³Ø¨ÙØ¹</button>
+            <button class="btn btn-ghost btn-sm" id="chartBtn-month" onclick="switchChart('month')">Ø´ÙØ±</button>
+            <button class="btn btn-primary btn-sm" id="chartBtn-6m"  onclick="switchChart('6m')">6 Ø£Ø´ÙØ±</button>
+            <button class="btn btn-ghost btn-sm" id="chartBtn-year"  onclick="switchChart('year')">Ø³ÙØ©</button>
+            <button class="btn btn-ghost btn-sm" id="chartBtn-custom" onclick="toggleCustomChart()">ð ÙØ®ØµØµ</button>
           </div>
           <!-- Custom date range for chart -->
           <div id="chartCustomRange" style="display:none;background:var(--s2);border-radius:10px;padding:12px;margin-bottom:12px;">
             <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;">
               <div>
-                <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px;">من</label>
+                <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px;">ÙÙ</label>
                 <input class="input" type="date" id="chartFrom" oninput="applyCustomChart()">
               </div>
               <div>
-                <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px;">إلى</label>
+                <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px;">Ø¥ÙÙ</label>
                 <input class="input" type="date" id="chartTo" oninput="applyCustomChart()">
               </div>
-              <button class="btn btn-primary btn-sm" onclick="applyCustomChart()">تطبيق</button>
+              <button class="btn btn-primary btn-sm" onclick="applyCustomChart()">ØªØ·Ø¨ÙÙ</button>
             </div>
             <div id="chartRangeLabel" style="font-size:12px;color:var(--gold);margin-top:8px;"></div>
           </div>
@@ -597,9 +594,9 @@ function signOut() {
         </div>
 
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">🔮</div>توقع الأرباح (3 أشهر)</div>
+          <div class="card-title"><div class="card-title-icon">ð®</div>ØªÙÙØ¹ Ø§ÙØ£Ø±Ø¨Ø§Ø­ (3 Ø£Ø´ÙØ±)</div>
           <div id="forecastContainer" style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">
-            أجرِ تحليلاً أولاً لعرض التوقعات
+            Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù ÙØ¹Ø±Ø¶ Ø§ÙØªÙÙØ¹Ø§Øª
           </div>
         </div>
       </div>
@@ -607,30 +604,30 @@ function signOut() {
 
     <!-- Breakeven -->
     <div class="card" style="margin-top:16px;">
-      <div class="card-title"><div class="card-title-icon">⚖️</div>نقطة التعادل</div>
+      <div class="card-title"><div class="card-title-icon">âï¸</div>ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù</div>
       <div id="breakevenContainer">
-        <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">أدخل بياناتك لحساب نقطة التعادل</div>
+        <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">Ø£Ø¯Ø®Ù Ø¨ÙØ§ÙØ§ØªÙ ÙØ­Ø³Ø§Ø¨ ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù</div>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- ════ ANALYSIS PAGE ════ -->
+<!-- ââââ ANALYSIS PAGE ââââ -->
 <div class="page" id="page-analysis">
   <div class="page-header">
     <div class="page-title">
-      <h1>تحليل مشروع</h1>
-      <p>أدخل بياناتك أو ارفع ملف Excel للحصول على تشخيص كامل</p>
+      <h1>ØªØ­ÙÙÙ ÙØ´Ø±ÙØ¹</h1>
+      <p>Ø£Ø¯Ø®Ù Ø¨ÙØ§ÙØ§ØªÙ Ø£Ù Ø§Ø±ÙØ¹ ÙÙÙ Excel ÙÙØ­ØµÙÙ Ø¹ÙÙ ØªØ´Ø®ÙØµ ÙØ§ÙÙ</p>
     </div>
   </div>
 
   <!-- Excel Upload -->
   <div class="excel-zone" id="excelZone">
     <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcel(this)">
-    <div style="font-size:28px;margin-bottom:10px;">📊</div>
-    <h3>ارفع ملف Excel أو CSV</h3>
-    <p>يُقرأ تلقائياً ويملأ الحقول — أو أدخل يدوياً</p>
+    <div style="font-size:28px;margin-bottom:10px;">ð</div>
+    <h3>Ø§Ø±ÙØ¹ ÙÙÙ Excel Ø£Ù CSV</h3>
+    <p>ÙÙÙØ±Ø£ ØªÙÙØ§Ø¦ÙØ§Ù ÙÙÙÙØ£ Ø§ÙØ­ÙÙÙ â Ø£Ù Ø£Ø¯Ø®Ù ÙØ¯ÙÙØ§Ù</p>
   </div>
   <div class="msg success" id="excelMsg"></div>
 
@@ -640,96 +637,96 @@ function signOut() {
     <!-- Left column -->
     <div style="display:flex;flex-direction:column;gap:16px;">
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">🏢</div>معلومات المشروع</div>
+        <div class="card-title"><div class="card-title-icon">ð¢</div>ÙØ¹ÙÙÙØ§Øª Ø§ÙÙØ´Ø±ÙØ¹</div>
         <div class="form-grid">
-          <div class="form-group"><label>اسم المشروع</label><input class="input" id="f-name" type="text" placeholder="مثال: مقهى النخيل"></div>
-          <div class="form-group"><label>نوع النشاط</label>
+          <div class="form-group"><label>Ø§Ø³Ù Ø§ÙÙØ´Ø±ÙØ¹</label><input class="input" id="f-name" type="text" placeholder="ÙØ«Ø§Ù: ÙÙÙÙ Ø§ÙÙØ®ÙÙ"></div>
+          <div class="form-group"><label>ÙÙØ¹ Ø§ÙÙØ´Ø§Ø·</label>
             <select class="input" id="f-type">
-              <option value="">اختر النوع</option>
-              <option>مطعم أو كافيه</option><option>متجر تجزئة</option>
-              <option>خدمات</option><option>تصنيع</option>
-              <option>تجارة إلكترونية</option><option>حلاقة وتجميل</option><option>أخرى</option>
+              <option value="">Ø§Ø®ØªØ± Ø§ÙÙÙØ¹</option>
+              <option>ÙØ·Ø¹Ù Ø£Ù ÙØ§ÙÙÙ</option><option>ÙØªØ¬Ø± ØªØ¬Ø²Ø¦Ø©</option>
+              <option>Ø®Ø¯ÙØ§Øª</option><option>ØªØµÙÙØ¹</option>
+              <option>ØªØ¬Ø§Ø±Ø© Ø¥ÙÙØªØ±ÙÙÙØ©</option><option>Ø­ÙØ§ÙØ© ÙØªØ¬ÙÙÙ</option><option>Ø£Ø®Ø±Ù</option>
             </select>
           </div>
-          <div class="form-group"><label>الفترة الزمنية</label>
+          <div class="form-group"><label>Ø§ÙÙØªØ±Ø© Ø§ÙØ²ÙÙÙØ©</label>
             <select class="input" id="f-period" onchange="toggleCustomPeriod()">
-              <option value="يومي">يومي</option>
-              <option value="أسبوعي">أسبوعي</option>
-              <option value="شهري" selected>شهري</option>
-              <option value="ربع سنوي">ربع سنوي</option>
-              <option value="نصف سنوي">نصف سنوي</option>
-              <option value="سنوي">سنوي</option>
-              <option value="مخصص">فترة مخصصة</option>
+              <option value="ÙÙÙÙ">ÙÙÙÙ</option>
+              <option value="Ø£Ø³Ø¨ÙØ¹Ù">Ø£Ø³Ø¨ÙØ¹Ù</option>
+              <option value="Ø´ÙØ±Ù" selected>Ø´ÙØ±Ù</option>
+              <option value="Ø±Ø¨Ø¹ Ø³ÙÙÙ">Ø±Ø¨Ø¹ Ø³ÙÙÙ</option>
+              <option value="ÙØµÙ Ø³ÙÙÙ">ÙØµÙ Ø³ÙÙÙ</option>
+              <option value="Ø³ÙÙÙ">Ø³ÙÙÙ</option>
+              <option value="ÙØ®ØµØµ">ÙØªØ±Ø© ÙØ®ØµØµØ©</option>
             </select>
           </div>
-          <div class="form-group"><label>عدد الموظفين</label><input class="input" id="f-employees" inputmode="numeric" placeholder="0"></div>
+          <div class="form-group"><label>Ø¹Ø¯Ø¯ Ø§ÙÙÙØ¸ÙÙÙ</label><input class="input" id="f-employees" inputmode="numeric" placeholder="0"></div>
           <div class="form-group full" id="customPeriodWrap" style="display:none;">
-            <label>تحديد الفترة</label>
+            <label>ØªØ­Ø¯ÙØ¯ Ø§ÙÙØªØ±Ø©</label>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">من</label>
+                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">ÙÙ</label>
                 <input class="input" type="date" id="f-date-from">
               </div>
               <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">إلى</label>
+                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">Ø¥ÙÙ</label>
                 <input class="input" type="date" id="f-date-to">
               </div>
             </div>
             <div id="customPeriodLabel" style="font-size:12px;color:var(--gold);margin-top:6px;"></div>
-          </div><textarea class="input" id="f-notes" placeholder="أي تفاصيل تساعد في دقة التحليل..."></textarea></div>
+          </div><textarea class="input" id="f-notes" placeholder="Ø£Ù ØªÙØ§ØµÙÙ ØªØ³Ø§Ø¹Ø¯ ÙÙ Ø¯ÙØ© Ø§ÙØªØ­ÙÙÙ..."></textarea></div>
         </div>
       </div>
 
       <!-- Revenues -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">💰</div>الإيرادات والمصاريف</div>
+        <div class="card-title"><div class="card-title-icon">ð°</div>Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª ÙØ§ÙÙØµØ§Ø±ÙÙ</div>
         <div class="form-grid">
-          <div class="form-group"><label>إجمالي الإيرادات (ريال)</label><input class="input num-input" id="f-rev" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>تكلفة البضاعة / الإنتاج</label><input class="input num-input" id="f-cogs" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>الإيجار</label><input class="input num-input" id="f-rent" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>الرواتب</label><input class="input num-input" id="f-sal" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>التسويق والإعلان</label><input class="input num-input" id="f-mkt" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>مصاريف أخرى</label><input class="input num-input" id="f-other" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+          <div class="form-group"><label>Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª (Ø±ÙØ§Ù)</label><input class="input num-input" id="f-rev" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+          <div class="form-group"><label>ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø© / Ø§ÙØ¥ÙØªØ§Ø¬</label><input class="input num-input" id="f-cogs" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+          <div class="form-group"><label>Ø§ÙØ¥ÙØ¬Ø§Ø±</label><input class="input num-input" id="f-rent" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+          <div class="form-group"><label>Ø§ÙØ±ÙØ§ØªØ¨</label><input class="input num-input" id="f-sal" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+          <div class="form-group"><label>Ø§ÙØªØ³ÙÙÙ ÙØ§ÙØ¥Ø¹ÙØ§Ù</label><input class="input num-input" id="f-mkt" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+          <div class="form-group"><label>ÙØµØ§Ø±ÙÙ Ø£Ø®Ø±Ù</label><input class="input num-input" id="f-other" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
         </div>
         <!-- Live calculator -->
         <div class="live-bar" id="liveBar">
-          <div class="live-item"><div class="live-val" id="lv-exp">—</div><div class="live-lbl">إجمالي المصاريف</div></div>
-          <div class="live-item"><div class="live-val" id="lv-profit">—</div><div class="live-lbl">صافي الربح</div></div>
-          <div class="live-item"><div class="live-val" id="lv-margin">—</div><div class="live-lbl">هامش الربح</div></div>
-          <div class="live-item"><div class="live-val" id="lv-be">—</div><div class="live-lbl">نقطة التعادل</div></div>
+          <div class="live-item"><div class="live-val" id="lv-exp">â</div><div class="live-lbl">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙÙØµØ§Ø±ÙÙ</div></div>
+          <div class="live-item"><div class="live-val" id="lv-profit">â</div><div class="live-lbl">ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­</div></div>
+          <div class="live-item"><div class="live-val" id="lv-margin">â</div><div class="live-lbl">ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­</div></div>
+          <div class="live-item"><div class="live-val" id="lv-be">â</div><div class="live-lbl">ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù</div></div>
         </div>
       </div>
     </div>
 
-    <!-- Right column — Products -->
+    <!-- Right column â Products -->
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">📦</div>المنتجات / الخدمات</div>
+      <div class="card-title"><div class="card-title-icon">ð¦</div>Ø§ÙÙÙØªØ¬Ø§Øª / Ø§ÙØ®Ø¯ÙØ§Øª</div>
       <div class="prod-head">
-        <span>المنتج</span><span>سعر البيع</span><span>التكلفة</span><span>الكمية</span><span>الهامش</span><span></span>
+        <span>Ø§ÙÙÙØªØ¬</span><span>Ø³Ø¹Ø± Ø§ÙØ¨ÙØ¹</span><span>Ø§ÙØªÙÙÙØ©</span><span>Ø§ÙÙÙÙØ©</span><span>Ø§ÙÙØ§ÙØ´</span><span></span>
       </div>
       <div id="prodsContainer">
         <div class="prod-row">
-          <input class="input" type="text" placeholder="اسم المنتج">
+          <input class="input" type="text" placeholder="Ø§Ø³Ù Ø§ÙÙÙØªØ¬">
           <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
           <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
           <input class="input num-input" inputmode="numeric" placeholder="0">
-          <input class="input" type="text" placeholder="—" readonly style="color:var(--gold);font-weight:700;">
-          <button class="btn-rm" onclick="removeRow(this)">×</button>
+          <input class="input" type="text" placeholder="â" readonly style="color:var(--gold);font-weight:700;">
+          <button class="btn-rm" onclick="removeRow(this)">Ã</button>
         </div>
         <div class="prod-row">
-          <input class="input" type="text" placeholder="اسم المنتج">
+          <input class="input" type="text" placeholder="Ø§Ø³Ù Ø§ÙÙÙØªØ¬">
           <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
           <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
           <input class="input num-input" inputmode="numeric" placeholder="0">
-          <input class="input" type="text" placeholder="—" readonly style="color:var(--gold);font-weight:700;">
-          <button class="btn-rm" onclick="removeRow(this)">×</button>
+          <input class="input" type="text" placeholder="â" readonly style="color:var(--gold);font-weight:700;">
+          <button class="btn-rm" onclick="removeRow(this)">Ã</button>
         </div>
       </div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center;" onclick="addProdRow()">+ إضافة منتج</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center;" onclick="addProdRow()">+ Ø¥Ø¶Ø§ÙØ© ÙÙØªØ¬</button>
 
       <!-- Products analysis preview -->
       <div id="prodAnalysis" style="margin-top:20px;display:none;">
-        <div class="card-title" style="margin-bottom:12px;"><div class="card-title-icon">🏆</div>ترتيب المنتجات</div>
+        <div class="card-title" style="margin-bottom:12px;"><div class="card-title-icon">ð</div>ØªØ±ØªÙØ¨ Ø§ÙÙÙØªØ¬Ø§Øª</div>
         <div id="prodRanking"></div>
       </div>
     </div>
@@ -737,23 +734,23 @@ function signOut() {
 
   <!-- Analyze Button -->
   <button class="btn btn-primary" style="width:100%;justify-content:center;padding:18px;font-size:16px;margin-top:20px;border-radius:14px;" onclick="runAnalysis()" id="analyzeBtn">
-    <span id="analyzeBtnText">تحليل المشروع الآن</span>
+    <span id="analyzeBtnText">ØªØ­ÙÙÙ Ø§ÙÙØ´Ø±ÙØ¹ Ø§ÙØ¢Ù</span>
     <div class="spin-sm" id="analyzeSpin" style="border-top-color:#000;"></div>
-    <span id="analyzeBtnIcon">🔍</span>
+    <span id="analyzeBtnIcon">ð</span>
   </button>
   <div class="msg error" id="analysisError"></div>
 </div>
 
-<!-- ════ RESULTS PAGE ════ -->
+<!-- ââââ RESULTS PAGE ââââ -->
 <div class="page" id="page-results">
   <div class="page-header">
     <div class="page-title">
-      <h1 id="resultTitle">تقرير التشخيص</h1>
-      <p id="resultMeta">—</p>
+      <h1 id="resultTitle">ØªÙØ±ÙØ± Ø§ÙØªØ´Ø®ÙØµ</h1>
+      <p id="resultMeta">â</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-ghost btn-sm" onclick="exportPDF()">⬇ PDF</button>
-      <button class="btn btn-primary btn-sm" onclick="showPage('analysis')">+ تحليل جديد</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportPDF()">â¬ PDF</button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button>
     </div>
   </div>
 
@@ -763,7 +760,7 @@ function signOut() {
   <div class="grid-2">
     <!-- Score -->
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">💯</div>مؤشر الصحة المالية</div>
+      <div class="card-title"><div class="card-title-icon">ð¯</div>ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø© Ø§ÙÙØ§ÙÙØ©</div>
       <div class="score-wrap">
         <div class="score-ring">
           <svg width="140" height="140" viewBox="0 0 140 140">
@@ -775,292 +772,292 @@ function signOut() {
             <div class="score-max">/100</div>
           </div>
         </div>
-        <div class="score-label" id="resScoreLabel">—</div>
+        <div class="score-label" id="resScoreLabel">â</div>
       </div>
       <div id="resScoreBreakdown"></div>
     </div>
 
     <!-- Benchmark -->
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">📊</div>مقارنة بالسوق</div>
+      <div class="card-title"><div class="card-title-icon">ð</div>ÙÙØ§Ø±ÙØ© Ø¨Ø§ÙØ³ÙÙ</div>
       <div id="benchmarkContainer"></div>
     </div>
   </div>
 
   <!-- Alerts -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon">🚨</div>التنبيهات المالية</div>
+    <div class="card-title"><div class="card-title-icon">ð¨</div>Ø§ÙØªÙØ¨ÙÙØ§Øª Ø§ÙÙØ§ÙÙØ©</div>
     <div id="resultAlerts"></div>
   </div>
 
   <!-- Breakeven + Products -->
   <div class="grid-2" style="margin-top:16px;">
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">⚖️</div>نقطة التعادل</div>
+      <div class="card-title"><div class="card-title-icon">âï¸</div>ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù</div>
       <div id="resultBreakeven"></div>
     </div>
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">🏆</div>تحليل المنتجات</div>
+      <div class="card-title"><div class="card-title-icon">ð</div>ØªØ­ÙÙÙ Ø§ÙÙÙØªØ¬Ø§Øª</div>
       <div id="resultProducts"></div>
     </div>
   </div>
 
   <!-- AI Analysis -->
   <div class="card" style="margin-top:16px;" id="aiAnalysisCard">
-    <div class="card-title"><div class="card-title-icon">🤖</div>التحليل الذكي</div>
+    <div class="card-title"><div class="card-title-icon">ð¤</div>Ø§ÙØªØ­ÙÙÙ Ø§ÙØ°ÙÙ</div>
     <div id="aiBlocks"></div>
   </div>
 
   <!-- Scenarios -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات افتراضية</div>
+    <div class="card-title"><div class="card-title-icon">ð¯</div>Ø³ÙÙØ§Ø±ÙÙÙØ§Øª Ø§ÙØªØ±Ø§Ø¶ÙØ©</div>
     <div class="grid-3" id="scenariosContainer"></div>
   </div>
 </div>
 
-<!-- ════ BENCHMARK PAGE ════ -->
+<!-- ââââ BENCHMARK PAGE ââââ -->
 <div class="page" id="page-benchmark">
   <div class="page-header">
-    <div class="page-title"><h1>مقارنة بالسوق</h1><p>كيف يقف مشروعك مقارنة بالمعدلات الطبيعية في قطاعك</p></div>
+    <div class="page-title"><h1>ÙÙØ§Ø±ÙØ© Ø¨Ø§ÙØ³ÙÙ</h1><p>ÙÙÙ ÙÙÙ ÙØ´Ø±ÙØ¹Ù ÙÙØ§Ø±ÙØ© Ø¨Ø§ÙÙØ¹Ø¯ÙØ§Øª Ø§ÙØ·Ø¨ÙØ¹ÙØ© ÙÙ ÙØ·Ø§Ø¹Ù</p></div>
     <div class="header-actions">
       <select class="input" id="bench-sector" onchange="renderBenchmarkPage()" style="width:auto;padding:8px 14px;font-size:13px;">
-        <option value="restaurant">مطعم / كافيه</option>
-        <option value="retail">متجر تجزئة</option>
-        <option value="services">خدمات</option>
-        <option value="barber">حلاقة وتجميل</option>
-        <option value="ecom">تجارة إلكترونية</option>
+        <option value="restaurant">ÙØ·Ø¹Ù / ÙØ§ÙÙÙ</option>
+        <option value="retail">ÙØªØ¬Ø± ØªØ¬Ø²Ø¦Ø©</option>
+        <option value="services">Ø®Ø¯ÙØ§Øª</option>
+        <option value="barber">Ø­ÙØ§ÙØ© ÙØªØ¬ÙÙÙ</option>
+        <option value="ecom">ØªØ¬Ø§Ø±Ø© Ø¥ÙÙØªØ±ÙÙÙØ©</option>
       </select>
     </div>
   </div>
   <div id="benchPageContent"></div>
 </div>
 
-<!-- ════ SCENARIOS PAGE ════ -->
+<!-- ââââ SCENARIOS PAGE ââââ -->
 <div class="page" id="page-scenarios">
   <div class="page-header">
-    <div class="page-title"><h1>سيناريوهات افتراضية</h1><p>جرّب "ماذا لو" وشوف تأثيرها على أرباحك</p></div>
+    <div class="page-title"><h1>Ø³ÙÙØ§Ø±ÙÙÙØ§Øª Ø§ÙØªØ±Ø§Ø¶ÙØ©</h1><p>Ø¬Ø±ÙØ¨ "ÙØ§Ø°Ø§ ÙÙ" ÙØ´ÙÙ ØªØ£Ø«ÙØ±ÙØ§ Ø¹ÙÙ Ø£Ø±Ø¨Ø§Ø­Ù</p></div>
   </div>
   <div id="scenariosPageContent">
-    <div style="text-align:center;padding:60px;color:var(--gray);font-size:14px;">أجرِ تحليلاً أولاً لعرض السيناريوهات</div>
+    <div style="text-align:center;padding:60px;color:var(--gray);font-size:14px;">Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù ÙØ¹Ø±Ø¶ Ø§ÙØ³ÙÙØ§Ø±ÙÙÙØ§Øª</div>
   </div>
 </div>
 
-<!-- ════ COMPARE PAGE ════ -->
+<!-- ââââ COMPARE PAGE ââââ -->
 <div class="page" id="page-compare">
   <div class="page-header">
-    <div class="page-title"><h1>مقارنة الفترات</h1><p>قارن أداء مشروعك بين فترتين</p></div>
+    <div class="page-title"><h1>ÙÙØ§Ø±ÙØ© Ø§ÙÙØªØ±Ø§Øª</h1><p>ÙØ§Ø±Ù Ø£Ø¯Ø§Ø¡ ÙØ´Ø±ÙØ¹Ù Ø¨ÙÙ ÙØªØ±ØªÙÙ</p></div>
   </div>
   <div id="comparePageContent">
-    <div style="text-align:center;padding:60px;color:var(--gray);font-size:14px;">ستظهر المقارنة هنا عند توفر تقريرين أو أكثر</div>
+    <div style="text-align:center;padding:60px;color:var(--gray);font-size:14px;">Ø³ØªØ¸ÙØ± Ø§ÙÙÙØ§Ø±ÙØ© ÙÙØ§ Ø¹ÙØ¯ ØªÙÙØ± ØªÙØ±ÙØ±ÙÙ Ø£Ù Ø£ÙØ«Ø±</div>
   </div>
 </div>
 
-<!-- ════ REPORTS PAGE ════ -->
+<!-- ââââ REPORTS PAGE ââââ -->
 <div class="page" id="page-reports">
   <div class="page-header">
-    <div class="page-title"><h1>التقارير المحفوظة</h1><p>سجل كامل لتحليلاتك السابقة</p></div>
+    <div class="page-title"><h1>Ø§ÙØªÙØ§Ø±ÙØ± Ø§ÙÙØ­ÙÙØ¸Ø©</h1><p>Ø³Ø¬Ù ÙØ§ÙÙ ÙØªØ­ÙÙÙØ§ØªÙ Ø§ÙØ³Ø§Ø¨ÙØ©</p></div>
     <div class="header-actions">
-      <button class="btn btn-primary btn-sm" onclick="showPage('analysis')">+ تحليل جديد</button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button>
     </div>
   </div>
   <div id="savedReportsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
 </div>
 
 
-<!-- ════ AI CFO PAGE ════ -->
+<!-- ââââ AI CFO PAGE ââââ -->
 <div class="page" id="page-cfo">
   <div class="page-header">
     <div class="page-title">
-      <h1>🤖 AI CFO</h1>
-      <p>مستشارك المالي الذكي — يعرف بيانات مشروعك ويجاوب على أسئلتك</p>
+      <h1>ð¤ AI CFO</h1>
+      <p>ÙØ³ØªØ´Ø§Ø±Ù Ø§ÙÙØ§ÙÙ Ø§ÙØ°ÙÙ â ÙØ¹Ø±Ù Ø¨ÙØ§ÙØ§Øª ÙØ´Ø±ÙØ¹Ù ÙÙØ¬Ø§ÙØ¨ Ø¹ÙÙ Ø£Ø³Ø¦ÙØªÙ</p>
     </div>
   </div>
 
   <!-- Context bar -->
   <div class="cfo-context-bar" id="cfoContextBar" style="display:none;">
     <div class="cfo-context-dot"></div>
-    <span id="cfoContextText">متصل ببيانات مشروعك</span>
-    <button class="btn btn-ghost btn-sm" style="margin-right:auto;" onclick="showPage('analysis')">تحديث البيانات</button>
+    <span id="cfoContextText">ÙØªØµÙ Ø¨Ø¨ÙØ§ÙØ§Øª ÙØ´Ø±ÙØ¹Ù</span>
+    <button class="btn btn-ghost btn-sm" style="margin-right:auto;" onclick="showPage('analysis')">ØªØ­Ø¯ÙØ« Ø§ÙØ¨ÙØ§ÙØ§Øª</button>
   </div>
 
   <div class="cfo-wrap">
     <!-- Suggestions -->
     <div class="cfo-suggestions" id="cfoSuggestions">
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ما أهم 3 قرارات يجب اتخاذها الآن؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">هل مشروعي مربح مقارنة بالسوق؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">كيف أخفض تكاليفي بدون تأثير على الجودة؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ما توقعاتك للأشهر القادمة؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">أي منتج يجب أن أركز عليه؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">هل يمكنني رفع الأسعار الآن؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ما نقطة التعادل ومتى أصلها؟</button>
-      <button class="cfo-chip" onclick="sendCFO(this.textContent)">كيف أزيد هامش الربح 5%؟</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙØ§ Ø£ÙÙ 3 ÙØ±Ø§Ø±Ø§Øª ÙØ¬Ø¨ Ø§ØªØ®Ø§Ø°ÙØ§ Ø§ÙØ¢ÙØ</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙÙ ÙØ´Ø±ÙØ¹Ù ÙØ±Ø¨Ø­ ÙÙØ§Ø±ÙØ© Ø¨Ø§ÙØ³ÙÙØ</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙÙÙ Ø£Ø®ÙØ¶ ØªÙØ§ÙÙÙÙ Ø¨Ø¯ÙÙ ØªØ£Ø«ÙØ± Ø¹ÙÙ Ø§ÙØ¬ÙØ¯Ø©Ø</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙØ§ ØªÙÙØ¹Ø§ØªÙ ÙÙØ£Ø´ÙØ± Ø§ÙÙØ§Ø¯ÙØ©Ø</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">Ø£Ù ÙÙØªØ¬ ÙØ¬Ø¨ Ø£Ù Ø£Ø±ÙØ² Ø¹ÙÙÙØ</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙÙ ÙÙÙÙÙÙ Ø±ÙØ¹ Ø§ÙØ£Ø³Ø¹Ø§Ø± Ø§ÙØ¢ÙØ</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙØ§ ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù ÙÙØªÙ Ø£ØµÙÙØ§Ø</button>
+      <button class="cfo-chip" onclick="sendCFO(this.textContent)">ÙÙÙ Ø£Ø²ÙØ¯ ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ 5%Ø</button>
     </div>
 
     <!-- Messages -->
     <div class="cfo-messages" id="cfoMessages">
       <div class="cfo-msg">
-        <div class="cfo-avatar ai">🤖</div>
+        <div class="cfo-avatar ai">ð¤</div>
         <div class="cfo-bubble ai">
-          مرحباً! أنا <strong>AI CFO</strong> — مستشارك المالي الذكي.<br><br>
-          أقدر أساعدك في تحليل أرقامك، أجاوب على أسئلتك المالية، وأعطيك توصيات مخصصة لمشروعك.<br><br>
-          <strong>ابدأ بتحليل مشروعك أولاً</strong> لأتمكن من الإجابة بدقة أكبر، أو اسألني أي سؤال الآن.
+          ÙØ±Ø­Ø¨Ø§Ù! Ø£ÙØ§ <strong>AI CFO</strong> â ÙØ³ØªØ´Ø§Ø±Ù Ø§ÙÙØ§ÙÙ Ø§ÙØ°ÙÙ.<br><br>
+          Ø£ÙØ¯Ø± Ø£Ø³Ø§Ø¹Ø¯Ù ÙÙ ØªØ­ÙÙÙ Ø£Ø±ÙØ§ÙÙØ Ø£Ø¬Ø§ÙØ¨ Ø¹ÙÙ Ø£Ø³Ø¦ÙØªÙ Ø§ÙÙØ§ÙÙØ©Ø ÙØ£Ø¹Ø·ÙÙ ØªÙØµÙØ§Øª ÙØ®ØµØµØ© ÙÙØ´Ø±ÙØ¹Ù.<br><br>
+          <strong>Ø§Ø¨Ø¯Ø£ Ø¨ØªØ­ÙÙÙ ÙØ´Ø±ÙØ¹Ù Ø£ÙÙØ§Ù</strong> ÙØ£ØªÙÙÙ ÙÙ Ø§ÙØ¥Ø¬Ø§Ø¨Ø© Ø¨Ø¯ÙØ© Ø£ÙØ¨Ø±Ø Ø£Ù Ø§Ø³Ø£ÙÙÙ Ø£Ù Ø³Ø¤Ø§Ù Ø§ÙØ¢Ù.
         </div>
       </div>
     </div>
 
     <!-- Input -->
     <div class="cfo-input-row">
-      <textarea class="cfo-input" id="cfoInput" placeholder="اسأل AI CFO أي سؤال عن مشروعك..." rows="1"
+      <textarea class="cfo-input" id="cfoInput" placeholder="Ø§Ø³Ø£Ù AI CFO Ø£Ù Ø³Ø¤Ø§Ù Ø¹Ù ÙØ´Ø±ÙØ¹Ù..." rows="1"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCFO();}"
         oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
-      <button class="cfo-send" id="cfoSendBtn" onclick="sendCFO()">↑</button>
+      <button class="cfo-send" id="cfoSendBtn" onclick="sendCFO()">â</button>
     </div>
   </div>
 </div>
 
 
-<!-- ════ ACTION PLAN PAGE ════ -->
+<!-- ââââ ACTION PLAN PAGE ââââ -->
 <div class="page" id="page-actionplan">
   <div class="page-header">
-    <div class="page-title"><h1>📋 خطة العمل الأسبوعية</h1><p>خطوات عملية مخصصة لمشروعك — الأسبوع القادم</p></div>
+    <div class="page-title"><h1>ð Ø®Ø·Ø© Ø§ÙØ¹ÙÙ Ø§ÙØ£Ø³Ø¨ÙØ¹ÙØ©</h1><p>Ø®Ø·ÙØ§Øª Ø¹ÙÙÙØ© ÙØ®ØµØµØ© ÙÙØ´Ø±ÙØ¹Ù â Ø§ÙØ£Ø³Ø¨ÙØ¹ Ø§ÙÙØ§Ø¯Ù</p></div>
     <div class="header-actions">
-      <button class="btn btn-ghost btn-sm" onclick="generateActionPlan()">🔄 تحديث الخطة</button>
-      <button class="btn btn-primary btn-sm" onclick="exportActionPlanPDF()">⬇ PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="generateActionPlan()">ð ØªØ­Ø¯ÙØ« Ø§ÙØ®Ø·Ø©</button>
+      <button class="btn btn-primary btn-sm" onclick="exportActionPlanPDF()">â¬ PDF</button>
     </div>
   </div>
   <div id="actionPlanContent">
-    <div class="feature-empty"><div class="fe-icon">📋</div><p>أجرِ تحليلاً أولاً لتوليد خطة عمل مخصصة لمشروعك</p>
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ تحليل جديد</button></div>
+    <div class="feature-empty"><div class="fe-icon">ð</div><p>Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù ÙØªÙÙÙØ¯ Ø®Ø·Ø© Ø¹ÙÙ ÙØ®ØµØµØ© ÙÙØ´Ø±ÙØ¹Ù</p>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button></div>
   </div>
 </div>
 
-<!-- ════ CASH FLOW PAGE ════ -->
+<!-- ââââ CASH FLOW PAGE ââââ -->
 <div class="page" id="page-cashflow">
   <div class="page-header">
-    <div class="page-title"><h1>💧 التدفق النقدي</h1><p>Cash Runway — كم تكفي سيولتك؟</p></div>
+    <div class="page-title"><h1>ð§ Ø§ÙØªØ¯ÙÙ Ø§ÙÙÙØ¯Ù</h1><p>Cash Runway â ÙÙ ØªÙÙÙ Ø³ÙÙÙØªÙØ</p></div>
   </div>
   <div id="cashflowContent">
-    <div class="feature-empty"><div class="fe-icon">💧</div><p>أدخل بيانات السيولة لحساب الـ Cash Runway</p></div>
+    <div class="feature-empty"><div class="fe-icon">ð§</div><p>Ø£Ø¯Ø®Ù Ø¨ÙØ§ÙØ§Øª Ø§ÙØ³ÙÙÙØ© ÙØ­Ø³Ø§Ø¨ Ø§ÙÙ Cash Runway</p></div>
   </div>
   <!-- Cash input -->
   <div class="card" style="margin-top:20px;">
-    <div class="card-title"><div class="card-title-icon">🏦</div>بيانات السيولة</div>
+    <div class="card-title"><div class="card-title-icon">ð¦</div>Ø¨ÙØ§ÙØ§Øª Ø§ÙØ³ÙÙÙØ©</div>
     <div class="form-grid">
-      <div class="form-group"><label>الرصيد النقدي الحالي (ريال)</label><input class="input num-input" id="cf-cash" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
-      <div class="form-group"><label>المصاريف الثابتة الشهرية</label><input class="input num-input" id="cf-fixed" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
-      <div class="form-group"><label>المصاريف المتغيرة الشهرية</label><input class="input num-input" id="cf-variable" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
-      <div class="form-group"><label>الإيرادات الشهرية المتوقعة</label><input class="input num-input" id="cf-expected-rev" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
+      <div class="form-group"><label>Ø§ÙØ±ØµÙØ¯ Ø§ÙÙÙØ¯Ù Ø§ÙØ­Ø§ÙÙ (Ø±ÙØ§Ù)</label><input class="input num-input" id="cf-cash" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
+      <div class="form-group"><label>Ø§ÙÙØµØ§Ø±ÙÙ Ø§ÙØ«Ø§Ø¨ØªØ© Ø§ÙØ´ÙØ±ÙØ©</label><input class="input num-input" id="cf-fixed" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
+      <div class="form-group"><label>Ø§ÙÙØµØ§Ø±ÙÙ Ø§ÙÙØªØºÙØ±Ø© Ø§ÙØ´ÙØ±ÙØ©</label><input class="input num-input" id="cf-variable" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
+      <div class="form-group"><label>Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª Ø§ÙØ´ÙØ±ÙØ© Ø§ÙÙØªÙÙØ¹Ø©</label><input class="input num-input" id="cf-expected-rev" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
     </div>
   </div>
 </div>
 
-<!-- ════ INTEGRATIONS PAGE ════ -->
+<!-- ââââ INTEGRATIONS PAGE ââââ -->
 <div class="page" id="page-integrations">
   <div class="page-header">
-    <div class="page-title"><h1>🔌 الربط والاستيراد</h1><p>استورد بياناتك تلقائياً من أنظمة نقاط البيع</p></div>
+    <div class="page-title"><h1>ð Ø§ÙØ±Ø¨Ø· ÙØ§ÙØ§Ø³ØªÙØ±Ø§Ø¯</h1><p>Ø§Ø³ØªÙØ±Ø¯ Ø¨ÙØ§ÙØ§ØªÙ ØªÙÙØ§Ø¦ÙØ§Ù ÙÙ Ø£ÙØ¸ÙØ© ÙÙØ§Ø· Ø§ÙØ¨ÙØ¹</p></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
     <div class="integration-card" onclick="connectIntegration('google-sheets')">
-      <div class="int-logo" style="background:rgba(66,133,244,0.1);">📊</div>
+      <div class="int-logo" style="background:rgba(66,133,244,0.1);">ð</div>
       <div class="int-info">
         <div class="int-name">Google Sheets</div>
-        <div class="int-desc">استورد بياناتك من جدول Google مباشرة</div>
+        <div class="int-desc">Ø§Ø³ØªÙØ±Ø¯ Ø¨ÙØ§ÙØ§ØªÙ ÙÙ Ø¬Ø¯ÙÙ Google ÙØ¨Ø§Ø´Ø±Ø©</div>
       </div>
-      <div class="int-badge badge-available">متاح</div>
+      <div class="int-badge badge-available">ÙØªØ§Ø­</div>
     </div>
     <div class="integration-card" onclick="connectIntegration('excel')">
-      <div class="int-logo" style="background:rgba(33,115,70,0.1);">📗</div>
+      <div class="int-logo" style="background:rgba(33,115,70,0.1);">ð</div>
       <div class="int-info">
         <div class="int-name">Excel / CSV</div>
-        <div class="int-desc">رفع ملف Excel أو CSV مباشرة</div>
+        <div class="int-desc">Ø±ÙØ¹ ÙÙÙ Excel Ø£Ù CSV ÙØ¨Ø§Ø´Ø±Ø©</div>
       </div>
-      <div class="int-badge badge-available">متاح</div>
+      <div class="int-badge badge-available">ÙØªØ§Ø­</div>
     </div>
     <div class="integration-card" onclick="connectIntegration('foodics')">
-      <div class="int-logo" style="background:rgba(255,87,34,0.1);">🍽️</div>
+      <div class="int-logo" style="background:rgba(255,87,34,0.1);">ð½ï¸</div>
       <div class="int-info">
         <div class="int-name">Foodics</div>
-        <div class="int-desc">نظام نقاط البيع للمطاعم والكافيهات</div>
+        <div class="int-desc">ÙØ¸Ø§Ù ÙÙØ§Ø· Ø§ÙØ¨ÙØ¹ ÙÙÙØ·Ø§Ø¹Ù ÙØ§ÙÙØ§ÙÙÙØ§Øª</div>
       </div>
-      <div class="int-badge badge-coming">قريباً</div>
+      <div class="int-badge badge-coming">ÙØ±ÙØ¨Ø§Ù</div>
     </div>
     <div class="integration-card" onclick="connectIntegration('rewaa')">
-      <div class="int-logo" style="background:rgba(100,181,246,0.1);">🏪</div>
+      <div class="int-logo" style="background:rgba(100,181,246,0.1);">ðª</div>
       <div class="int-info">
-        <div class="int-name">Rewaa رواء</div>
-        <div class="int-desc">نظام إدارة المخزون والمبيعات</div>
+        <div class="int-name">Rewaa Ø±ÙØ§Ø¡</div>
+        <div class="int-desc">ÙØ¸Ø§Ù Ø¥Ø¯Ø§Ø±Ø© Ø§ÙÙØ®Ø²ÙÙ ÙØ§ÙÙØ¨ÙØ¹Ø§Øª</div>
       </div>
-      <div class="int-badge badge-coming">قريباً</div>
+      <div class="int-badge badge-coming">ÙØ±ÙØ¨Ø§Ù</div>
     </div>
     <div class="integration-card" onclick="connectIntegration('square')">
-      <div class="int-logo" style="background:rgba(0,0,0,0.2);">⬛</div>
+      <div class="int-logo" style="background:rgba(0,0,0,0.2);">â¬</div>
       <div class="int-info">
         <div class="int-name">Square</div>
-        <div class="int-desc">نظام نقاط البيع العالمي</div>
+        <div class="int-desc">ÙØ¸Ø§Ù ÙÙØ§Ø· Ø§ÙØ¨ÙØ¹ Ø§ÙØ¹Ø§ÙÙÙ</div>
       </div>
-      <div class="int-badge badge-coming">قريباً</div>
+      <div class="int-badge badge-coming">ÙØ±ÙØ¨Ø§Ù</div>
     </div>
     <div class="integration-card" onclick="connectIntegration('manual')">
-      <div class="int-logo" style="background:var(--gold-d);">✍️</div>
+      <div class="int-logo" style="background:var(--gold-d);">âï¸</div>
       <div class="int-info">
-        <div class="int-name">إدخال يدوي</div>
-        <div class="int-desc">أدخل بياناتك مباشرة في النموذج</div>
+        <div class="int-name">Ø¥Ø¯Ø®Ø§Ù ÙØ¯ÙÙ</div>
+        <div class="int-desc">Ø£Ø¯Ø®Ù Ø¨ÙØ§ÙØ§ØªÙ ÙØ¨Ø§Ø´Ø±Ø© ÙÙ Ø§ÙÙÙÙØ°Ø¬</div>
       </div>
-      <div class="int-badge badge-available">متاح</div>
+      <div class="int-badge badge-available">ÙØªØ§Ø­</div>
     </div>
   </div>
 
   <!-- Google Sheets connect panel -->
   <div class="card" id="gsheetPanel" style="display:none;">
-    <div class="card-title"><div class="card-title-icon">📊</div>ربط Google Sheets</div>
+    <div class="card-title"><div class="card-title-icon">ð</div>Ø±Ø¨Ø· Google Sheets</div>
     <div class="form-grid">
-      <div class="form-group full"><label>رابط الجدول (يجب أن يكون مشاركاً للعموم)</label>
+      <div class="form-group full"><label>Ø±Ø§Ø¨Ø· Ø§ÙØ¬Ø¯ÙÙ (ÙØ¬Ø¨ Ø£Ù ÙÙÙÙ ÙØ´Ø§Ø±ÙØ§Ù ÙÙØ¹ÙÙÙ)</label>
         <input class="input" id="gsheet-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." dir="ltr">
       </div>
       <div class="form-group">
-        <label>عمود الإيرادات</label>
-        <input class="input" id="gsheet-rev-col" placeholder="مثال: B2" dir="ltr">
+        <label>Ø¹ÙÙØ¯ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª</label>
+        <input class="input" id="gsheet-rev-col" placeholder="ÙØ«Ø§Ù: B2" dir="ltr">
       </div>
       <div class="form-group">
-        <label>عمود المصاريف</label>
-        <input class="input" id="gsheet-exp-col" placeholder="مثال: C2" dir="ltr">
+        <label>Ø¹ÙÙØ¯ Ø§ÙÙØµØ§Ø±ÙÙ</label>
+        <input class="input" id="gsheet-exp-col" placeholder="ÙØ«Ø§Ù: C2" dir="ltr">
       </div>
     </div>
-    <button class="btn btn-primary" style="margin-top:12px;" onclick="importFromSheets()">📥 استيراد البيانات</button>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="importFromSheets()">ð¥ Ø§Ø³ØªÙØ±Ø§Ø¯ Ø§ÙØ¨ÙØ§ÙØ§Øª</button>
     <div class="msg" id="gsheetMsg" style="margin-top:10px;"></div>
   </div>
 </div>
 
-<!-- ════ PRICING PAGE ════ -->
+<!-- ââââ PRICING PAGE ââââ -->
 <div class="page" id="page-pricing">
   <div class="page-header">
-    <div class="page-title"><h1>💲 تحليل التسعير</h1><p>شوف تأثير رفع أو خفض الأسعار على أرباحك</p></div>
+    <div class="page-title"><h1>ð² ØªØ­ÙÙÙ Ø§ÙØªØ³Ø¹ÙØ±</h1><p>Ø´ÙÙ ØªØ£Ø«ÙØ± Ø±ÙØ¹ Ø£Ù Ø®ÙØ¶ Ø§ÙØ£Ø³Ø¹Ø§Ø± Ø¹ÙÙ Ø£Ø±Ø¨Ø§Ø­Ù</p></div>
   </div>
   <div id="pricingContent">
-    <div class="feature-empty"><div class="fe-icon">💲</div><p>أجرِ تحليلاً أولاً لتفعيل تحليل التسعير</p>
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ تحليل جديد</button></div>
+    <div class="feature-empty"><div class="fe-icon">ð²</div><p>Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù ÙØªÙØ¹ÙÙ ØªØ­ÙÙÙ Ø§ÙØªØ³Ø¹ÙØ±</p>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button></div>
   </div>
 </div>
 
-<!-- ════ SMART FORECAST PAGE ════ -->
+<!-- ââââ SMART FORECAST PAGE ââââ -->
 <div class="page" id="page-forecast">
   <div class="page-header">
-    <div class="page-title"><h1>🔮 التوقعات الذكية</h1><p>توقع المبيعات والأرباح واحتمالية الخسارة</p></div>
+    <div class="page-title"><h1>ð® Ø§ÙØªÙÙØ¹Ø§Øª Ø§ÙØ°ÙÙØ©</h1><p>ØªÙÙØ¹ Ø§ÙÙØ¨ÙØ¹Ø§Øª ÙØ§ÙØ£Ø±Ø¨Ø§Ø­ ÙØ§Ø­ØªÙØ§ÙÙØ© Ø§ÙØ®Ø³Ø§Ø±Ø©</p></div>
   </div>
   <div id="forecastPageContent">
-    <div class="feature-empty"><div class="fe-icon">🔮</div><p>أجرِ تحليلاً أولاً لعرض التوقعات الذكية</p>
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ تحليل جديد</button></div>
+    <div class="feature-empty"><div class="fe-icon">ð®</div><p>Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù ÙØ¹Ø±Ø¶ Ø§ÙØªÙÙØ¹Ø§Øª Ø§ÙØ°ÙÙØ©</p>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button></div>
   </div>
 </div>
 
-<!-- ════ HEALTH ADVISOR PAGE ════ -->
+<!-- ââââ HEALTH ADVISOR PAGE ââââ -->
 <div class="page" id="page-healthadvisor">
   <div class="page-header">
-    <div class="page-title"><h1>❤️ مستشار الصحة المالية</h1><p>أهم 3 قرارات يجب اتخاذها الآن</p></div>
+    <div class="page-title"><h1>â¤ï¸ ÙØ³ØªØ´Ø§Ø± Ø§ÙØµØ­Ø© Ø§ÙÙØ§ÙÙØ©</h1><p>Ø£ÙÙ 3 ÙØ±Ø§Ø±Ø§Øª ÙØ¬Ø¨ Ø§ØªØ®Ø§Ø°ÙØ§ Ø§ÙØ¢Ù</p></div>
   </div>
   <div id="healthAdvisorContent">
-    <div class="feature-empty"><div class="fe-icon">❤️</div><p>أجرِ تحليلاً أولاً لعرض توصيات الصحة المالية</p>
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ تحليل جديد</button></div>
+    <div class="feature-empty"><div class="fe-icon">â¤ï¸</div><p>Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù ÙØ¹Ø±Ø¶ ØªÙØµÙØ§Øª Ø§ÙØµØ­Ø© Ø§ÙÙØ§ÙÙØ©</p>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯</button></div>
   </div>
 </div>
 
@@ -1071,8 +1068,8 @@ function signOut() {
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loading-box">
     <div class="loading-ring"></div>
-    <p>جاري تحليل بيانات مشروعك...</p>
-    <small>يستغرق ذلك 10–20 ثانية</small>
+    <p>Ø¬Ø§Ø±Ù ØªØ­ÙÙÙ Ø¨ÙØ§ÙØ§Øª ÙØ´Ø±ÙØ¹Ù...</p>
+    <small>ÙØ³ØªØºØ±Ù Ø°ÙÙ 10â20 Ø«Ø§ÙÙØ©</small>
   </div>
 </div>
 
@@ -1080,9 +1077,9 @@ function signOut() {
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // STATE
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 let STATE = {
   currentReport: null,
   savedReports: JSON.parse(localStorage.getItem('tw_reports') || '[]'),
@@ -1090,66 +1087,66 @@ let STATE = {
   chartMode: '6m',
 };
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // BENCHMARKS DATA
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 const BENCHMARKS = {
   restaurant: {
-    label: 'مطعم / كافيه',
-    netMargin:   { min: 15, max: 25, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 60, max: 75, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 8,  max: 12, label: 'نسبة الإيجار' },
-    salPct:      { min: 20, max: 30, label: 'نسبة الرواتب' },
-    cogsPct:     { min: 25, max: 40, label: 'تكلفة البضاعة' },
-    mktPct:      { min: 3,  max: 8,  label: 'نسبة التسويق' },
+    label: 'ÙØ·Ø¹Ù / ÙØ§ÙÙÙ',
+    netMargin:   { min: 15, max: 25, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØµØ§ÙÙ' },
+    grossMargin: { min: 60, max: 75, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØ¥Ø¬ÙØ§ÙÙ' },
+    rentPct:     { min: 8,  max: 12, label: 'ÙØ³Ø¨Ø© Ø§ÙØ¥ÙØ¬Ø§Ø±' },
+    salPct:      { min: 20, max: 30, label: 'ÙØ³Ø¨Ø© Ø§ÙØ±ÙØ§ØªØ¨' },
+    cogsPct:     { min: 25, max: 40, label: 'ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©' },
+    mktPct:      { min: 3,  max: 8,  label: 'ÙØ³Ø¨Ø© Ø§ÙØªØ³ÙÙÙ' },
   },
   retail: {
-    label: 'متجر تجزئة',
-    netMargin:   { min: 10, max: 20, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 30, max: 50, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 5,  max: 10, label: 'نسبة الإيجار' },
-    salPct:      { min: 10, max: 20, label: 'نسبة الرواتب' },
-    cogsPct:     { min: 50, max: 70, label: 'تكلفة البضاعة' },
-    mktPct:      { min: 2,  max: 5,  label: 'نسبة التسويق' },
+    label: 'ÙØªØ¬Ø± ØªØ¬Ø²Ø¦Ø©',
+    netMargin:   { min: 10, max: 20, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØµØ§ÙÙ' },
+    grossMargin: { min: 30, max: 50, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØ¥Ø¬ÙØ§ÙÙ' },
+    rentPct:     { min: 5,  max: 10, label: 'ÙØ³Ø¨Ø© Ø§ÙØ¥ÙØ¬Ø§Ø±' },
+    salPct:      { min: 10, max: 20, label: 'ÙØ³Ø¨Ø© Ø§ÙØ±ÙØ§ØªØ¨' },
+    cogsPct:     { min: 50, max: 70, label: 'ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©' },
+    mktPct:      { min: 2,  max: 5,  label: 'ÙØ³Ø¨Ø© Ø§ÙØªØ³ÙÙÙ' },
   },
   services: {
-    label: 'خدمات',
-    netMargin:   { min: 20, max: 40, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 50, max: 75, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 3,  max: 8,  label: 'نسبة الإيجار' },
-    salPct:      { min: 30, max: 50, label: 'نسبة الرواتب' },
-    cogsPct:     { min: 20, max: 40, label: 'تكلفة الخدمة' },
-    mktPct:      { min: 5,  max: 12, label: 'نسبة التسويق' },
+    label: 'Ø®Ø¯ÙØ§Øª',
+    netMargin:   { min: 20, max: 40, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØµØ§ÙÙ' },
+    grossMargin: { min: 50, max: 75, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØ¥Ø¬ÙØ§ÙÙ' },
+    rentPct:     { min: 3,  max: 8,  label: 'ÙØ³Ø¨Ø© Ø§ÙØ¥ÙØ¬Ø§Ø±' },
+    salPct:      { min: 30, max: 50, label: 'ÙØ³Ø¨Ø© Ø§ÙØ±ÙØ§ØªØ¨' },
+    cogsPct:     { min: 20, max: 40, label: 'ØªÙÙÙØ© Ø§ÙØ®Ø¯ÙØ©' },
+    mktPct:      { min: 5,  max: 12, label: 'ÙØ³Ø¨Ø© Ø§ÙØªØ³ÙÙÙ' },
   },
   barber: {
-    label: 'حلاقة وتجميل',
-    netMargin:   { min: 18, max: 30, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 10, max: 18, label: 'نسبة الإيجار' },
-    salPct:      { min: 25, max: 40, label: 'نسبة الرواتب' },
-    cogsPct:     { min: 15, max: 30, label: 'تكلفة المواد' },
-    mktPct:      { min: 2,  max: 6,  label: 'نسبة التسويق' },
+    label: 'Ø­ÙØ§ÙØ© ÙØªØ¬ÙÙÙ',
+    netMargin:   { min: 18, max: 30, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØµØ§ÙÙ' },
+    grossMargin: { min: 65, max: 80, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØ¥Ø¬ÙØ§ÙÙ' },
+    rentPct:     { min: 10, max: 18, label: 'ÙØ³Ø¨Ø© Ø§ÙØ¥ÙØ¬Ø§Ø±' },
+    salPct:      { min: 25, max: 40, label: 'ÙØ³Ø¨Ø© Ø§ÙØ±ÙØ§ØªØ¨' },
+    cogsPct:     { min: 15, max: 30, label: 'ØªÙÙÙØ© Ø§ÙÙÙØ§Ø¯' },
+    mktPct:      { min: 2,  max: 6,  label: 'ÙØ³Ø¨Ø© Ø§ÙØªØ³ÙÙÙ' },
   },
   ecom: {
-    label: 'تجارة إلكترونية',
-    netMargin:   { min: 8,  max: 20, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 30, max: 55, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 0,  max: 3,  label: 'نسبة الإيجار' },
-    salPct:      { min: 10, max: 25, label: 'نسبة الرواتب' },
-    cogsPct:     { min: 45, max: 65, label: 'تكلفة البضاعة' },
-    mktPct:      { min: 10, max: 20, label: 'نسبة التسويق' },
+    label: 'ØªØ¬Ø§Ø±Ø© Ø¥ÙÙØªØ±ÙÙÙØ©',
+    netMargin:   { min: 8,  max: 20, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØµØ§ÙÙ' },
+    grossMargin: { min: 30, max: 55, label: 'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ Ø§ÙØ¥Ø¬ÙØ§ÙÙ' },
+    rentPct:     { min: 0,  max: 3,  label: 'ÙØ³Ø¨Ø© Ø§ÙØ¥ÙØ¬Ø§Ø±' },
+    salPct:      { min: 10, max: 25, label: 'ÙØ³Ø¨Ø© Ø§ÙØ±ÙØ§ØªØ¨' },
+    cogsPct:     { min: 45, max: 65, label: 'ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©' },
+    mktPct:      { min: 10, max: 20, label: 'ÙØ³Ø¨Ø© Ø§ÙØªØ³ÙÙÙ' },
   }
 };
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // UTILS
-// ══════════════════════════════════════════
-const parseNum = v => parseFloat(String(v||'').replace(/[,،\s]/g,'')) || 0;
+// ââââââââââââââââââââââââââââââââââââââââââ
+const parseNum = v => parseFloat(String(v||'').replace(/[,Ø\s]/g,'')) || 0;
 const getN = id => parseNum(document.getElementById(id)?.value);
 const fmt = n => {
   const a = Math.abs(n);
-  if(a>=1e6) return (n/1e6).toFixed(1)+'م';
-  if(a>=1e3) return (n/1e3).toFixed(1)+'ك';
+  if(a>=1e6) return (n/1e6).toFixed(1)+'Ù';
+  if(a>=1e3) return (n/1e3).toFixed(1)+'Ù';
   return Math.round(n).toLocaleString('ar-SA');
 };
 const pct = (a,b) => b>0 ? ((a/b)*100).toFixed(1) : 0;
@@ -1167,7 +1164,7 @@ function showMsg(id, msg, type='error') {
   setTimeout(()=>el.style.display='none', 4000);
 }
 
-// ── numeric inputs ──
+// ââ numeric inputs ââ
 document.addEventListener('DOMContentLoaded', () => {
   initNumInputs();
   initChart();
@@ -1187,9 +1184,9 @@ function initNumInputs() {
   });
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // NAVIGATION
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1211,9 +1208,9 @@ function showPage(name) {
   window.scrollTo(0,0);
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // LIVE CALCULATOR
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function liveCalc() {
   const rev = getN('f-rev');
   if(!rev){document.getElementById('liveBar').style.display='none';return;}
@@ -1223,37 +1220,37 @@ function liveCalc() {
   const be = exp; // simplified break-even = fixed costs + variable ratio
 
   document.getElementById('liveBar').style.display = 'grid';
-  document.getElementById('lv-exp').textContent = fmt(exp)+' ر';
+  document.getElementById('lv-exp').textContent = fmt(exp)+' Ø±';
   document.getElementById('lv-exp').style.color = 'var(--white)';
 
   const pv = document.getElementById('lv-profit');
-  pv.textContent = (profit>=0?'+':'')+fmt(profit)+' ر';
+  pv.textContent = (profit>=0?'+':'')+fmt(profit)+' Ø±';
   pv.style.color = profit>=0 ? 'var(--green)' : 'var(--red)';
 
   const mv = document.getElementById('lv-margin');
   mv.textContent = margin+'%';
   mv.style.color = parseFloat(margin)>15 ? 'var(--green)' : parseFloat(margin)<5 ? 'var(--red)' : 'var(--warn)';
 
-  document.getElementById('lv-be').textContent = fmt(be)+' ر';
+  document.getElementById('lv-be').textContent = fmt(be)+' Ø±';
 
   // also update product analysis
   updateProductAnalysis();
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // PRODUCTS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function addProdRow() {
   const c = document.getElementById('prodsContainer');
   const r = document.createElement('div');
   r.className = 'prod-row';
   r.innerHTML = `
-    <input class="input" type="text" placeholder="اسم المنتج">
+    <input class="input" type="text" placeholder="Ø§Ø³Ù Ø§ÙÙÙØªØ¬">
     <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
     <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
     <input class="input num-input" inputmode="numeric" placeholder="0">
-    <input class="input" type="text" placeholder="—" readonly style="color:var(--gold);font-weight:700;">
-    <button class="btn-rm" onclick="removeRow(this)">×</button>`;
+    <input class="input" type="text" placeholder="â" readonly style="color:var(--gold);font-weight:700;">
+    <button class="btn-rm" onclick="removeRow(this)">Ã</button>`;
   c.appendChild(r);
   r.querySelectorAll('.num-input').forEach(el=>{
     el.addEventListener('input',function(){
@@ -1318,14 +1315,14 @@ function updateProductAnalysis(){
       </div>
       <div style="text-align:center;">
         <div class="prod-an-margin" style="color:${p.margin>30?'var(--green)':p.margin<10?'var(--red)':'var(--warn)'};">${p.margin.toFixed(0)}%</div>
-        <div class="prod-an-contrib">هامش الربح</div>
+        <div class="prod-an-contrib">ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­</div>
       </div>
     </div>`).join('');
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // SCORE CALCULATOR
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function calcScore(data) {
   const { netMargin, grossMargin, rentPct, salPct, cogsPct } = data;
   let score = 0, breakdown = [];
@@ -1333,17 +1330,17 @@ function calcScore(data) {
   // Profitability (40pts)
   const profScore = Math.min(40, Math.max(0, (netMargin/25)*40));
   score += profScore;
-  breakdown.push({ label:'الربحية', val:Math.round(profScore), max:40, color:'var(--gold)' });
+  breakdown.push({ label:'Ø§ÙØ±Ø¨Ø­ÙØ©', val:Math.round(profScore), max:40, color:'var(--gold)' });
 
   // Cost control (30pts)
   const costScore = Math.min(30, Math.max(0, ((100-cogsPct)/100)*30));
   score += costScore;
-  breakdown.push({ label:'التحكم في التكاليف', val:Math.round(costScore), max:30, color:'var(--blue)' });
+  breakdown.push({ label:'Ø§ÙØªØ­ÙÙ ÙÙ Ø§ÙØªÙØ§ÙÙÙ', val:Math.round(costScore), max:30, color:'var(--blue)' });
 
   // Efficiency (30pts)
   const effScore = Math.min(30, Math.max(0, ((grossMargin)/75)*30));
   score += effScore;
-  breakdown.push({ label:'كفاءة التشغيل', val:Math.round(effScore), max:30, color:'var(--green)' });
+  breakdown.push({ label:'ÙÙØ§Ø¡Ø© Ø§ÙØªØ´ØºÙÙ', val:Math.round(effScore), max:30, color:'var(--green)' });
 
   return { total: Math.round(score), breakdown };
 }
@@ -1355,11 +1352,11 @@ function scoreColor(s){
 }
 
 function scoreText(s){
-  if(s>=80) return 'ممتاز 🌟';
-  if(s>=65) return 'جيد جداً ✅';
-  if(s>=50) return 'متوسط ⚠️';
-  if(s>=35) return 'يحتاج تحسين 🔧';
-  return 'خطر ❗';
+  if(s>=80) return 'ÙÙØªØ§Ø² ð';
+  if(s>=65) return 'Ø¬ÙØ¯ Ø¬Ø¯Ø§Ù â';
+  if(s>=50) return 'ÙØªÙØ³Ø· â ï¸';
+  if(s>=35) return 'ÙØ­ØªØ§Ø¬ ØªØ­Ø³ÙÙ ð§';
+  return 'Ø®Ø·Ø± â';
 }
 
 function renderScore(ringId, valId, labelId, bkId, score) {
@@ -1376,13 +1373,13 @@ function renderScore(ringId, valId, labelId, bkId, score) {
   document.getElementById(labelId).textContent = scoreText(score);
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // BENCHMARKS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function getSectorKey(bizType) {
   const map = {
-    'مطعم أو كافيه':'restaurant','متجر تجزئة':'retail',
-    'خدمات':'services','حلاقة وتجميل':'barber','تجارة إلكترونية':'ecom'
+    'ÙØ·Ø¹Ù Ø£Ù ÙØ§ÙÙÙ':'restaurant','ÙØªØ¬Ø± ØªØ¬Ø²Ø¦Ø©':'retail',
+    'Ø®Ø¯ÙØ§Øª':'services','Ø­ÙØ§ÙØ© ÙØªØ¬ÙÙÙ':'barber','ØªØ¬Ø§Ø±Ø© Ø¥ÙÙØªØ±ÙÙÙØ©':'ecom'
   };
   return map[bizType] || 'restaurant';
 }
@@ -1401,22 +1398,22 @@ function renderBenchmarkItems(metrics, bench, container) {
       const val = metrics[k];
       const {min,max,label} = bench[k];
       const status = benchStatus(val, min, max);
-      const badgeText = status==='good'?'ضمن الطبيعي':status==='warn'?'قريب من الحد':'خارج النطاق';
+      const badgeText = status==='good'?'Ø¶ÙÙ Ø§ÙØ·Ø¨ÙØ¹Ù':status==='warn'?'ÙØ±ÙØ¨ ÙÙ Ø§ÙØ­Ø¯':'Ø®Ø§Ø±Ø¬ Ø§ÙÙØ·Ø§Ù';
       const badgeClass = status==='good'?'badge-good':status==='warn'?'badge-warn':'badge-bad';
       html += `<div class="bench-item ${status}">
         <div style="flex:1;">
           <div class="bench-label">${label}</div>
-          <div class="bench-range">المعدل الطبيعي: ${min}%–${max}%</div>
+          <div class="bench-range">Ø§ÙÙØ¹Ø¯Ù Ø§ÙØ·Ø¨ÙØ¹Ù: ${min}%â${max}%</div>
         </div>
         <div style="text-align:center;margin:0 12px;">
           <div class="bench-yours" style="color:${status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)'};">${parseFloat(val).toFixed(1)}%</div>
-          <div style="font-size:10px;color:var(--gray);">لديك</div>
+          <div style="font-size:10px;color:var(--gray);">ÙØ¯ÙÙ</div>
         </div>
         <div class="bench-badge ${badgeClass}">${badgeText}</div>
       </div>`;
     }
   });
-  document.getElementById(container).innerHTML = html || '<div style="color:var(--gray);font-size:13px;">أدخل بياناتك لعرض المقارنة</div>';
+  document.getElementById(container).innerHTML = html || '<div style="color:var(--gray);font-size:13px;">Ø£Ø¯Ø®Ù Ø¨ÙØ§ÙØ§ØªÙ ÙØ¹Ø±Ø¶ Ø§ÙÙÙØ§Ø±ÙØ©</div>';
 }
 
 function renderBenchmarkPage() {
@@ -1438,50 +1435,50 @@ function renderBenchmarkPage() {
     html += `<div class="bench-item ${hasData?status:''}">
       <div style="flex:1;">
         <div class="bench-label">${label}</div>
-        <div class="bench-range">المعدل الطبيعي في ${bench.label}: ${min}% – ${max}%</div>
+        <div class="bench-range">Ø§ÙÙØ¹Ø¯Ù Ø§ÙØ·Ø¨ÙØ¹Ù ÙÙ ${bench.label}: ${min}% â ${max}%</div>
       </div>
       ${hasData ? `
       <div style="text-align:center;margin:0 16px;">
         <div class="bench-yours" style="color:${status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)'};">${parseFloat(val).toFixed(1)}%</div>
-        <div style="font-size:10px;color:var(--gray);">مشروعك</div>
+        <div style="font-size:10px;color:var(--gray);">ÙØ´Ø±ÙØ¹Ù</div>
       </div>
-      <div class="bench-badge ${badgeClass}">${status==='good'?'✓ طبيعي':status==='warn'?'⚠ قريب':'✗ خارج النطاق'}</div>
-      ` : `<div style="font-size:12px;color:var(--gray);">أجرِ تحليلاً لرؤية مقارنة مشروعك</div>`}
+      <div class="bench-badge ${badgeClass}">${status==='good'?'â Ø·Ø¨ÙØ¹Ù':status==='warn'?'â  ÙØ±ÙØ¨':'â Ø®Ø§Ø±Ø¬ Ø§ÙÙØ·Ø§Ù'}</div>
+      ` : `<div style="font-size:12px;color:var(--gray);">Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù ÙØ±Ø¤ÙØ© ÙÙØ§Ø±ÙØ© ÙØ´Ø±ÙØ¹Ù</div>`}
     </div>`;
   });
   html += '</div>';
   c.innerHTML = html;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // ALERTS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function generateAlerts(data, sectorKey) {
   const bench = BENCHMARKS[sectorKey] || BENCHMARKS.restaurant;
   const alerts = [];
   const {revenue, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, netProfit} = data;
 
-  if(netProfit < 0) alerts.push({type:'danger', icon:'🔴', msg:`المشروع يعمل بخسارة ${fmt(Math.abs(netProfit))} ريال — يجب اتخاذ إجراء فوري`});
-  if(netMargin < 5 && netProfit >= 0) alerts.push({type:'warn', icon:'⚠️', msg:`هامش الربح ${netMargin}% منخفض جداً — أقل من الحد الآمن`});
+  if(netProfit < 0) alerts.push({type:'danger', icon:'ð´', msg:`Ø§ÙÙØ´Ø±ÙØ¹ ÙØ¹ÙÙ Ø¨Ø®Ø³Ø§Ø±Ø© ${fmt(Math.abs(netProfit))} Ø±ÙØ§Ù â ÙØ¬Ø¨ Ø§ØªØ®Ø§Ø° Ø¥Ø¬Ø±Ø§Ø¡ ÙÙØ±Ù`});
+  if(netMargin < 5 && netProfit >= 0) alerts.push({type:'warn', icon:'â ï¸', msg:`ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ ${netMargin}% ÙÙØ®ÙØ¶ Ø¬Ø¯Ø§Ù â Ø£ÙÙ ÙÙ Ø§ÙØ­Ø¯ Ø§ÙØ¢ÙÙ`});
 
   if(bench.rentPct && rentPct > bench.rentPct.max*1.2)
-    alerts.push({type:'warn', icon:'🏠', msg:`الإيجار ${parseFloat(rentPct).toFixed(1)}% من الإيرادات — المعدل الطبيعي ${bench.rentPct.min}–${bench.rentPct.max}%`});
+    alerts.push({type:'warn', icon:'ð ', msg:`Ø§ÙØ¥ÙØ¬Ø§Ø± ${parseFloat(rentPct).toFixed(1)}% ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª â Ø§ÙÙØ¹Ø¯Ù Ø§ÙØ·Ø¨ÙØ¹Ù ${bench.rentPct.min}â${bench.rentPct.max}%`});
 
   if(bench.salPct && salPct > bench.salPct.max*1.1)
-    alerts.push({type:'warn', icon:'👥', msg:`الرواتب ${parseFloat(salPct).toFixed(1)}% من الإيرادات — أعلى من الطبيعي (${bench.salPct.min}–${bench.salPct.max}%)`});
+    alerts.push({type:'warn', icon:'ð¥', msg:`Ø§ÙØ±ÙØ§ØªØ¨ ${parseFloat(salPct).toFixed(1)}% ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª â Ø£Ø¹ÙÙ ÙÙ Ø§ÙØ·Ø¨ÙØ¹Ù (${bench.salPct.min}â${bench.salPct.max}%)`});
 
   if(bench.cogsPct && cogsPct > bench.cogsPct.max*1.1)
-    alerts.push({type:'warn', icon:'📦', msg:`تكلفة البضاعة ${parseFloat(cogsPct).toFixed(1)}% — أعلى من المعدل (${bench.cogsPct.min}–${bench.cogsPct.max}%)`});
+    alerts.push({type:'warn', icon:'ð¦', msg:`ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø© ${parseFloat(cogsPct).toFixed(1)}% â Ø£Ø¹ÙÙ ÙÙ Ø§ÙÙØ¹Ø¯Ù (${bench.cogsPct.min}â${bench.cogsPct.max}%)`});
 
   if(netMargin >= 20)
-    alerts.push({type:'good', icon:'🌟', msg:`هامش الربح ${netMargin}% ممتاز — أعلى من المتوسط في القطاع`});
+    alerts.push({type:'good', icon:'ð', msg:`ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ ${netMargin}% ÙÙØªØ§Ø² â Ø£Ø¹ÙÙ ÙÙ Ø§ÙÙØªÙØ³Ø· ÙÙ Ø§ÙÙØ·Ø§Ø¹`});
 
   return alerts;
 }
 
 function renderAlerts(alerts, containerId) {
   if(!alerts.length){
-    document.getElementById(containerId).innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:16px;">لا توجد تنبيهات</div>';
+    document.getElementById(containerId).innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:16px;">ÙØ§ ØªÙØ¬Ø¯ ØªÙØ¨ÙÙØ§Øª</div>';
     return;
   }
   document.getElementById(containerId).innerHTML = alerts.map(a=>`
@@ -1491,9 +1488,9 @@ function renderAlerts(alerts, containerId) {
     </div>`).join('');
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // BREAKEVEN
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function calcBreakeven(revenue, cogs, fixedCosts) {
   const variableRatio = revenue > 0 ? cogs/revenue : 0;
   const contribution = 1 - variableRatio;
@@ -1510,67 +1507,67 @@ function renderBreakeven(revenue, cogs, fixedCosts, containerId) {
   const html = `
     <div class="kpi-row kpi-row-2" style="margin-bottom:14px;">
       <div class="kpi ${status==='good'?'':''}">
-        <div class="kpi-val neu">${fmt(be)} ر</div>
-        <div class="kpi-label">نقطة التعادل</div>
+        <div class="kpi-val neu">${fmt(be)} Ø±</div>
+        <div class="kpi-label">ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù</div>
       </div>
       <div class="kpi ${status==='good'?'gold':''}">
-        <div class="kpi-val ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)} ر</div>
-        <div class="kpi-label">${diff>=0?'فوق نقطة التعادل':'تحت نقطة التعادل'}</div>
+        <div class="kpi-val ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)} Ø±</div>
+        <div class="kpi-label">${diff>=0?'ÙÙÙ ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù':'ØªØ­Øª ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù'}</div>
       </div>
     </div>
     <div class="alert alert-${diff>=0?'good':'danger'}">
-      <span class="alert-icon">${diff>=0?'✅':'⚠️'}</span>
+      <span class="alert-icon">${diff>=0?'â':'â ï¸'}</span>
       <span>${diff>=0
-        ? `مبيعاتك أعلى من نقطة التعادل بـ ${fmt(diff)} ريال (${pctAbove}%) — المشروع مربح.`
-        : `تحتاج ${fmt(Math.abs(diff))} ريال إضافية للوصول لنقطة التعادل.`
+        ? `ÙØ¨ÙØ¹Ø§ØªÙ Ø£Ø¹ÙÙ ÙÙ ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù Ø¨Ù ${fmt(diff)} Ø±ÙØ§Ù (${pctAbove}%) â Ø§ÙÙØ´Ø±ÙØ¹ ÙØ±Ø¨Ø­.`
+        : `ØªØ­ØªØ§Ø¬ ${fmt(Math.abs(diff))} Ø±ÙØ§Ù Ø¥Ø¶Ø§ÙÙØ© ÙÙÙØµÙÙ ÙÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù.`
       }</span>
     </div>
     <div style="margin-top:12px;">
-      <div class="progress-head"><span style="font-size:12px;color:var(--gray);">التقدم نحو نقطة التعادل</span><span style="font-size:12px;color:var(--gold);">${Math.min(100,Math.round((revenue/be)*100))}%</span></div>
+      <div class="progress-head"><span style="font-size:12px;color:var(--gray);">Ø§ÙØªÙØ¯Ù ÙØ­Ù ÙÙØ·Ø© Ø§ÙØªØ¹Ø§Ø¯Ù</span><span style="font-size:12px;color:var(--gold);">${Math.min(100,Math.round((revenue/be)*100))}%</span></div>
       <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,(revenue/be)*100)}%;background:${diff>=0?'var(--green)':'var(--red)'};"></div></div>
     </div>`;
   document.getElementById(containerId).innerHTML = html;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // SCENARIOS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function buildScenarios(data) {
   const {revenue, totalExpenses, netProfit, cogs, salaries, rent} = data;
   return [
     {
-      title: 'رفع المبيعات 10%',
-      desc: 'ماذا لو زادت مبيعاتك 10% مع نفس التكاليف؟',
+      title: 'Ø±ÙØ¹ Ø§ÙÙØ¨ÙØ¹Ø§Øª 10%',
+      desc: 'ÙØ§Ø°Ø§ ÙÙ Ø²Ø§Ø¯Øª ÙØ¨ÙØ¹Ø§ØªÙ 10% ÙØ¹ ÙÙØ³ Ø§ÙØªÙØ§ÙÙÙØ',
       newProfit: netProfit + revenue*0.10,
       delta: revenue*0.10,
     },
     {
-      title: 'رفع المبيعات 20%',
-      desc: 'هدف نمو أكثر طموحاً مع نفس الهيكل التشغيلي',
+      title: 'Ø±ÙØ¹ Ø§ÙÙØ¨ÙØ¹Ø§Øª 20%',
+      desc: 'ÙØ¯Ù ÙÙÙ Ø£ÙØ«Ø± Ø·ÙÙØ­Ø§Ù ÙØ¹ ÙÙØ³ Ø§ÙÙÙÙÙ Ø§ÙØªØ´ØºÙÙÙ',
       newProfit: netProfit + revenue*0.20,
       delta: revenue*0.20,
     },
     {
-      title: 'تخفيض الرواتب 10%',
-      desc: 'تحسين كفاءة الفريق أو إعادة هيكلة',
+      title: 'ØªØ®ÙÙØ¶ Ø§ÙØ±ÙØ§ØªØ¨ 10%',
+      desc: 'ØªØ­Ø³ÙÙ ÙÙØ§Ø¡Ø© Ø§ÙÙØ±ÙÙ Ø£Ù Ø¥Ø¹Ø§Ø¯Ø© ÙÙÙÙØ©',
       newProfit: netProfit + salaries*0.10,
       delta: salaries*0.10,
     },
     {
-      title: 'تخفيض تكاليف البضاعة 5%',
-      desc: 'التفاوض مع الموردين أو البحث عن بدائل',
+      title: 'ØªØ®ÙÙØ¶ ØªÙØ§ÙÙÙ Ø§ÙØ¨Ø¶Ø§Ø¹Ø© 5%',
+      desc: 'Ø§ÙØªÙØ§ÙØ¶ ÙØ¹ Ø§ÙÙÙØ±Ø¯ÙÙ Ø£Ù Ø§ÙØ¨Ø­Ø« Ø¹Ù Ø¨Ø¯Ø§Ø¦Ù',
       newProfit: netProfit + cogs*0.05,
       delta: cogs*0.05,
     },
     {
-      title: 'تخفيض الإيجار 15%',
-      desc: 'إعادة التفاوض على عقد الإيجار',
+      title: 'ØªØ®ÙÙØ¶ Ø§ÙØ¥ÙØ¬Ø§Ø± 15%',
+      desc: 'Ø¥Ø¹Ø§Ø¯Ø© Ø§ÙØªÙØ§ÙØ¶ Ø¹ÙÙ Ø¹ÙØ¯ Ø§ÙØ¥ÙØ¬Ø§Ø±',
       newProfit: netProfit + rent*0.15,
       delta: rent*0.15,
     },
     {
-      title: 'رفع المبيعات 10% + تخفيض تكاليف 5%',
-      desc: 'مزيج متوازن من النمو وترشيد التكاليف',
+      title: 'Ø±ÙØ¹ Ø§ÙÙØ¨ÙØ¹Ø§Øª 10% + ØªØ®ÙÙØ¶ ØªÙØ§ÙÙÙ 5%',
+      desc: 'ÙØ²ÙØ¬ ÙØªÙØ§Ø²Ù ÙÙ Ø§ÙÙÙÙ ÙØªØ±Ø´ÙØ¯ Ø§ÙØªÙØ§ÙÙÙ',
       newProfit: netProfit + revenue*0.10 + totalExpenses*0.05,
       delta: revenue*0.10 + totalExpenses*0.05,
     },
@@ -1584,9 +1581,9 @@ function renderScenarios(scenarios, revenue, containerId) {
     return `<div class="scenario-card">
       <div class="sc-title">${s.title}</div>
       <div class="sc-desc">${s.desc}</div>
-      <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ر</div>
+      <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} Ø±</div>
       <div class="sc-delta" style="color:${s.delta>=0?'var(--green)':'var(--red)'};">
-        ${deltaSign}${fmt(s.delta)} ريال • هامش ${newMargin}%
+        ${deltaSign}${fmt(s.delta)} Ø±ÙØ§Ù â¢ ÙØ§ÙØ´ ${newMargin}%
       </div>
     </div>`;
   }).join('');
@@ -1598,15 +1595,15 @@ function renderScenariosPage() {
   const scenarios = buildScenarios(metrics);
   const html = `
     <div class="card" style="margin-bottom:16px;">
-      <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات "ماذا لو؟"</div>
+      <div class="card-title"><div class="card-title-icon">ð¯</div>Ø³ÙÙØ§Ø±ÙÙÙØ§Øª "ÙØ§Ø°Ø§ ÙÙØ"</div>
       <div class="grid-3">${scenarios.map(s=>{
         const newMargin = metrics.revenue > 0 ? ((s.newProfit/metrics.revenue)*100).toFixed(1) : 0;
         return `<div class="scenario-card">
           <div class="sc-title">${s.title}</div>
           <div class="sc-desc">${s.desc}</div>
-          <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ر</div>
+          <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} Ø±</div>
           <div class="sc-delta" style="color:${s.delta>=0?'var(--green)':'var(--red)'};">
-            +${fmt(s.delta)} ريال • هامش ${newMargin}%
+            +${fmt(s.delta)} Ø±ÙØ§Ù â¢ ÙØ§ÙØ´ ${newMargin}%
           </div>
         </div>`;
       }).join('')}</div>
@@ -1614,47 +1611,47 @@ function renderScenariosPage() {
   document.getElementById('scenariosPageContent').innerHTML = html;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // COMPARE PERIODS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function renderComparePage() {
   const reports = STATE.savedReports;
   if(reports.length < 2){
-    document.getElementById('comparePageContent').innerHTML = '<div style="text-align:center;padding:60px;color:var(--gray);font-size:14px;">تحتاج تقريرين على الأقل للمقارنة</div>';
+    document.getElementById('comparePageContent').innerHTML = '<div style="text-align:center;padding:60px;color:var(--gray);font-size:14px;">ØªØ­ØªØ§Ø¬ ØªÙØ±ÙØ±ÙÙ Ø¹ÙÙ Ø§ÙØ£ÙÙ ÙÙÙÙØ§Ø±ÙØ©</div>';
     return;
   }
   const r1 = reports[0], r2 = reports[1];
   const m1 = r1.metrics, m2 = r2.metrics;
   const delta = (a,b) => b>0 ? (((a-b)/b)*100).toFixed(1) : 0;
   const dColor = v => parseFloat(v)>0?'var(--green)':parseFloat(v)<0?'var(--red)':'var(--gray)';
-  const dSign  = v => parseFloat(v)>0?'↑':'↓';
+  const dSign  = v => parseFloat(v)>0?'â':'â';
 
   document.getElementById('comparePageContent').innerHTML = `
     <div class="card">
       <div class="compare-row" style="grid-template-columns:1fr auto 1fr;margin-bottom:20px;">
         <div class="compare-period">
-          <div class="compare-period-label">📅 ${r2.bizName} — ${new Date(r2.createdAt).toLocaleDateString('ar-SA')}</div>
-          <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m2.revenue)} ر</span></div>
-          <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m2.netProfit)} ر</span></div>
-          <div class="compare-metric"><span>هامش الربح</span><span class="compare-metric-val">${m2.netMargin}%</span></div>
-          <div class="compare-metric"><span>المصاريف</span><span class="compare-metric-val">${fmt(m2.totalExpenses)} ر</span></div>
+          <div class="compare-period-label">ð ${r2.bizName} â ${new Date(r2.createdAt).toLocaleDateString('ar-SA')}</div>
+          <div class="compare-metric"><span>Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª</span><span class="compare-metric-val">${fmt(m2.revenue)} Ø±</span></div>
+          <div class="compare-metric"><span>ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­</span><span class="compare-metric-val">${fmt(m2.netProfit)} Ø±</span></div>
+          <div class="compare-metric"><span>ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­</span><span class="compare-metric-val">${m2.netMargin}%</span></div>
+          <div class="compare-metric"><span>Ø§ÙÙØµØ§Ø±ÙÙ</span><span class="compare-metric-val">${fmt(m2.totalExpenses)} Ø±</span></div>
         </div>
-        <div class="compare-arrow">⇄</div>
+        <div class="compare-arrow">â</div>
         <div class="compare-period">
-          <div class="compare-period-label">📅 ${r1.bizName} — ${new Date(r1.createdAt).toLocaleDateString('ar-SA')}</div>
-          <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m1.revenue)} ر</span></div>
-          <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m1.netProfit)} ر</span></div>
-          <div class="compare-metric"><span>هامش الربح</span><span class="compare-metric-val">${m1.netMargin}%</span></div>
-          <div class="compare-metric"><span>المصاريف</span><span class="compare-metric-val">${fmt(m1.totalExpenses)} ر</span></div>
+          <div class="compare-period-label">ð ${r1.bizName} â ${new Date(r1.createdAt).toLocaleDateString('ar-SA')}</div>
+          <div class="compare-metric"><span>Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª</span><span class="compare-metric-val">${fmt(m1.revenue)} Ø±</span></div>
+          <div class="compare-metric"><span>ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­</span><span class="compare-metric-val">${fmt(m1.netProfit)} Ø±</span></div>
+          <div class="compare-metric"><span>ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­</span><span class="compare-metric-val">${m1.netMargin}%</span></div>
+          <div class="compare-metric"><span>Ø§ÙÙØµØ§Ø±ÙÙ</span><span class="compare-metric-val">${fmt(m1.totalExpenses)} Ø±</span></div>
         </div>
       </div>
-      <div class="card-title" style="margin-bottom:14px;"><div class="card-title-icon">📊</div>التغيير بين الفترتين</div>
+      <div class="card-title" style="margin-bottom:14px;"><div class="card-title-icon">ð</div>Ø§ÙØªØºÙÙØ± Ø¨ÙÙ Ø§ÙÙØªØ±ØªÙÙ</div>
       <div class="kpi-row kpi-row-4">
         ${[
-          {label:'الإيرادات', d:delta(m1.revenue,m2.revenue)},
-          {label:'صافي الربح', d:delta(m1.netProfit,m2.netProfit)},
-          {label:'هامش الربح', d:(m1.netMargin-m2.netMargin).toFixed(1)},
-          {label:'المصاريف', d:delta(m1.totalExpenses,m2.totalExpenses)},
+          {label:'Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', d:delta(m1.revenue,m2.revenue)},
+          {label:'ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­', d:delta(m1.netProfit,m2.netProfit)},
+          {label:'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­', d:(m1.netMargin-m2.netMargin).toFixed(1)},
+          {label:'Ø§ÙÙØµØ§Ø±ÙÙ', d:delta(m1.totalExpenses,m2.totalExpenses)},
         ].map(k=>`
           <div class="kpi">
             <div class="kpi-val" style="color:${dColor(k.d)};">${dSign(k.d)} ${Math.abs(k.d)}%</div>
@@ -1664,20 +1661,20 @@ function renderComparePage() {
     </div>`;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // CHART
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function initChart() {
   const ctx = document.getElementById('perfChart')?.getContext('2d');
   if(!ctx) return;
-  const labels6m = ['أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس'];
+  const labels6m = ['Ø£ÙØªÙØ¨Ø±','ÙÙÙÙØ¨Ø±','Ø¯ÙØ³ÙØ¨Ø±','ÙÙØ§ÙØ±','ÙØ¨Ø±Ø§ÙØ±','ÙØ§Ø±Ø³'];
   STATE.chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels6m,
       datasets: [
         {
-          label:'الإيرادات',
+          label:'Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª',
           data:[65,72,68,80,75,85].map(v=>v*1000),
           borderColor:'var(--gold)',
           backgroundColor:'rgba(200,164,90,0.08)',
@@ -1685,7 +1682,7 @@ function initChart() {
           pointBackgroundColor:'var(--gold)',
         },
         {
-          label:'الأرباح',
+          label:'Ø§ÙØ£Ø±Ø¨Ø§Ø­',
           data:[12,15,11,18,14,17].map(v=>v*1000),
           borderColor:'var(--green)',
           backgroundColor:'rgba(76,175,130,0.06)',
@@ -1700,7 +1697,7 @@ function initChart() {
       scales:{
         x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'var(--gray)',font:{size:11}} },
         y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'var(--gray)',font:{size:11},
-          callback: v => v>=1000 ? (v/1000).toFixed(0)+'ك' : v
+          callback: v => v>=1000 ? (v/1000).toFixed(0)+'Ù' : v
         }}
       }
     }
@@ -1710,8 +1707,8 @@ function initChart() {
 function toggleCustomPeriod() {
   const val = document.getElementById('f-period').value;
   const wrap = document.getElementById('customPeriodWrap');
-  wrap.style.display = val === 'مخصص' ? 'block' : 'none';
-  if(val === 'مخصص') {
+  wrap.style.display = val === 'ÙØ®ØµØµ' ? 'block' : 'none';
+  if(val === 'ÙØ®ØµØµ') {
     // Set defaults: last 30 days
     const today = new Date();
     const from  = new Date(today); from.setDate(today.getDate()-30);
@@ -1727,7 +1724,7 @@ function updateCustomPeriodLabel() {
   if(!from || !to) return;
   const f = new Date(from), t = new Date(to);
   const days = Math.round((t-f)/(1000*60*60*24));
-  document.getElementById('customPeriodLabel').textContent = `الفترة: ${days} يوم (${f.toLocaleDateString('ar-SA')} — ${t.toLocaleDateString('ar-SA')})`;
+  document.getElementById('customPeriodLabel').textContent = `Ø§ÙÙØªØ±Ø©: ${days} ÙÙÙ (${f.toLocaleDateString('ar-SA')} â ${t.toLocaleDateString('ar-SA')})`;
 }
 
 document.addEventListener('change', e => {
@@ -1736,13 +1733,13 @@ document.addEventListener('change', e => {
 
 function getPeriodLabel() {
   const val = document.getElementById('f-period').value;
-  if(val !== 'مخصص') return val;
+  if(val !== 'ÙØ®ØµØµ') return val;
   const from = document.getElementById('f-date-from').value;
   const to   = document.getElementById('f-date-to').value;
-  if(!from || !to) return 'مخصص';
+  if(!from || !to) return 'ÙØ®ØµØµ';
   const f = new Date(from), t = new Date(to);
   const days = Math.round((t-f)/(1000*60*60*24));
-  return `${days} يوم (${f.toLocaleDateString('ar-SA')} — ${t.toLocaleDateString('ar-SA')})`;
+  return `${days} ÙÙÙ (${f.toLocaleDateString('ar-SA')} â ${t.toLocaleDateString('ar-SA')})`;
 }
 
 function toggleCustomChart() {
@@ -1769,21 +1766,21 @@ function applyCustomChart() {
   if(!from || !to) return;
 
   const f = new Date(from), t = new Date(to);
-  if(f >= t) { document.getElementById('chartRangeLabel').textContent = '⚠️ تاريخ البداية يجب أن يكون قبل النهاية'; return; }
+  if(f >= t) { document.getElementById('chartRangeLabel').textContent = 'â ï¸ ØªØ§Ø±ÙØ® Ø§ÙØ¨Ø¯Ø§ÙØ© ÙØ¬Ø¨ Ø£Ù ÙÙÙÙ ÙØ¨Ù Ø§ÙÙÙØ§ÙØ©'; return; }
 
   const days = Math.round((t-f)/(1000*60*60*24));
   document.getElementById('chartRangeLabel').textContent =
-    `✓ عرض ${days} يوم — من ${f.toLocaleDateString('ar-SA')} إلى ${t.toLocaleDateString('ar-SA')}`;
+    `â Ø¹Ø±Ø¶ ${days} ÙÙÙ â ÙÙ ${f.toLocaleDateString('ar-SA')} Ø¥ÙÙ ${t.toLocaleDateString('ar-SA')}`;
 
   // Generate labels + data for the custom range
   const labels = [], revData = [], prfData = [];
   const step = days <= 14 ? 1 : days <= 60 ? 7 : days <= 180 ? 14 : 30;
-  const stepLabel = step === 1 ? 'يوم' : step === 7 ? 'أسبوع' : step === 14 ? 'أسبوعين' : 'شهر';
+  const stepLabel = step === 1 ? 'ÙÙÙ' : step === 7 ? 'Ø£Ø³Ø¨ÙØ¹' : step === 14 ? 'Ø£Ø³Ø¨ÙØ¹ÙÙ' : 'Ø´ÙØ±';
   let cur = new Date(f);
   let i = 0;
   while(cur <= t && labels.length < 24) {
     labels.push(cur.toLocaleDateString('ar-SA', {month:'short', day:'numeric'}));
-    // Simulated data — replace with real data from STATE.savedReports in production
+    // Simulated data â replace with real data from STATE.savedReports in production
     const base = 70000 + Math.sin(i*0.5)*15000 + Math.random()*10000;
     revData.push(Math.round(base));
     prfData.push(Math.round(base * (0.12 + Math.sin(i*0.3)*0.05)));
@@ -1806,11 +1803,11 @@ function switchChart(mode) {
   if(mode !== 'custom') document.getElementById('chartCustomRange').style.display = 'none';
 
   const data = {
-    day:   { labels:['12ص','3ص','6ص','9ص','12ظ','3م','6م','9م'], rev:[2,1.5,1,3,8,12,9,6].map(v=>v*1000), prf:[0.3,0.2,0.1,0.5,1.4,2.2,1.6,1].map(v=>v*1000) },
-    week:  { labels:['السبت','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'], rev:[8,12,9,14,11,16,13].map(v=>v*1000), prf:[1.5,2.2,1.8,3,2,3.5,2.5].map(v=>v*1000) },
-    month: { labels:['الأسبوع 1','الأسبوع 2','الأسبوع 3','الأسبوع 4'], rev:[18,22,20,25].map(v=>v*1000), prf:[3.5,4.2,3.8,5].map(v=>v*1000) },
-    '6m':  { labels:['أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس'], rev:[65,72,68,80,75,85].map(v=>v*1000), prf:[12,15,11,18,14,17].map(v=>v*1000) },
-    year:  { labels:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], rev:[60,65,70,68,75,80,78,85,82,88,90,95].map(v=>v*1000), prf:[10,12,14,11,15,17,16,18,17,19,20,22].map(v=>v*1000) },
+    day:   { labels:['12Øµ','3Øµ','6Øµ','9Øµ','12Ø¸','3Ù','6Ù','9Ù'], rev:[2,1.5,1,3,8,12,9,6].map(v=>v*1000), prf:[0.3,0.2,0.1,0.5,1.4,2.2,1.6,1].map(v=>v*1000) },
+    week:  { labels:['Ø§ÙØ³Ø¨Øª','Ø§ÙØ£Ø­Ø¯','Ø§ÙØ¥Ø«ÙÙÙ','Ø§ÙØ«ÙØ§Ø«Ø§Ø¡','Ø§ÙØ£Ø±Ø¨Ø¹Ø§Ø¡','Ø§ÙØ®ÙÙØ³','Ø§ÙØ¬ÙØ¹Ø©'], rev:[8,12,9,14,11,16,13].map(v=>v*1000), prf:[1.5,2.2,1.8,3,2,3.5,2.5].map(v=>v*1000) },
+    month: { labels:['Ø§ÙØ£Ø³Ø¨ÙØ¹ 1','Ø§ÙØ£Ø³Ø¨ÙØ¹ 2','Ø§ÙØ£Ø³Ø¨ÙØ¹ 3','Ø§ÙØ£Ø³Ø¨ÙØ¹ 4'], rev:[18,22,20,25].map(v=>v*1000), prf:[3.5,4.2,3.8,5].map(v=>v*1000) },
+    '6m':  { labels:['Ø£ÙØªÙØ¨Ø±','ÙÙÙÙØ¨Ø±','Ø¯ÙØ³ÙØ¨Ø±','ÙÙØ§ÙØ±','ÙØ¨Ø±Ø§ÙØ±','ÙØ§Ø±Ø³'], rev:[65,72,68,80,75,85].map(v=>v*1000), prf:[12,15,11,18,14,17].map(v=>v*1000) },
+    year:  { labels:['ÙÙØ§ÙØ±','ÙØ¨Ø±Ø§ÙØ±','ÙØ§Ø±Ø³','Ø£Ø¨Ø±ÙÙ','ÙØ§ÙÙ','ÙÙÙÙÙ','ÙÙÙÙÙ','Ø£ØºØ³Ø·Ø³','Ø³Ø¨ØªÙØ¨Ø±','Ø£ÙØªÙØ¨Ø±','ÙÙÙÙØ¨Ø±','Ø¯ÙØ³ÙØ¨Ø±'], rev:[60,65,70,68,75,80,78,85,82,88,90,95].map(v=>v*1000), prf:[10,12,14,11,15,17,16,18,17,19,20,22].map(v=>v*1000) },
   };
   const d = data[mode];
   if(!d) return;
@@ -1820,15 +1817,15 @@ function switchChart(mode) {
   STATE.chartInstance.update();
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // ANALYSIS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 async function runAnalysis() {
   const revenue = getN('f-rev');
-  if(!revenue){ showMsg('analysisError','من فضلك أدخل إجمالي الإيرادات'); return; }
+  if(!revenue){ showMsg('analysisError','ÙÙ ÙØ¶ÙÙ Ø£Ø¯Ø®Ù Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª'); return; }
 
   const btn = document.getElementById('analyzeBtn');
-  document.getElementById('analyzeBtnText').textContent = 'جاري التحليل...';
+  document.getElementById('analyzeBtnText').textContent = 'Ø¬Ø§Ø±Ù Ø§ÙØªØ­ÙÙÙ...';
   document.getElementById('analyzeSpin').style.display = 'block';
   document.getElementById('analyzeBtnIcon').style.display = 'none';
   btn.disabled = true;
@@ -1845,8 +1842,8 @@ async function runAnalysis() {
   const cogsPct = parseFloat(pct(cogs,revenue));
   const mktPct  = parseFloat(pct(marketing,revenue));
 
-  const bizName   = document.getElementById('f-name').value || 'مشروعك';
-  const bizType   = document.getElementById('f-type').value || 'غير محدد';
+  const bizName   = document.getElementById('f-name').value || 'ÙØ´Ø±ÙØ¹Ù';
+  const bizType   = document.getElementById('f-type').value || 'ØºÙØ± ÙØ­Ø¯Ø¯';
   const period    = getPeriodLabel();
   const employees = getN('f-employees');
   const notes     = document.getElementById('f-notes').value;
@@ -1862,52 +1859,52 @@ async function runAnalysis() {
   const scenarios = buildScenarios({ revenue, totalExpenses, netProfit, cogs, salaries, rent });
 
   const productsText = products.length
-    ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n')
-    : 'لا توجد بيانات منتجات.';
+    ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: Ø³Ø¹Ø± ${p.price}Ø± ØªÙÙÙØ© ${p.cost}Ø± ÙÙÙØ© ${p.qty} ÙØ§ÙØ´ ${m}%`;}).join('\n')
+    : 'ÙØ§ ØªÙØ¬Ø¯ Ø¨ÙØ§ÙØ§Øª ÙÙØªØ¬Ø§Øª.';
 
-  const prompt = `أنت مستشار مالي خبير للمشاريع الصغيرة والمتوسطة السعودية.
+  const prompt = `Ø£ÙØª ÙØ³ØªØ´Ø§Ø± ÙØ§ÙÙ Ø®Ø¨ÙØ± ÙÙÙØ´Ø§Ø±ÙØ¹ Ø§ÙØµØºÙØ±Ø© ÙØ§ÙÙØªÙØ³Ø·Ø© Ø§ÙØ³Ø¹ÙØ¯ÙØ©.
 
-بيانات ${bizName} (${bizType}) — تحليل ${period}:
-- الإيرادات: ${revenue.toLocaleString()} ريال
-- تكلفة البضاعة: ${cogs.toLocaleString()} (${cogsPct}%)
-- الإيجار: ${rent.toLocaleString()} (${rentPct}%)
-- الرواتب: ${salaries.toLocaleString()} (${salPct}%)
-- التسويق: ${marketing.toLocaleString()} (${mktPct}%)
-- إجمالي المصاريف: ${totalExpenses.toLocaleString()}
-- صافي الربح: ${netProfit.toLocaleString()} | هامش: ${netMargin}% | هامش إجمالي: ${grossMargin}%
-- مؤشر الصحة: ${scoreData.total}/100
-المنتجات: ${productsText}
-ملاحظات: ${notes||'لا يوجد'}
+Ø¨ÙØ§ÙØ§Øª ${bizName} (${bizType}) â ØªØ­ÙÙÙ ${period}:
+- Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª: ${revenue.toLocaleString()} Ø±ÙØ§Ù
+- ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©: ${cogs.toLocaleString()} (${cogsPct}%)
+- Ø§ÙØ¥ÙØ¬Ø§Ø±: ${rent.toLocaleString()} (${rentPct}%)
+- Ø§ÙØ±ÙØ§ØªØ¨: ${salaries.toLocaleString()} (${salPct}%)
+- Ø§ÙØªØ³ÙÙÙ: ${marketing.toLocaleString()} (${mktPct}%)
+- Ø¥Ø¬ÙØ§ÙÙ Ø§ÙÙØµØ§Ø±ÙÙ: ${totalExpenses.toLocaleString()}
+- ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­: ${netProfit.toLocaleString()} | ÙØ§ÙØ´: ${netMargin}% | ÙØ§ÙØ´ Ø¥Ø¬ÙØ§ÙÙ: ${grossMargin}%
+- ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø©: ${scoreData.total}/100
+Ø§ÙÙÙØªØ¬Ø§Øª: ${productsText}
+ÙÙØ§Ø­Ø¸Ø§Øª: ${notes||'ÙØ§ ÙÙØ¬Ø¯'}
 
-المعدلات الطبيعية في ${bench.label}: هامش صافي ${bench.netMargin.min}–${bench.netMargin.max}%، رواتب ${bench.salPct.min}–${bench.salPct.max}%، إيجار ${bench.rentPct.min}–${bench.rentPct.max}%.
+Ø§ÙÙØ¹Ø¯ÙØ§Øª Ø§ÙØ·Ø¨ÙØ¹ÙØ© ÙÙ ${bench.label}: ÙØ§ÙØ´ ØµØ§ÙÙ ${bench.netMargin.min}â${bench.netMargin.max}%Ø Ø±ÙØ§ØªØ¨ ${bench.salPct.min}â${bench.salPct.max}%Ø Ø¥ÙØ¬Ø§Ø± ${bench.rentPct.min}â${bench.rentPct.max}%.
 
-قدّم تقريراً مالياً تشخيصياً. استخدم هذا التنسيق:
+ÙØ¯ÙÙ ØªÙØ±ÙØ±Ø§Ù ÙØ§ÙÙØ§Ù ØªØ´Ø®ÙØµÙØ§Ù. Ø§Ø³ØªØ®Ø¯Ù ÙØ°Ø§ Ø§ÙØªÙØ³ÙÙ:
 
-[SECTION:التشخيص العام]
-فقرة تشخيصية (3-4 جمل) مباشرة مع أرقام.
+[SECTION:Ø§ÙØªØ´Ø®ÙØµ Ø§ÙØ¹Ø§Ù]
+ÙÙØ±Ø© ØªØ´Ø®ÙØµÙØ© (3-4 Ø¬ÙÙ) ÙØ¨Ø§Ø´Ø±Ø© ÙØ¹ Ø£Ø±ÙØ§Ù.
 [/SECTION]
-[SECTION:نقاط القوة]
-- نقطة مع رقم
-- نقطة مع رقم
-- نقطة مع رقم
+[SECTION:ÙÙØ§Ø· Ø§ÙÙÙØ©]
+- ÙÙØ·Ø© ÙØ¹ Ø±ÙÙ
+- ÙÙØ·Ø© ÙØ¹ Ø±ÙÙ
+- ÙÙØ·Ø© ÙØ¹ Ø±ÙÙ
 [/SECTION]
-[SECTION:نقاط الخطر]
-- خطر مع رقم
-- خطر مع رقم
-- خطر مع رقم
+[SECTION:ÙÙØ§Ø· Ø§ÙØ®Ø·Ø±]
+- Ø®Ø·Ø± ÙØ¹ Ø±ÙÙ
+- Ø®Ø·Ø± ÙØ¹ Ø±ÙÙ
+- Ø®Ø·Ø± ÙØ¹ Ø±ÙÙ
 [/SECTION]
-[SECTION:تحليل المنتجات]
-تحليل هوامش المنتجات وتوصيات التسعير مع أرقام.
+[SECTION:ØªØ­ÙÙÙ Ø§ÙÙÙØªØ¬Ø§Øª]
+ØªØ­ÙÙÙ ÙÙØ§ÙØ´ Ø§ÙÙÙØªØ¬Ø§Øª ÙØªÙØµÙØ§Øª Ø§ÙØªØ³Ø¹ÙØ± ÙØ¹ Ø£Ø±ÙØ§Ù.
 [/SECTION]
-[SECTION:توصيات عملية]
-- إجراء فوري
-- إجراء قصير المدى
-- إجراء قصير المدى
-- إجراء متوسط المدى
-- إجراء استراتيجي
+[SECTION:ØªÙØµÙØ§Øª Ø¹ÙÙÙØ©]
+- Ø¥Ø¬Ø±Ø§Ø¡ ÙÙØ±Ù
+- Ø¥Ø¬Ø±Ø§Ø¡ ÙØµÙØ± Ø§ÙÙØ¯Ù
+- Ø¥Ø¬Ø±Ø§Ø¡ ÙØµÙØ± Ø§ÙÙØ¯Ù
+- Ø¥Ø¬Ø±Ø§Ø¡ ÙØªÙØ³Ø· Ø§ÙÙØ¯Ù
+- Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ø³ØªØ±Ø§ØªÙØ¬Ù
 [/SECTION]
-[SECTION:توقع الأداء]
-سيناريوهان بأرقام: مع التوصيات وبدونها خلال 3 أشهر.
+[SECTION:ØªÙÙØ¹ Ø§ÙØ£Ø¯Ø§Ø¡]
+Ø³ÙÙØ§Ø±ÙÙÙØ§Ù Ø¨Ø£Ø±ÙØ§Ù: ÙØ¹ Ø§ÙØªÙØµÙØ§Øª ÙØ¨Ø¯ÙÙÙØ§ Ø®ÙØ§Ù 3 Ø£Ø´ÙØ±.
 [/SECTION]`;
 
   let reportText = '';
@@ -1946,27 +1943,27 @@ async function runAnalysis() {
   renderResults(report);
   showPage('results');
 
-  document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';
+  document.getElementById('analyzeBtnText').textContent = 'ØªØ­ÙÙÙ Ø§ÙÙØ´Ø±ÙØ¹ Ø§ÙØ¢Ù';
   document.getElementById('analyzeSpin').style.display = 'none';
   document.getElementById('analyzeBtnIcon').style.display = 'inline';
   btn.disabled = false;
 
-  toast('تم حفظ التقرير ✓');
+  toast('ØªÙ Ø­ÙØ¸ Ø§ÙØªÙØ±ÙØ± â');
 }
 
 function renderResults(report) {
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey, createdAt} = report;
   const {revenue, netProfit, netMargin, grossMargin, totalExpenses, rentPct, salPct, cogsPct, mktPct, cogs, rent} = metrics;
 
-  document.getElementById('resultTitle').textContent = `تقرير ${bizName}`;
-  document.getElementById('resultMeta').textContent  = `${bizType} — تحليل ${period} — ${new Date(createdAt).toLocaleDateString('ar-SA')}`;
+  document.getElementById('resultTitle').textContent = `ØªÙØ±ÙØ± ${bizName}`;
+  document.getElementById('resultMeta').textContent  = `${bizType} â ØªØ­ÙÙÙ ${period} â ${new Date(createdAt).toLocaleDateString('ar-SA')}`;
 
   // KPIs
   document.getElementById('resultKpis').innerHTML = [
-    {val:fmt(revenue)+' ر', label:'الإيرادات', cls:'neu'},
-    {val:(netProfit>=0?'+':'')+fmt(netProfit)+' ر', label:'صافي الربح', cls:netProfit>=0?'pos':'neg'},
-    {val:netMargin+'%', label:'هامش الربح', cls:netMargin>15?'pos':netMargin<5?'neg':'warn'},
-    {val:scoreData.total+'/100', label:'مؤشر الصحة', cls:scoreData.total>=65?'pos':scoreData.total>=40?'warn':'neg'},
+    {val:fmt(revenue)+' Ø±', label:'Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', cls:'neu'},
+    {val:(netProfit>=0?'+':'')+fmt(netProfit)+' Ø±', label:'ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­', cls:netProfit>=0?'pos':'neg'},
+    {val:netMargin+'%', label:'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­', cls:netMargin>15?'pos':netMargin<5?'neg':'warn'},
+    {val:scoreData.total+'/100', label:'ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø©', cls:scoreData.total>=65?'pos':scoreData.total>=40?'warn':'neg'},
   ].map(k=>`<div class="kpi"><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
   // Score
@@ -2007,8 +2004,8 @@ function renderResults(report) {
     document.getElementById('resultProducts').innerHTML = withMargins.map((p,i)=>{
       const contrib = totalProd>0 ? ((p.profit/totalProd)*100).toFixed(0) : 0;
       const suggestion = p.margin < 15
-        ? `رفع السعر 5% يرفع الربح ${fmt(p.qty*p.cost*0.05)} ر`
-        : p.margin > 50 ? 'منتج رابح — ركّز عليه' : 'أداء طبيعي';
+        ? `Ø±ÙØ¹ Ø§ÙØ³Ø¹Ø± 5% ÙØ±ÙØ¹ Ø§ÙØ±Ø¨Ø­ ${fmt(p.qty*p.cost*0.05)} Ø±`
+        : p.margin > 50 ? 'ÙÙØªØ¬ Ø±Ø§Ø¨Ø­ â Ø±ÙÙØ² Ø¹ÙÙÙ' : 'Ø£Ø¯Ø§Ø¡ Ø·Ø¨ÙØ¹Ù';
       return `<div class="prod-analysis-row">
         <div class="prod-rank ${i===0?'rank-1':i===1?'rank-2':'rank-3'}">${i+1}</div>
         <div style="flex:1;">
@@ -2018,16 +2015,16 @@ function renderResults(report) {
         </div>
         <div style="text-align:center;margin-right:12px;">
           <div style="font-size:16px;font-weight:700;color:${p.margin>30?'var(--green)':p.margin<10?'var(--red)':'var(--warn)'};">${p.margin.toFixed(0)}%</div>
-          <div style="font-size:10px;color:var(--gray);">هامش</div>
+          <div style="font-size:10px;color:var(--gray);">ÙØ§ÙØ´</div>
         </div>
         <div style="text-align:center;">
           <div style="font-size:16px;font-weight:700;color:var(--gold);">${contrib}%</div>
-          <div style="font-size:10px;color:var(--gray);">مساهمة</div>
+          <div style="font-size:10px;color:var(--gray);">ÙØ³Ø§ÙÙØ©</div>
         </div>
       </div>`;
     }).join('');
   } else {
-    document.getElementById('resultProducts').innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">لم يتم إدخال منتجات</div>';
+    document.getElementById('resultProducts').innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">ÙÙ ÙØªÙ Ø¥Ø¯Ø®Ø§Ù ÙÙØªØ¬Ø§Øª</div>';
   }
 
   // AI Analysis
@@ -2039,34 +2036,34 @@ function renderResults(report) {
 
 function renderAIBlocks(text, containerId) {
   const wrap = document.getElementById(containerId);
-  if(!text){wrap.innerHTML='<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">التحليل الذكي غير متاح حالياً</div>';return;}
+  if(!text){wrap.innerHTML='<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">Ø§ÙØªØ­ÙÙÙ Ø§ÙØ°ÙÙ ØºÙØ± ÙØªØ§Ø­ Ø­Ø§ÙÙØ§Ù</div>';return;}
   const sections = [...text.matchAll(/\[SECTION:(.*?)\]([\s\S]*?)\[\/SECTION\]/g)];
-  const icons={'التشخيص العام':'🩺','نقاط القوة':'✅','نقاط الخطر':'⚠️','تحليل المنتجات':'📊','توصيات عملية':'🎯','توقع الأداء':'📈'};
+  const icons={'Ø§ÙØªØ´Ø®ÙØµ Ø§ÙØ¹Ø§Ù':'ð©º','ÙÙØ§Ø· Ø§ÙÙÙØ©':'â','ÙÙØ§Ø· Ø§ÙØ®Ø·Ø±':'â ï¸','ØªØ­ÙÙÙ Ø§ÙÙÙØªØ¬Ø§Øª':'ð','ØªÙØµÙØ§Øª Ø¹ÙÙÙØ©':'ð¯','ØªÙÙØ¹ Ø§ÙØ£Ø¯Ø§Ø¡':'ð'};
   if(!sections.length){wrap.innerHTML=`<div style="font-size:14px;line-height:1.9;color:var(--gray2);">${text.replace(/\n/g,'<br>')}</div>`;return;}
   wrap.innerHTML = sections.map((s,i)=>{
     const title=s[1].trim(), content=s[2].trim();
     const lines=content.split('\n').filter(l=>l.trim());
-    const isGood=title==='نقاط القوة', isBad=title==='نقاط الخطر', isWarn=title==='توصيات عملية';
+    const isGood=title==='ÙÙØ§Ø· Ø§ÙÙÙØ©', isBad=title==='ÙÙØ§Ø· Ø§ÙØ®Ø·Ø±', isWarn=title==='ØªÙØµÙØ§Øª Ø¹ÙÙÙØ©';
     const listHtml = (isGood||isBad||isWarn)
-      ? `<div class="insight-list">${lines.map(l=>`<li class="insight-item ${isGood?'g':isBad?'r':'w'}"><span class="ii-icon">${isGood?'✓':isBad?'!':'→'}</span><span>${l.replace(/^[-•\d.]\s*/,'')}</span></li>`).join('')}</div>`
+      ? `<div class="insight-list">${lines.map(l=>`<li class="insight-item ${isGood?'g':isBad?'r':'w'}"><span class="ii-icon">${isGood?'â':isBad?'!':'â'}</span><span>${l.replace(/^[-â¢\d.]\s*/,'')}</span></li>`).join('')}</div>`
       : `<div style="font-size:14px;line-height:1.9;color:var(--gray2);">${content.replace(/\n/g,'<br>')}</div>`;
     return `<div style="margin-bottom:20px;animation:fadeUp 0.4s ease ${i*0.08}s forwards;opacity:0;">
       <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-        <span style="width:28px;height:28px;background:var(--gold-d);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">${icons[title]||'📌'}</span>${title}
+        <span style="width:28px;height:28px;background:var(--gold-d);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">${icons[title]||'ð'}</span>${title}
       </div>${listHtml}</div>`;
   }).join('');
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // DASHBOARD UPDATE
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function updateDashboard() {
   const rep = STATE.savedReports[0];
   if(!rep){ return; }
   const m = rep.metrics;
-  document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ر';
+  document.getElementById('dk-rev').textContent = fmt(m.revenue)+' Ø±';
   const pk = document.getElementById('dk-profit');
-  pk.textContent = (m.netProfit>=0?'+':'')+fmt(m.netProfit)+' ر';
+  pk.textContent = (m.netProfit>=0?'+':'')+fmt(m.netProfit)+' Ø±';
   pk.className = 'kpi-val '+(m.netProfit>=0?'pos':'neg');
   const mk = document.getElementById('dk-margin');
   mk.textContent = m.netMargin+'%';
@@ -2085,25 +2082,25 @@ function updateDashboard() {
   const optimistic = (m.netProfit + m.revenue*0.1) * 3;
   document.getElementById('forecastContainer').innerHTML = `
     <div class="kpi-row kpi-row-2">
-      <div class="kpi"><div class="kpi-val ${forecast3m>=0?'pos':'neg'}">${fmt(forecast3m)} ر</div><div class="kpi-label">متوقع خلال 3 أشهر (الوضع الحالي)</div></div>
-      <div class="kpi gold"><div class="kpi-val pos">${fmt(optimistic)} ر</div><div class="kpi-label">متوقع مع تطبيق التوصيات</div></div>
+      <div class="kpi"><div class="kpi-val ${forecast3m>=0?'pos':'neg'}">${fmt(forecast3m)} Ø±</div><div class="kpi-label">ÙØªÙÙØ¹ Ø®ÙØ§Ù 3 Ø£Ø´ÙØ± (Ø§ÙÙØ¶Ø¹ Ø§ÙØ­Ø§ÙÙ)</div></div>
+      <div class="kpi gold"><div class="kpi-val pos">${fmt(optimistic)} Ø±</div><div class="kpi-label">ÙØªÙÙØ¹ ÙØ¹ ØªØ·Ø¨ÙÙ Ø§ÙØªÙØµÙØ§Øª</div></div>
     </div>
     <div class="alert alert-info" style="margin-top:12px;">
-      <span class="alert-icon">🔮</span>
-      <span>لو طبّقت توصيات التحليل، ربحك المتوقع أعلى بـ ${fmt(optimistic-forecast3m)} ريال خلال 3 أشهر</span>
+      <span class="alert-icon">ð®</span>
+      <span>ÙÙ Ø·Ø¨ÙÙØª ØªÙØµÙØ§Øª Ø§ÙØªØ­ÙÙÙØ Ø±Ø¨Ø­Ù Ø§ÙÙØªÙÙØ¹ Ø£Ø¹ÙÙ Ø¨Ù ${fmt(optimistic-forecast3m)} Ø±ÙØ§Ù Ø®ÙØ§Ù 3 Ø£Ø´ÙØ±</span>
     </div>`;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // SAVED REPORTS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function renderSavedReports() {
   const grid = document.getElementById('savedReportsGrid');
   if(!STATE.savedReports.length){
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;background:var(--s1);border:1px dashed var(--border);border-radius:16px;">
-      <div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📭</div>
-      <div style="color:var(--gray2);font-size:14px;">لا توجد تقارير محفوظة</div>
-      <div style="color:var(--gray);font-size:13px;margin-top:6px;">ابدأ بتحليل مشروعك الأول</div>
+      <div style="font-size:40px;margin-bottom:12px;opacity:0.3;">ð­</div>
+      <div style="color:var(--gray2);font-size:14px;">ÙØ§ ØªÙØ¬Ø¯ ØªÙØ§Ø±ÙØ± ÙØ­ÙÙØ¸Ø©</div>
+      <div style="color:var(--gray);font-size:13px;margin-top:6px;">Ø§Ø¨Ø¯Ø£ Ø¨ØªØ­ÙÙÙ ÙØ´Ø±ÙØ¹Ù Ø§ÙØ£ÙÙ</div>
     </div>`;
     return;
   }
@@ -2112,17 +2109,17 @@ function renderSavedReports() {
     return `<div class="card" style="cursor:pointer;transition:all 0.2s;animation:fadeUp 0.4s ease ${i*0.06}s forwards;opacity:0;" onmouseenter="this.style.borderColor='var(--gold-b)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="openSavedReport(${r.id})">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
         <div style="font-size:15px;font-weight:700;color:var(--white);">${r.bizName}</div>
-        <div style="font-size:11px;padding:3px 10px;background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-b);border-radius:20px;">${r.bizType||'—'}</div>
+        <div style="font-size:11px;padding:3px 10px;background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-b);border-radius:20px;">${r.bizType||'â'}</div>
       </div>
       <div class="kpi-row kpi-row-2" style="margin-bottom:12px;">
-        <div class="kpi card-sm"><div class="kpi-val neu" style="font-size:16px;">${fmt(m.revenue)} ر</div><div class="kpi-label">الإيرادات</div></div>
-        <div class="kpi card-sm"><div class="kpi-val ${m.netProfit>=0?'pos':'neg'}" style="font-size:16px;">${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ر</div><div class="kpi-label">صافي الربح</div></div>
+        <div class="kpi card-sm"><div class="kpi-val neu" style="font-size:16px;">${fmt(m.revenue)} Ø±</div><div class="kpi-label">Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª</div></div>
+        <div class="kpi card-sm"><div class="kpi-val ${m.netProfit>=0?'pos':'neg'}" style="font-size:16px;">${m.netProfit>=0?'+':''}${fmt(m.netProfit)} Ø±</div><div class="kpi-label">ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­</div></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;color:var(--gray);">${new Date(r.createdAt).toLocaleDateString('ar-SA')}</div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSavedReport(${r.id})">عرض</button>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSavedReport(${r.id})">حذف</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSavedReport(${r.id})">Ø¹Ø±Ø¶</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSavedReport(${r.id})">Ø­Ø°Ù</button>
         </div>
       </div>
     </div>`;
@@ -2138,16 +2135,16 @@ function openSavedReport(id) {
 }
 
 function deleteSavedReport(id) {
-  if(!confirm('حذف هذا التقرير؟')) return;
+  if(!confirm('Ø­Ø°Ù ÙØ°Ø§ Ø§ÙØªÙØ±ÙØ±Ø')) return;
   STATE.savedReports = STATE.savedReports.filter(r=>r.id!==id);
   localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports));
   renderSavedReports();
-  toast('تم الحذف');
+  toast('ØªÙ Ø§ÙØ­Ø°Ù');
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // EXCEL IMPORT
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function handleExcel(input) {
   const file = input.files[0]; if(!file) return;
   const reader = new FileReader();
@@ -2166,14 +2163,14 @@ function handleExcel(input) {
         }
       });
       const map=[
-        {ids:['اسم','name','project'], field:'f-name', type:'text'},
-        {ids:['إيرادات','مبيعات','revenue','sales'], field:'f-rev', type:'num'},
-        {ids:['تكلفة البضاعة','cogs','cost of goods'], field:'f-cogs', type:'num'},
-        {ids:['إيجار','rent'], field:'f-rent', type:'num'},
-        {ids:['رواتب','salaries'], field:'f-sal', type:'num'},
-        {ids:['تسويق','marketing'], field:'f-mkt', type:'num'},
-        {ids:['مصاريف أخرى','other'], field:'f-other', type:'num'},
-        {ids:['موظفين','employees'], field:'f-employees', type:'num'},
+        {ids:['Ø§Ø³Ù','name','project'], field:'f-name', type:'text'},
+        {ids:['Ø¥ÙØ±Ø§Ø¯Ø§Øª','ÙØ¨ÙØ¹Ø§Øª','revenue','sales'], field:'f-rev', type:'num'},
+        {ids:['ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©','cogs','cost of goods'], field:'f-cogs', type:'num'},
+        {ids:['Ø¥ÙØ¬Ø§Ø±','rent'], field:'f-rent', type:'num'},
+        {ids:['Ø±ÙØ§ØªØ¨','salaries'], field:'f-sal', type:'num'},
+        {ids:['ØªØ³ÙÙÙ','marketing'], field:'f-mkt', type:'num'},
+        {ids:['ÙØµØ§Ø±ÙÙ Ø£Ø®Ø±Ù','other'], field:'f-other', type:'num'},
+        {ids:['ÙÙØ¸ÙÙÙ','employees'], field:'f-employees', type:'num'},
       ];
       let filled=0;
       map.forEach(m=>{
@@ -2183,9 +2180,9 @@ function handleExcel(input) {
           if(el){el.value=m.type==='num'?(parseFloat(match.v)||0).toLocaleString('en'):match.v;filled++;}
         }
       });
-      showMsg('excelMsg',`✓ تم قراءة "${file.name}" — ملء ${filled} حقل`,'success');
+      showMsg('excelMsg',`â ØªÙ ÙØ±Ø§Ø¡Ø© "${file.name}" â ÙÙØ¡ ${filled} Ø­ÙÙ`,'success');
       liveCalc();
-    } catch(err){showMsg('excelMsg','تعذّر قراءة الملف','error');}
+    } catch(err){showMsg('excelMsg','ØªØ¹Ø°ÙØ± ÙØ±Ø§Ø¡Ø© Ø§ÙÙÙÙ','error');}
   };
   reader.readAsBinaryString(file);
 }
@@ -2195,11 +2192,11 @@ ez.addEventListener('dragover',e=>{e.preventDefault();ez.classList.add('drag-ove
 ez.addEventListener('dragleave',()=>ez.classList.remove('drag-over'));
 ez.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f){document.getElementById('excelFile').files=e.dataTransfer.files;handleExcel(document.getElementById('excelFile'));}});
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // PDF EXPORT
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 async function exportPDF() {
-  if(!STATE.currentReport){toast('لا يوجد تقرير لتصديره');return;}
+  if(!STATE.currentReport){toast('ÙØ§ ÙÙØ¬Ø¯ ØªÙØ±ÙØ± ÙØªØµØ¯ÙØ±Ù');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const r=STATE.currentReport, m=r.metrics;
@@ -2210,7 +2207,7 @@ async function exportPDF() {
   doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(200,164,90);
   doc.text('Tawakkad Financial Report',105,22,{align:'center'});
   doc.setFontSize(11); doc.setTextColor(180,175,165);
-  doc.text(`${r.bizName} — ${r.bizType} — ${r.period}`,105,31,{align:'center'});
+  doc.text(`${r.bizName} â ${r.bizType} â ${r.period}`,105,31,{align:'center'});
   doc.setFontSize(9); doc.setTextColor(100,95,88);
   doc.text(`${new Date(r.createdAt).toLocaleDateString('ar-SA')}  |  Health Score: ${r.scoreData.total}/100`,105,39,{align:'center'});
   doc.setDrawColor(200,164,90); doc.setLineWidth(0.3); doc.line(20,44,190,44);
@@ -2234,22 +2231,22 @@ async function exportPDF() {
       doc.setFontSize(8.5); doc.setTextColor(160,155,145);
       s[2].trim().split('\n').filter(l=>l.trim()).slice(0,5).forEach(line=>{
         if(y>272){doc.addPage();doc.setFillColor(7,8,10);doc.rect(0,0,210,297,'F');y=20;}
-        doc.text('• '+line.replace(/^[-•]\s*/,'').substring(0,100),22,y); y+=6;
+        doc.text('â¢ '+line.replace(/^[-â¢]\s*/,'').substring(0,100),22,y); y+=6;
       });
       y+=5;
     });
   }
   doc.setFillColor(200,164,90); doc.rect(0,293,210,4,'F');
   doc.setFontSize(7); doc.setTextColor(80,75,70);
-  doc.text('Generated by Tawakkad — Certainty Before Investment — tawakkad.sa',105,291,{align:'center'});
+  doc.text('Generated by Tawakkad â Certainty Before Investment â tawakkad.sa',105,291,{align:'center'});
   doc.save(`tawakkad-${r.bizName}-${new Date().toISOString().slice(0,10)}.pdf`);
-  toast('تم تحميل PDF ✓');
+  toast('ØªÙ ØªØ­ÙÙÙ PDF â');
 }
 
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // AI CFO
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 let CFO_HISTORY = [];
 
 function getCFOContext() {
@@ -2277,38 +2274,38 @@ function getCFOContext() {
 
 function buildCFOSystemPrompt(ctx) {
   if (!ctx) {
-    return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية.
-لا تتوفر بيانات مشروع حالياً. أجب على الأسئلة المالية بشكل عام ومفيد.
-تحدث بالعربية دائماً. كن موجزاً ومباشراً. استخدم الأرقام والأمثلة.`;
+    return `Ø£ÙØª AI CFO â ÙØ³ØªØ´Ø§Ø± ÙØ§ÙÙ Ø°ÙÙ ÙÙÙØ´Ø§Ø±ÙØ¹ Ø§ÙØµØºÙØ±Ø© ÙØ§ÙÙØªÙØ³Ø·Ø© Ø§ÙØ³Ø¹ÙØ¯ÙØ©.
+ÙØ§ ØªØªÙÙØ± Ø¨ÙØ§ÙØ§Øª ÙØ´Ø±ÙØ¹ Ø­Ø§ÙÙØ§Ù. Ø£Ø¬Ø¨ Ø¹ÙÙ Ø§ÙØ£Ø³Ø¦ÙØ© Ø§ÙÙØ§ÙÙØ© Ø¨Ø´ÙÙ Ø¹Ø§Ù ÙÙÙÙØ¯.
+ØªØ­Ø¯Ø« Ø¨Ø§ÙØ¹Ø±Ø¨ÙØ© Ø¯Ø§Ø¦ÙØ§Ù. ÙÙ ÙÙØ¬Ø²Ø§Ù ÙÙØ¨Ø§Ø´Ø±Ø§Ù. Ø§Ø³ØªØ®Ø¯Ù Ø§ÙØ£Ø±ÙØ§Ù ÙØ§ÙØ£ÙØ«ÙØ©.`;
   }
 
   const prodsText = ctx.products.length
     ? ctx.products.map(p => {
         const m = p.price > 0 ? (((p.price-p.cost)/p.price)*100).toFixed(0) : 0;
-        return `${p.name} (هامش ${m}%, كمية ${p.qty})`;
-      }).join('، ')
-    : 'لا توجد بيانات';
+        return `${p.name} (ÙØ§ÙØ´ ${m}%, ÙÙÙØ© ${p.qty})`;
+      }).join('Ø ')
+    : 'ÙØ§ ØªÙØ¬Ø¯ Ø¨ÙØ§ÙØ§Øª';
 
-  return `أنت AI CFO لمشروع "${ctx.bizName}" — مستشار مالي متخصص.
+  return `Ø£ÙØª AI CFO ÙÙØ´Ø±ÙØ¹ "${ctx.bizName}" â ÙØ³ØªØ´Ø§Ø± ÙØ§ÙÙ ÙØªØ®ØµØµ.
 
-بيانات المشروع الحالية:
-- النشاط: ${ctx.bizType} | الفترة: ${ctx.period}
-- الإيرادات: ${ctx.revenue?.toLocaleString()} ريال
-- صافي الربح: ${ctx.netProfit?.toLocaleString()} ريال (${ctx.netMargin}%)
-- هامش إجمالي: ${ctx.grossMargin}%
-- المصاريف: ${ctx.totalExpenses?.toLocaleString()} ريال
-- الإيجار: ${ctx.rentPct}% | الرواتب: ${ctx.salPct}% | تكلفة البضاعة: ${ctx.cogsPct}% | التسويق: ${ctx.mktPct}%
-- مؤشر الصحة: ${ctx.healthScore}/100
-- المنتجات: ${prodsText}
-- التنبيهات: ${ctx.alerts?.join(' | ') || 'لا توجد'}
+Ø¨ÙØ§ÙØ§Øª Ø§ÙÙØ´Ø±ÙØ¹ Ø§ÙØ­Ø§ÙÙØ©:
+- Ø§ÙÙØ´Ø§Ø·: ${ctx.bizType} | Ø§ÙÙØªØ±Ø©: ${ctx.period}
+- Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª: ${ctx.revenue?.toLocaleString()} Ø±ÙØ§Ù
+- ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­: ${ctx.netProfit?.toLocaleString()} Ø±ÙØ§Ù (${ctx.netMargin}%)
+- ÙØ§ÙØ´ Ø¥Ø¬ÙØ§ÙÙ: ${ctx.grossMargin}%
+- Ø§ÙÙØµØ§Ø±ÙÙ: ${ctx.totalExpenses?.toLocaleString()} Ø±ÙØ§Ù
+- Ø§ÙØ¥ÙØ¬Ø§Ø±: ${ctx.rentPct}% | Ø§ÙØ±ÙØ§ØªØ¨: ${ctx.salPct}% | ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©: ${ctx.cogsPct}% | Ø§ÙØªØ³ÙÙÙ: ${ctx.mktPct}%
+- ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø©: ${ctx.healthScore}/100
+- Ø§ÙÙÙØªØ¬Ø§Øª: ${prodsText}
+- Ø§ÙØªÙØ¨ÙÙØ§Øª: ${ctx.alerts?.join(' | ') || 'ÙØ§ ØªÙØ¬Ø¯'}
 
-أنت تعرف هذه البيانات بشكل كامل. أجب على أسئلة المستخدم كمستشار مالي خبير:
-- كن مباشراً وموجزاً (3-5 جمل في الغالب)
-- استخدم أرقام المشروع الفعلية في إجاباتك
-- أعطِ توصيات قابلة للتطبيق فوراً
-- إذا كان السؤال خارج نطاق البيانات، أجب بشكل عام مفيد
-- تحدث بالعربية دائماً بأسلوب مستشار محترف وليس روبوت
-- استخدم **bold** للأرقام المهمة والنقاط الرئيسية`;
+Ø£ÙØª ØªØ¹Ø±Ù ÙØ°Ù Ø§ÙØ¨ÙØ§ÙØ§Øª Ø¨Ø´ÙÙ ÙØ§ÙÙ. Ø£Ø¬Ø¨ Ø¹ÙÙ Ø£Ø³Ø¦ÙØ© Ø§ÙÙØ³ØªØ®Ø¯Ù ÙÙØ³ØªØ´Ø§Ø± ÙØ§ÙÙ Ø®Ø¨ÙØ±:
+- ÙÙ ÙØ¨Ø§Ø´Ø±Ø§Ù ÙÙÙØ¬Ø²Ø§Ù (3-5 Ø¬ÙÙ ÙÙ Ø§ÙØºØ§ÙØ¨)
+- Ø§Ø³ØªØ®Ø¯Ù Ø£Ø±ÙØ§Ù Ø§ÙÙØ´Ø±ÙØ¹ Ø§ÙÙØ¹ÙÙØ© ÙÙ Ø¥Ø¬Ø§Ø¨Ø§ØªÙ
+- Ø£Ø¹Ø·Ù ØªÙØµÙØ§Øª ÙØ§Ø¨ÙØ© ÙÙØªØ·Ø¨ÙÙ ÙÙØ±Ø§Ù
+- Ø¥Ø°Ø§ ÙØ§Ù Ø§ÙØ³Ø¤Ø§Ù Ø®Ø§Ø±Ø¬ ÙØ·Ø§Ù Ø§ÙØ¨ÙØ§ÙØ§ØªØ Ø£Ø¬Ø¨ Ø¨Ø´ÙÙ Ø¹Ø§Ù ÙÙÙØ¯
+- ØªØ­Ø¯Ø« Ø¨Ø§ÙØ¹Ø±Ø¨ÙØ© Ø¯Ø§Ø¦ÙØ§Ù Ø¨Ø£Ø³ÙÙØ¨ ÙØ³ØªØ´Ø§Ø± ÙØ­ØªØ±Ù ÙÙÙØ³ Ø±ÙØ¨ÙØª
+- Ø§Ø³ØªØ®Ø¯Ù **bold** ÙÙØ£Ø±ÙØ§Ù Ø§ÙÙÙÙØ© ÙØ§ÙÙÙØ§Ø· Ø§ÙØ±Ø¦ÙØ³ÙØ©`;
 }
 
 async function sendCFO(quickMsg) {
@@ -2339,7 +2336,7 @@ async function sendCFO(quickMsg) {
   if (ctx) {
     document.getElementById('cfoContextBar').style.display = 'flex';
     document.getElementById('cfoContextText').textContent =
-      `متصل بـ ${ctx.bizName} — هامش الربح ${ctx.netMargin}% — مؤشر الصحة ${ctx.healthScore}/100`;
+      `ÙØªØµÙ Ø¨Ù ${ctx.bizName} â ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ ${ctx.netMargin}% â ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø© ${ctx.healthScore}/100`;
   }
 
   try {
@@ -2363,7 +2360,7 @@ async function sendCFO(quickMsg) {
     });
 
     const data = await resp.json();
-    const reply = data.content?.map(i => i.text || '').join('') || 'عذراً، حدث خطأ. حاول مجدداً.';
+    const reply = data.content?.map(i => i.text || '').join('') || 'Ø¹Ø°Ø±Ø§ÙØ Ø­Ø¯Ø« Ø®Ø·Ø£. Ø­Ø§ÙÙ ÙØ¬Ø¯Ø¯Ø§Ù.';
 
     // Add to history
     CFO_HISTORY.push({ role: 'assistant', content: reply });
@@ -2373,7 +2370,7 @@ async function sendCFO(quickMsg) {
 
   } catch(e) {
     removeTyping(typingId);
-    appendCFOMessage('ai', '⚠️ تعذّر الاتصال. تأكد من الإنترنت وحاول مجدداً.');
+    appendCFOMessage('ai', 'â ï¸ ØªØ¹Ø°ÙØ± Ø§ÙØ§ØªØµØ§Ù. ØªØ£ÙØ¯ ÙÙ Ø§ÙØ¥ÙØªØ±ÙØª ÙØ­Ø§ÙÙ ÙØ¬Ø¯Ø¯Ø§Ù.');
   } finally {
     document.getElementById('cfoSendBtn').disabled = false;
     input.focus();
@@ -2389,10 +2386,10 @@ function appendCFOMessage(role, text) {
   const formatted = text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')
-    .replace(/^[-•]\s*/gm, '• ');
+    .replace(/^[-â¢]\s*/gm, 'â¢ ');
 
   div.innerHTML = `
-    <div class="cfo-avatar ${role}">${role === 'ai' ? '🤖' : '👤'}</div>
+    <div class="cfo-avatar ${role}">${role === 'ai' ? 'ð¤' : 'ð¤'}</div>
     <div class="cfo-bubble ${role}">${formatted}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
@@ -2406,7 +2403,7 @@ function appendCFOTyping() {
   div.className = 'cfo-msg';
   div.id = id;
   div.innerHTML = `
-    <div class="cfo-avatar ai">🤖</div>
+    <div class="cfo-avatar ai">ð¤</div>
     <div class="cfo-bubble ai">
       <span class="typing-dot"></span>
       <span class="typing-dot"></span>
@@ -2422,31 +2419,31 @@ function removeTyping(id) {
 }
 
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // ACTION PLAN
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 async function generateActionPlan() {
   const rep = STATE.currentReport;
-  if (!rep) { toast('أجرِ تحليلاً أولاً'); showPage('analysis'); return; }
+  if (!rep) { toast('Ø£Ø¬Ø±Ù ØªØ­ÙÙÙØ§Ù Ø£ÙÙØ§Ù'); showPage('analysis'); return; }
 
   const c = document.getElementById('actionPlanContent');
-  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);">⏳ جاري توليد الخطة...</div>';
+  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);">â³ Ø¬Ø§Ø±Ù ØªÙÙÙØ¯ Ø§ÙØ®Ø·Ø©...</div>';
 
   const m = rep.metrics;
-  const prompt = `أنت مستشار مالي. بناءً على بيانات "${rep.bizName}":
-- الإيرادات: ${m.revenue?.toLocaleString()} ر | صافي الربح: ${m.netProfit?.toLocaleString()} ر | هامش: ${m.netMargin}%
-- تكاليف البضاعة: ${m.cogsPct}% | الإيجار: ${m.rentPct}% | الرواتب: ${m.salPct}%
-- مؤشر الصحة: ${rep.scoreData?.total}/100
-- التنبيهات: ${rep.alerts?.map(a=>a.msg).join(' | ') || 'لا يوجد'}
+  const prompt = `Ø£ÙØª ÙØ³ØªØ´Ø§Ø± ÙØ§ÙÙ. Ø¨ÙØ§Ø¡Ù Ø¹ÙÙ Ø¨ÙØ§ÙØ§Øª "${rep.bizName}":
+- Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª: ${m.revenue?.toLocaleString()} Ø± | ØµØ§ÙÙ Ø§ÙØ±Ø¨Ø­: ${m.netProfit?.toLocaleString()} Ø± | ÙØ§ÙØ´: ${m.netMargin}%
+- ØªÙØ§ÙÙÙ Ø§ÙØ¨Ø¶Ø§Ø¹Ø©: ${m.cogsPct}% | Ø§ÙØ¥ÙØ¬Ø§Ø±: ${m.rentPct}% | Ø§ÙØ±ÙØ§ØªØ¨: ${m.salPct}%
+- ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø©: ${rep.scoreData?.total}/100
+- Ø§ÙØªÙØ¨ÙÙØ§Øª: ${rep.alerts?.map(a=>a.msg).join(' | ') || 'ÙØ§ ÙÙØ¬Ø¯'}
 
-أعطني خطة عمل 4 أسابيع بالتنسيق التالي بالضبط (JSON فقط بدون أي نص آخر):
+Ø£Ø¹Ø·ÙÙ Ø®Ø·Ø© Ø¹ÙÙ 4 Ø£Ø³Ø§Ø¨ÙØ¹ Ø¨Ø§ÙØªÙØ³ÙÙ Ø§ÙØªØ§ÙÙ Ø¨Ø§ÙØ¶Ø¨Ø· (JSON ÙÙØ· Ø¨Ø¯ÙÙ Ø£Ù ÙØµ Ø¢Ø®Ø±):
 {
   "weeks": [
     {
       "week": 1,
-      "focus": "عنوان التركيز",
+      "focus": "Ø¹ÙÙØ§Ù Ø§ÙØªØ±ÙÙØ²",
       "actions": [
-        {"text": "الإجراء", "impact": "التأثير المتوقع مثل يوفر 2000 ر شهرياً", "priority": "high|med|low"}
+        {"text": "Ø§ÙØ¥Ø¬Ø±Ø§Ø¡", "impact": "Ø§ÙØªØ£Ø«ÙØ± Ø§ÙÙØªÙÙØ¹ ÙØ«Ù ÙÙÙØ± 2000 Ø± Ø´ÙØ±ÙØ§Ù", "priority": "high|med|low"}
       ]
     }
   ]
@@ -2477,25 +2474,25 @@ async function generateActionPlan() {
 function defaultActionPlan(rep) {
   const m = rep.metrics;
   return [
-    { week:1, focus:'تخفيض التكاليف الفورية', actions:[
-      {text:'راجع عقود الموردين وطلب تخفيض 5-10%', impact:'وفر تصل '+fmt(m.cogs*0.07)+' ر', priority:'high'},
-      {text:'حدّد المصاريف غير الضرورية وأوقفها فوراً', impact:'تخفيض مباشر للتكاليف', priority:'high'},
-      {text:'راجع ساعات العمل وتوزيع الموظفين', impact:'تحسين الكفاءة التشغيلية', priority:'med'},
+    { week:1, focus:'ØªØ®ÙÙØ¶ Ø§ÙØªÙØ§ÙÙÙ Ø§ÙÙÙØ±ÙØ©', actions:[
+      {text:'Ø±Ø§Ø¬Ø¹ Ø¹ÙÙØ¯ Ø§ÙÙÙØ±Ø¯ÙÙ ÙØ·ÙØ¨ ØªØ®ÙÙØ¶ 5-10%', impact:'ÙÙØ± ØªØµÙ '+fmt(m.cogs*0.07)+' Ø±', priority:'high'},
+      {text:'Ø­Ø¯ÙØ¯ Ø§ÙÙØµØ§Ø±ÙÙ ØºÙØ± Ø§ÙØ¶Ø±ÙØ±ÙØ© ÙØ£ÙÙÙÙØ§ ÙÙØ±Ø§Ù', impact:'ØªØ®ÙÙØ¶ ÙØ¨Ø§Ø´Ø± ÙÙØªÙØ§ÙÙÙ', priority:'high'},
+      {text:'Ø±Ø§Ø¬Ø¹ Ø³Ø§Ø¹Ø§Øª Ø§ÙØ¹ÙÙ ÙØªÙØ²ÙØ¹ Ø§ÙÙÙØ¸ÙÙÙ', impact:'ØªØ­Ø³ÙÙ Ø§ÙÙÙØ§Ø¡Ø© Ø§ÙØªØ´ØºÙÙÙØ©', priority:'med'},
     ]},
-    { week:2, focus:'تحسين الإيرادات', actions:[
-      {text:'رفع أسعار المنتجات ذات الهامش المنخفض 5-8%', impact:'زيادة الهامش '+m.netMargin+'%→'+(parseFloat(m.netMargin)+3)+'%', priority:'high'},
-      {text:'فعّل حملة تسويقية للمنتج الأكثر ربحاً', impact:'زيادة المبيعات 10-15%', priority:'high'},
-      {text:'اطلق عروض الولاء للعملاء الحاليين', impact:'تحسين الاحتفاظ بالعملاء', priority:'med'},
+    { week:2, focus:'ØªØ­Ø³ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', actions:[
+      {text:'Ø±ÙØ¹ Ø£Ø³Ø¹Ø§Ø± Ø§ÙÙÙØªØ¬Ø§Øª Ø°Ø§Øª Ø§ÙÙØ§ÙØ´ Ø§ÙÙÙØ®ÙØ¶ 5-8%', impact:'Ø²ÙØ§Ø¯Ø© Ø§ÙÙØ§ÙØ´ '+m.netMargin+'%â'+(parseFloat(m.netMargin)+3)+'%', priority:'high'},
+      {text:'ÙØ¹ÙÙ Ø­ÙÙØ© ØªØ³ÙÙÙÙØ© ÙÙÙÙØªØ¬ Ø§ÙØ£ÙØ«Ø± Ø±Ø¨Ø­Ø§Ù', impact:'Ø²ÙØ§Ø¯Ø© Ø§ÙÙØ¨ÙØ¹Ø§Øª 10-15%', priority:'high'},
+      {text:'Ø§Ø·ÙÙ Ø¹Ø±ÙØ¶ Ø§ÙÙÙØ§Ø¡ ÙÙØ¹ÙÙØ§Ø¡ Ø§ÙØ­Ø§ÙÙÙÙ', impact:'ØªØ­Ø³ÙÙ Ø§ÙØ§Ø­ØªÙØ§Ø¸ Ø¨Ø§ÙØ¹ÙÙØ§Ø¡', priority:'med'},
     ]},
-    { week:3, focus:'تحسين العمليات', actions:[
-      {text:'راجع جدول الطلبات والمخزون لتقليل الهدر', impact:'تخفيض COGS 3-5%', priority:'med'},
-      {text:'أتمت العمليات المتكررة قدر الإمكان', impact:'توفير وقت وتكاليف', priority:'low'},
-      {text:'حلّل ساعات الذروة وضع طاقم كافٍ', impact:'تحسين خدمة العملاء والمبيعات', priority:'med'},
+    { week:3, focus:'ØªØ­Ø³ÙÙ Ø§ÙØ¹ÙÙÙØ§Øª', actions:[
+      {text:'Ø±Ø§Ø¬Ø¹ Ø¬Ø¯ÙÙ Ø§ÙØ·ÙØ¨Ø§Øª ÙØ§ÙÙØ®Ø²ÙÙ ÙØªÙÙÙÙ Ø§ÙÙØ¯Ø±', impact:'ØªØ®ÙÙØ¶ COGS 3-5%', priority:'med'},
+      {text:'Ø£ØªÙØª Ø§ÙØ¹ÙÙÙØ§Øª Ø§ÙÙØªÙØ±Ø±Ø© ÙØ¯Ø± Ø§ÙØ¥ÙÙØ§Ù', impact:'ØªÙÙÙØ± ÙÙØª ÙØªÙØ§ÙÙÙ', priority:'low'},
+      {text:'Ø­ÙÙÙ Ø³Ø§Ø¹Ø§Øª Ø§ÙØ°Ø±ÙØ© ÙØ¶Ø¹ Ø·Ø§ÙÙ ÙØ§ÙÙ', impact:'ØªØ­Ø³ÙÙ Ø®Ø¯ÙØ© Ø§ÙØ¹ÙÙØ§Ø¡ ÙØ§ÙÙØ¨ÙØ¹Ø§Øª', priority:'med'},
     ]},
-    { week:4, focus:'قياس النتائج والتخطيط', actions:[
-      {text:'قارن أرقام هذا الشهر بالشهر الماضي', impact:'قياس أثر التحسينات', priority:'high'},
-      {text:'حدّد 3 أهداف للشهر القادم بأرقام واضحة', impact:'توجيه استراتيجي واضح', priority:'high'},
-      {text:'اعمل تحليل جديد على توكّد لقياس التحسن', impact:'متابعة دقيقة للأداء', priority:'med'},
+    { week:4, focus:'ÙÙØ§Ø³ Ø§ÙÙØªØ§Ø¦Ø¬ ÙØ§ÙØªØ®Ø·ÙØ·', actions:[
+      {text:'ÙØ§Ø±Ù Ø£Ø±ÙØ§Ù ÙØ°Ø§ Ø§ÙØ´ÙØ± Ø¨Ø§ÙØ´ÙØ± Ø§ÙÙØ§Ø¶Ù', impact:'ÙÙØ§Ø³ Ø£Ø«Ø± Ø§ÙØªØ­Ø³ÙÙØ§Øª', priority:'high'},
+      {text:'Ø­Ø¯ÙØ¯ 3 Ø£ÙØ¯Ø§Ù ÙÙØ´ÙØ± Ø§ÙÙØ§Ø¯Ù Ø¨Ø£Ø±ÙØ§Ù ÙØ§Ø¶Ø­Ø©', impact:'ØªÙØ¬ÙÙ Ø§Ø³ØªØ±Ø§ØªÙØ¬Ù ÙØ§Ø¶Ø­', priority:'high'},
+      {text:'Ø§Ø¹ÙÙ ØªØ­ÙÙÙ Ø¬Ø¯ÙØ¯ Ø¹ÙÙ ØªÙÙÙØ¯ ÙÙÙØ§Ø³ Ø§ÙØªØ­Ø³Ù', impact:'ÙØªØ§Ø¨Ø¹Ø© Ø¯ÙÙÙØ© ÙÙØ£Ø¯Ø§Ø¡', priority:'med'},
     ]},
   ];
 }
@@ -2507,22 +2504,22 @@ function renderActionPlan(weeks) {
   c.innerHTML = weeks.map(w => `
     <div class="week-card">
       <div class="week-header">
-        <div class="week-num">أ${w.week}</div>
-        <div><div class="week-title">الأسبوع ${w.week}</div><div class="week-focus">${w.focus}</div></div>
+        <div class="week-num">Ø£${w.week}</div>
+        <div><div class="week-title">Ø§ÙØ£Ø³Ø¨ÙØ¹ ${w.week}</div><div class="week-focus">${w.focus}</div></div>
         <div style="margin-right:auto;font-size:12px;color:var(--gray);">
-          ${w.actions.filter((_,i)=>progress[w.week+'-'+i]).length}/${w.actions.length} مكتمل
+          ${w.actions.filter((_,i)=>progress[w.week+'-'+i]).length}/${w.actions.length} ÙÙØªÙÙ
         </div>
       </div>
       ${w.actions.map((a,i) => {
         const key = w.week+'-'+i;
         const done = !!progress[key];
-        const priLabel = a.priority==='high'?'عالي':a.priority==='med'?'متوسط':'منخفض';
+        const priLabel = a.priority==='high'?'Ø¹Ø§ÙÙ':a.priority==='med'?'ÙØªÙØ³Ø·':'ÙÙØ®ÙØ¶';
         const priClass = a.priority==='high'?'pri-high':a.priority==='med'?'pri-med':'pri-low';
         return `<div class="action-item ${done?'done':''}" onclick="toggleAction(${w.week},${i},this)">
-          <div class="ai-check">${done?'✓':''}</div>
+          <div class="ai-check">${done?'â':''}</div>
           <div style="flex:1;">
             <div class="ai-text">${a.text}</div>
-            <div class="ai-impact">📈 ${a.impact}</div>
+            <div class="ai-impact">ð ${a.impact}</div>
           </div>
           <div class="ai-priority ${priClass}">${priLabel}</div>
         </div>`;
@@ -2539,28 +2536,28 @@ function toggleAction(week, idx, el) {
   localStorage.setItem('tw_plan_progress', JSON.stringify(progress));
   el.classList.toggle('done');
   const check = el.querySelector('.ai-check');
-  if(el.classList.contains('done')){check.textContent='✓';} else {check.textContent='';}
+  if(el.classList.contains('done')){check.textContent='â';} else {check.textContent='';}
 }
 
 function exportActionPlanPDF() {
-  toast('جاري تصدير الخطة...');
+  toast('Ø¬Ø§Ø±Ù ØªØµØ¯ÙØ± Ø§ÙØ®Ø·Ø©...');
   // Uses same jsPDF logic
-  if(!STATE._actionPlanWeeks){toast('لا توجد خطة لتصديرها');return;}
+  if(!STATE._actionPlanWeeks){toast('ÙØ§ ØªÙØ¬Ø¯ Ø®Ø·Ø© ÙØªØµØ¯ÙØ±ÙØ§');return;}
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({unit:'mm',format:'a4'});
   doc.setFillColor(7,8,10); doc.rect(0,0,210,297,'F');
   doc.setFillColor(200,164,90); doc.rect(0,0,210,3,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(200,164,90);
-  doc.text('Action Plan — ' + (STATE.currentReport?.bizName||''), 105, 20, {align:'center'});
+  doc.text('Action Plan â ' + (STATE.currentReport?.bizName||''), 105, 20, {align:'center'});
   let y = 35;
   STATE._actionPlanWeeks.forEach(w => {
     doc.setFontSize(12); doc.setTextColor(200,164,90);
     doc.text('Week '+w.week+': '+w.focus, 20, y); y+=8;
     w.actions.forEach(a => {
       doc.setFontSize(9); doc.setTextColor(160,155,145);
-      doc.text('• '+a.text, 25, y); y+=6;
+      doc.text('â¢ '+a.text, 25, y); y+=6;
       doc.setFontSize(8); doc.setTextColor(100,95,88);
-      doc.text('  → '+a.impact, 28, y); y+=7;
+      doc.text('  â '+a.impact, 28, y); y+=7;
       if(y>270){doc.addPage();doc.setFillColor(7,8,10);doc.rect(0,0,210,297,'F');y=20;}
     });
     y+=5;
@@ -2568,9 +2565,9 @@ function exportActionPlanPDF() {
   doc.save('tawakkad-action-plan.pdf');
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // CASH FLOW
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function calcCashFlow() {
   const cash     = parseNum(document.getElementById('cf-cash')?.value);
   const fixed    = parseNum(document.getElementById('cf-fixed')?.value);
@@ -2585,12 +2582,12 @@ function calcCashFlow() {
     ? (netMonthly >= 0 ? Infinity : Math.abs(cash / netMonthly))
     : Infinity;
 
-  const runwayText  = runway === Infinity ? '∞' : runway.toFixed(1);
+  const runwayText  = runway === Infinity ? 'â' : runway.toFixed(1);
   const runwayColor = runway === Infinity ? 'var(--green)' : runway < 3 ? 'var(--red)' : runway < 6 ? 'var(--warn)' : 'var(--green)';
-  const status      = runway === Infinity ? '✅ التدفق إيجابي' : runway < 3 ? '🔴 خطر — سيولة منخفضة جداً' : runway < 6 ? '⚠️ يحتاج مراقبة' : '✅ وضع جيد';
+  const status      = runway === Infinity ? 'â Ø§ÙØªØ¯ÙÙ Ø¥ÙØ¬Ø§Ø¨Ù' : runway < 3 ? 'ð´ Ø®Ø·Ø± â Ø³ÙÙÙØ© ÙÙØ®ÙØ¶Ø© Ø¬Ø¯Ø§Ù' : runway < 6 ? 'â ï¸ ÙØ­ØªØ§Ø¬ ÙØ±Ø§ÙØ¨Ø©' : 'â ÙØ¶Ø¹ Ø¬ÙØ¯';
 
   // Build 6-month projection
-  const months = ['الشهر 1','الشهر 2','الشهر 3','الشهر 4','الشهر 5','الشهر 6'];
+  const months = ['Ø§ÙØ´ÙØ± 1','Ø§ÙØ´ÙØ± 2','Ø§ÙØ´ÙØ± 3','Ø§ÙØ´ÙØ± 4','Ø§ÙØ´ÙØ± 5','Ø§ÙØ´ÙØ± 6'];
   let bal = cash;
   const rows = months.map((m,i) => {
     const inflow  = expRev * (1 + i*0.02);
@@ -2604,23 +2601,23 @@ function calcCashFlow() {
     <div class="grid-2">
       <div class="cf-runway">
         <div class="cf-runway-num" style="color:${runwayColor};">${runwayText}</div>
-        <div class="cf-runway-label">أشهر Cash Runway</div>
+        <div class="cf-runway-label">Ø£Ø´ÙØ± Cash Runway</div>
         <div style="margin-top:12px;font-size:13px;color:${runwayColor};font-weight:600;">${status}</div>
       </div>
       <div class="card card-sm">
-        <div class="card-title"><div class="card-title-icon">📊</div>ملخص التدفق</div>
+        <div class="card-title"><div class="card-title-icon">ð</div>ÙÙØ®Øµ Ø§ÙØªØ¯ÙÙ</div>
         <div class="kpi-row kpi-row-2">
-          <div class="kpi"><div class="kpi-val neu">${fmt(cash)} ر</div><div class="kpi-label">الرصيد الحالي</div></div>
-          <div class="kpi"><div class="kpi-val ${netMonthly>=0?'pos':'neg'}">${netMonthly>=0?'+':''}${fmt(netMonthly)} ر</div><div class="kpi-label">صافي شهري</div></div>
-          <div class="kpi"><div class="kpi-val neg">${fmt(monthlyBurn)} ر</div><div class="kpi-label">إجمالي الإنفاق</div></div>
-          <div class="kpi"><div class="kpi-val pos">${fmt(expRev)} ر</div><div class="kpi-label">إيرادات متوقعة</div></div>
+          <div class="kpi"><div class="kpi-val neu">${fmt(cash)} Ø±</div><div class="kpi-label">Ø§ÙØ±ØµÙØ¯ Ø§ÙØ­Ø§ÙÙ</div></div>
+          <div class="kpi"><div class="kpi-val ${netMonthly>=0?'pos':'neg'}">${netMonthly>=0?'+':''}${fmt(netMonthly)} Ø±</div><div class="kpi-label">ØµØ§ÙÙ Ø´ÙØ±Ù</div></div>
+          <div class="kpi"><div class="kpi-val neg">${fmt(monthlyBurn)} Ø±</div><div class="kpi-label">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¥ÙÙØ§Ù</div></div>
+          <div class="kpi"><div class="kpi-val pos">${fmt(expRev)} Ø±</div><div class="kpi-label">Ø¥ÙØ±Ø§Ø¯Ø§Øª ÙØªÙÙØ¹Ø©</div></div>
         </div>
       </div>
     </div>
     <div class="card" style="margin-top:16px;">
-      <div class="card-title"><div class="card-title-icon">📅</div>توقع التدفق — 6 أشهر</div>
+      <div class="card-title"><div class="card-title-icon">ð</div>ØªÙÙØ¹ Ø§ÙØªØ¯ÙÙ â 6 Ø£Ø´ÙØ±</div>
       <table class="cf-table">
-        <tr><th>الشهر</th><th>التدفق الداخل</th><th>التدفق الخارج</th><th>الصافي</th><th>الرصيد</th></tr>
+        <tr><th>Ø§ÙØ´ÙØ±</th><th>Ø§ÙØªØ¯ÙÙ Ø§ÙØ¯Ø§Ø®Ù</th><th>Ø§ÙØªØ¯ÙÙ Ø§ÙØ®Ø§Ø±Ø¬</th><th>Ø§ÙØµØ§ÙÙ</th><th>Ø§ÙØ±ØµÙØ¯</th></tr>
         ${rows.map(r=>`
           <tr>
             <td style="font-weight:600;color:var(--white);">${r.m}</td>
@@ -2646,39 +2643,39 @@ function prefillCashFlowFromReport() {
   calcCashFlow();
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // INTEGRATIONS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function connectIntegration(type) {
   if(type === 'google-sheets') {
     document.getElementById('gsheetPanel').style.display = 'block';
     document.getElementById('gsheetPanel').scrollIntoView({behavior:'smooth'});
   } else if(type === 'excel') {
     showPage('analysis');
-    toast('ارفع ملف Excel من صفحة التحليل');
+    toast('Ø§Ø±ÙØ¹ ÙÙÙ Excel ÙÙ ØµÙØ­Ø© Ø§ÙØªØ­ÙÙÙ');
   } else if(type === 'manual') {
     showPage('analysis');
   } else {
-    toast('هذا الربط سيكون متاحاً قريباً 🚀');
+    toast('ÙØ°Ø§ Ø§ÙØ±Ø¨Ø· Ø³ÙÙÙÙ ÙØªØ§Ø­Ø§Ù ÙØ±ÙØ¨Ø§Ù ð');
   }
 }
 
 async function importFromSheets() {
   const url = document.getElementById('gsheet-url').value.trim();
-  if(!url) { showMsg('gsheetMsg','من فضلك أدخل رابط الجدول'); return; }
+  if(!url) { showMsg('gsheetMsg','ÙÙ ÙØ¶ÙÙ Ø£Ø¯Ø®Ù Ø±Ø§Ø¨Ø· Ø§ÙØ¬Ø¯ÙÙ'); return; }
 
   // Extract sheet ID and convert to CSV export URL
   const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-  if(!match) { showMsg('gsheetMsg','الرابط غير صحيح'); return; }
+  if(!match) { showMsg('gsheetMsg','Ø§ÙØ±Ø§Ø¨Ø· ØºÙØ± ØµØ­ÙØ­'); return; }
 
   const sheetId = match[1];
   const csvUrl  = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
 
-  showMsg('gsheetMsg','⏳ جاري الاستيراد...','success');
+  showMsg('gsheetMsg','â³ Ø¬Ø§Ø±Ù Ø§ÙØ§Ø³ØªÙØ±Ø§Ø¯...','success');
 
   try {
     const resp = await fetch(csvUrl);
-    if(!resp.ok) throw new Error('تعذّر الوصول');
+    if(!resp.ok) throw new Error('ØªØ¹Ø°ÙØ± Ø§ÙÙØµÙÙ');
     const text = await resp.text();
 
     // Parse CSV
@@ -2689,12 +2686,12 @@ async function importFromSheets() {
     });
 
     const map=[
-      {ids:['إيرادات','مبيعات','revenue','sales'], field:'f-rev'},
-      {ids:['تكلفة','cogs'], field:'f-cogs'},
-      {ids:['إيجار','rent'], field:'f-rent'},
-      {ids:['رواتب','salaries'], field:'f-sal'},
-      {ids:['تسويق','marketing'], field:'f-mkt'},
-      {ids:['أخرى','other'], field:'f-other'},
+      {ids:['Ø¥ÙØ±Ø§Ø¯Ø§Øª','ÙØ¨ÙØ¹Ø§Øª','revenue','sales'], field:'f-rev'},
+      {ids:['ØªÙÙÙØ©','cogs'], field:'f-cogs'},
+      {ids:['Ø¥ÙØ¬Ø§Ø±','rent'], field:'f-rent'},
+      {ids:['Ø±ÙØ§ØªØ¨','salaries'], field:'f-sal'},
+      {ids:['ØªØ³ÙÙÙ','marketing'], field:'f-mkt'},
+      {ids:['Ø£Ø®Ø±Ù','other'], field:'f-other'},
     ];
     let filled=0;
     map.forEach(m=>{
@@ -2702,21 +2699,21 @@ async function importFromSheets() {
       if(match){const el=document.getElementById(m.field);if(el){el.value=(parseFloat(match.v)||0).toLocaleString('en');filled++;}}
     });
 
-    showMsg('gsheetMsg', `✓ تم استيراد ${filled} حقل من Google Sheets`, 'success');
+    showMsg('gsheetMsg', `â ØªÙ Ø§Ø³ØªÙØ±Ø§Ø¯ ${filled} Ø­ÙÙ ÙÙ Google Sheets`, 'success');
     setTimeout(()=>showPage('analysis'), 1500);
   } catch(e) {
-    showMsg('gsheetMsg','تأكد أن الجدول مشارَك للعموم (Anyone with the link)','error');
+    showMsg('gsheetMsg','ØªØ£ÙØ¯ Ø£Ù Ø§ÙØ¬Ø¯ÙÙ ÙØ´Ø§Ø±ÙÙ ÙÙØ¹ÙÙÙ (Anyone with the link)','error');
   }
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // PRICING ANALYSIS
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function renderPricingPage() {
   const rep = STATE.currentReport;
   if(!rep || !rep.products?.length) {
     document.getElementById('pricingContent').innerHTML =
-      '<div class="feature-empty"><div class="fe-icon">💲</div><p>أضف منتجات في التحليل لتفعيل هذه الصفحة</p></div>';
+      '<div class="feature-empty"><div class="fe-icon">ð²</div><p>Ø£Ø¶Ù ÙÙØªØ¬Ø§Øª ÙÙ Ø§ÙØªØ­ÙÙÙ ÙØªÙØ¹ÙÙ ÙØ°Ù Ø§ÙØµÙØ­Ø©</p></div>';
     return;
   }
 
@@ -2725,12 +2722,12 @@ function renderPricingPage() {
 
   let html = `
     <div class="card" style="margin-bottom:16px;">
-      <div class="card-title"><div class="card-title-icon">📊</div>تأثير تغيير الأسعار على الربح</div>
+      <div class="card-title"><div class="card-title-icon">ð</div>ØªØ£Ø«ÙØ± ØªØºÙÙØ± Ø§ÙØ£Ø³Ø¹Ø§Ø± Ø¹ÙÙ Ø§ÙØ±Ø¨Ø­</div>
       <div class="pricing-row-head">
-        <span>المنتج</span><span style="text-align:center;">السعر الحالي</span>
-        <span style="text-align:center;">التغيير %</span>
-        <span style="text-align:center;">السعر الجديد</span>
-        <span style="text-align:center;">تأثير الربح</span>
+        <span>Ø§ÙÙÙØªØ¬</span><span style="text-align:center;">Ø§ÙØ³Ø¹Ø± Ø§ÙØ­Ø§ÙÙ</span>
+        <span style="text-align:center;">Ø§ÙØªØºÙÙØ± %</span>
+        <span style="text-align:center;">Ø§ÙØ³Ø¹Ø± Ø§ÙØ¬Ø¯ÙØ¯</span>
+        <span style="text-align:center;">ØªØ£Ø«ÙØ± Ø§ÙØ±Ø¨Ø­</span>
       </div>`;
 
   products.forEach((p,i) => {
@@ -2739,22 +2736,22 @@ function renderPricingPage() {
       <div class="pricing-row" id="pr-row-${i}">
         <div>
           <div class="pr-name">${p.name}</div>
-          <div style="font-size:11px;color:${margin>30?'var(--green)':margin<10?'var(--red)':'var(--warn)'};">هامش ${margin.toFixed(0)}%</div>
+          <div style="font-size:11px;color:${margin>30?'var(--green)':margin<10?'var(--red)':'var(--warn)'};">ÙØ§ÙØ´ ${margin.toFixed(0)}%</div>
         </div>
-        <div class="pr-val">${p.price} ر</div>
+        <div class="pr-val">${p.price} Ø±</div>
         <div style="text-align:center;">
           <input type="range" class="price-slider" id="pslider-${i}" min="-20" max="30" value="0"
             oninput="updatePricingRow(${i},${p.price},${p.cost},${p.qty||1})">
           <div style="font-size:12px;color:var(--gold);margin-top:4px;" id="pslider-val-${i}">0%</div>
         </div>
-        <div class="pr-val" id="pr-new-${i}">${p.price} ر</div>
-        <div class="pr-impact" id="pr-impact-${i}">+0 ر</div>
+        <div class="pr-val" id="pr-new-${i}">${p.price} Ø±</div>
+        <div class="pr-impact" id="pr-impact-${i}">+0 Ø±</div>
       </div>`;
   });
 
   html += `</div>
     <div class="pr-suggestion" id="pricingSuggestion">
-      💡 حرّك السلايدر لأي منتج وشوف تأثيره على الربح فوراً
+      ð¡ Ø­Ø±ÙÙ Ø§ÙØ³ÙØ§ÙØ¯Ø± ÙØ£Ù ÙÙØªØ¬ ÙØ´ÙÙ ØªØ£Ø«ÙØ±Ù Ø¹ÙÙ Ø§ÙØ±Ø¨Ø­ ÙÙØ±Ø§Ù
     </div>`;
 
   document.getElementById('pricingContent').innerHTML = html;
@@ -2770,17 +2767,17 @@ function updatePricingRow(i, origPrice, cost, qty) {
   const newMargin = ((newPrice-cost)/newPrice*100).toFixed(0);
 
   document.getElementById('pslider-val-'+i).textContent = (pct>=0?'+':'')+pct+'%';
-  document.getElementById('pr-new-'+i).textContent      = newPrice.toFixed(0)+' ر';
-  document.getElementById('pr-impact-'+i).textContent   = (delta>=0?'+':'')+fmt(delta)+' ر';
+  document.getElementById('pr-new-'+i).textContent      = newPrice.toFixed(0)+' Ø±';
+  document.getElementById('pr-impact-'+i).textContent   = (delta>=0?'+':'')+fmt(delta)+' Ø±';
   document.getElementById('pr-impact-'+i).style.color   = delta>=0?'var(--green)':'var(--red)';
 
   document.getElementById('pricingSuggestion').innerHTML =
-    `💡 رفع سعر <strong>${pct>=0?'رفع':'خفض'} ${Math.abs(pct)}%</strong> — السعر الجديد <strong>${newPrice.toFixed(0)} ر</strong> — هامش <strong>${newMargin}%</strong> — تأثير على الربح: <strong style="color:${delta>=0?'var(--green)':'var(--red)'};">${delta>=0?'+':''}${fmt(delta)} ر</strong>`;
+    `ð¡ Ø±ÙØ¹ Ø³Ø¹Ø± <strong>${pct>=0?'Ø±ÙØ¹':'Ø®ÙØ¶'} ${Math.abs(pct)}%</strong> â Ø§ÙØ³Ø¹Ø± Ø§ÙØ¬Ø¯ÙØ¯ <strong>${newPrice.toFixed(0)} Ø±</strong> â ÙØ§ÙØ´ <strong>${newMargin}%</strong> â ØªØ£Ø«ÙØ± Ø¹ÙÙ Ø§ÙØ±Ø¨Ø­: <strong style="color:${delta>=0?'var(--green)':'var(--red)'};">${delta>=0?'+':''}${fmt(delta)} Ø±</strong>`;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // SMART FORECAST
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 function renderSmartForecast() {
   const rep = STATE.currentReport;
   if(!rep) return;
@@ -2811,7 +2808,7 @@ function renderSmartForecast() {
   const b6m = calc6m(scenarios.base);
   const o6m = calc6m(scenarios.optimistic);
 
-  // Loss probability — based on margin and trend
+  // Loss probability â based on margin and trend
   const lossPct = Math.max(0, Math.min(100,
     m.netMargin < 0 ? 95 :
     m.netMargin < 5 ? 70 :
@@ -2832,49 +2829,49 @@ function renderSmartForecast() {
   document.getElementById('forecastPageContent').innerHTML = `
     <div class="grid-2">
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">⚠️</div>احتمالية الخسارة خلال 4 أشهر</div>
+        <div class="card-title"><div class="card-title-icon">â ï¸</div>Ø§Ø­ØªÙØ§ÙÙØ© Ø§ÙØ®Ø³Ø§Ø±Ø© Ø®ÙØ§Ù 4 Ø£Ø´ÙØ±</div>
         <div class="loss-meter">
           <div class="loss-prob" style="color:${lossColor};">${lossPct}%</div>
-          <div class="loss-label">احتمالية الخسارة</div>
+          <div class="loss-label">Ø§Ø­ØªÙØ§ÙÙØ© Ø§ÙØ®Ø³Ø§Ø±Ø©</div>
           <div style="margin-top:14px;">
             <div class="progress-track"><div class="progress-fill" style="width:${lossPct}%;background:${lossColor};"></div></div>
           </div>
           <div style="font-size:12px;color:${lossColor};margin-top:10px;font-weight:600;">
-            ${lossPct>60?'🔴 خطر مرتفع — اتخذ إجراء فوري':lossPct>30?'⚠️ خطر متوسط — راقب الوضع':'✅ خطر منخفض — الوضع مستقر'}
+            ${lossPct>60?'ð´ Ø®Ø·Ø± ÙØ±ØªÙØ¹ â Ø§ØªØ®Ø° Ø¥Ø¬Ø±Ø§Ø¡ ÙÙØ±Ù':lossPct>30?'â ï¸ Ø®Ø·Ø± ÙØªÙØ³Ø· â Ø±Ø§ÙØ¨ Ø§ÙÙØ¶Ø¹':'â Ø®Ø·Ø± ÙÙØ®ÙØ¶ â Ø§ÙÙØ¶Ø¹ ÙØ³ØªÙØ±'}
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات 6 أشهر</div>
+        <div class="card-title"><div class="card-title-icon">ð¯</div>Ø³ÙÙØ§Ø±ÙÙÙØ§Øª 6 Ø£Ø´ÙØ±</div>
         <div class="scenario-tab">
           <div class="sc-tab-item">
-            <div class="sc-tab-label">تشاؤمي</div>
-            <div class="sc-tab-val ${p6m>=0?'':''}  " style="color:${p6m>=0?'var(--warn)':'var(--red)'};">${fmt(p6m)} ر</div>
+            <div class="sc-tab-label">ØªØ´Ø§Ø¤ÙÙ</div>
+            <div class="sc-tab-val ${p6m>=0?'':''}  " style="color:${p6m>=0?'var(--warn)':'var(--red)'};">${fmt(p6m)} Ø±</div>
           </div>
           <div class="sc-tab-item active">
-            <div class="sc-tab-label">الوضع الحالي</div>
-            <div class="sc-tab-val">${fmt(b6m)} ر</div>
+            <div class="sc-tab-label">Ø§ÙÙØ¶Ø¹ Ø§ÙØ­Ø§ÙÙ</div>
+            <div class="sc-tab-val">${fmt(b6m)} Ø±</div>
           </div>
           <div class="sc-tab-item">
-            <div class="sc-tab-label">تفاؤلي</div>
-            <div class="sc-tab-val" style="color:var(--green);">${fmt(o6m)} ر</div>
+            <div class="sc-tab-label">ØªÙØ§Ø¤ÙÙ</div>
+            <div class="sc-tab-val" style="color:var(--green);">${fmt(o6m)} Ø±</div>
           </div>
         </div>
         <div class="alert alert-info">
-          <span class="alert-icon">💡</span>
-          <span>الفرق بين التشاؤمي والتفاؤلي: <strong>${fmt(o6m-p6m)} ر</strong> خلال 6 أشهر — القرارات الآن تحدد الفرق.</span>
+          <span class="alert-icon">ð¡</span>
+          <span>Ø§ÙÙØ±Ù Ø¨ÙÙ Ø§ÙØªØ´Ø§Ø¤ÙÙ ÙØ§ÙØªÙØ§Ø¤ÙÙ: <strong>${fmt(o6m-p6m)} Ø±</strong> Ø®ÙØ§Ù 6 Ø£Ø´ÙØ± â Ø§ÙÙØ±Ø§Ø±Ø§Øª Ø§ÙØ¢Ù ØªØ­Ø¯Ø¯ Ø§ÙÙØ±Ù.</span>
         </div>
       </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <div class="card-title"><div class="card-title-icon">📈</div>توقع الأداء الشهري — 6 أشهر قادمة</div>
+      <div class="card-title"><div class="card-title-icon">ð</div>ØªÙÙØ¹ Ø§ÙØ£Ø¯Ø§Ø¡ Ø§ÙØ´ÙØ±Ù â 6 Ø£Ø´ÙØ± ÙØ§Ø¯ÙØ©</div>
       <table class="cf-table">
-        <tr><th>الشهر</th><th>الإيرادات المتوقعة</th><th>المصاريف</th><th>الربح المتوقع</th><th>الهامش</th></tr>
+        <tr><th>Ø§ÙØ´ÙØ±</th><th>Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª Ø§ÙÙØªÙÙØ¹Ø©</th><th>Ø§ÙÙØµØ§Ø±ÙÙ</th><th>Ø§ÙØ±Ø¨Ø­ Ø§ÙÙØªÙÙØ¹</th><th>Ø§ÙÙØ§ÙØ´</th></tr>
         ${rows.map(r=>`
           <tr>
-            <td style="font-weight:600;color:var(--white);">شهر ${r.m}</td>
+            <td style="font-weight:600;color:var(--white);">Ø´ÙØ± ${r.m}</td>
             <td class="cf-in">+${fmt(r.rev)}</td>
             <td class="cf-out">-${fmt(r.exp)}</td>
             <td class="cf-net" style="color:${r.profit>=0?'var(--green)':'var(--red)'};">${fmt(r.profit)}</td>
@@ -2884,31 +2881,31 @@ function renderSmartForecast() {
     </div>`;
 }
 
-// ══════════════════════════════════════════
-// HEALTH ADVISOR — أهم 3 قرارات
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
+// HEALTH ADVISOR â Ø£ÙÙ 3 ÙØ±Ø§Ø±Ø§Øª
+// ââââââââââââââââââââââââââââââââââââââââââ
 async function renderHealthAdvisor() {
   const rep = STATE.currentReport;
   if(!rep) return;
 
   const c = document.getElementById('healthAdvisorContent');
-  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);">⏳ يحلل AI أهم قراراتك...</div>';
+  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);">â³ ÙØ­ÙÙ AI Ø£ÙÙ ÙØ±Ø§Ø±Ø§ØªÙ...</div>';
 
   const m = rep.metrics;
-  const prompt = `أنت مستشار مالي خبير. بناءً على بيانات "${rep.bizName}":
-هامش الربح: ${m.netMargin}% | تكلفة البضاعة: ${m.cogsPct}% | الإيجار: ${m.rentPct}% | الرواتب: ${m.salPct}%
-مؤشر الصحة: ${rep.scoreData?.total}/100
-التنبيهات: ${rep.alerts?.map(a=>a.msg).join(' | ')||'لا يوجد'}
+  const prompt = `Ø£ÙØª ÙØ³ØªØ´Ø§Ø± ÙØ§ÙÙ Ø®Ø¨ÙØ±. Ø¨ÙØ§Ø¡Ù Ø¹ÙÙ Ø¨ÙØ§ÙØ§Øª "${rep.bizName}":
+ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­: ${m.netMargin}% | ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø©: ${m.cogsPct}% | Ø§ÙØ¥ÙØ¬Ø§Ø±: ${m.rentPct}% | Ø§ÙØ±ÙØ§ØªØ¨: ${m.salPct}%
+ÙØ¤Ø´Ø± Ø§ÙØµØ­Ø©: ${rep.scoreData?.total}/100
+Ø§ÙØªÙØ¨ÙÙØ§Øª: ${rep.alerts?.map(a=>a.msg).join(' | ')||'ÙØ§ ÙÙØ¬Ø¯'}
 
-أعطني أهم 3 قرارات يجب اتخاذها الآن بتنسيق JSON فقط:
+Ø£Ø¹Ø·ÙÙ Ø£ÙÙ 3 ÙØ±Ø§Ø±Ø§Øª ÙØ¬Ø¨ Ø§ØªØ®Ø§Ø°ÙØ§ Ø§ÙØ¢Ù Ø¨ØªÙØ³ÙÙ JSON ÙÙØ·:
 {
   "decisions": [
     {
       "rank": 1,
-      "title": "عنوان القرار",
-      "why": "لماذا هذا مهم الآن مع أرقام",
-      "steps": ["خطوة 1", "خطوة 2", "خطوة 3"],
-      "impact": "التأثير المتوقع مثل: زيادة الربح 15% خلال شهر"
+      "title": "Ø¹ÙÙØ§Ù Ø§ÙÙØ±Ø§Ø±",
+      "why": "ÙÙØ§Ø°Ø§ ÙØ°Ø§ ÙÙÙ Ø§ÙØ¢Ù ÙØ¹ Ø£Ø±ÙØ§Ù",
+      "steps": ["Ø®Ø·ÙØ© 1", "Ø®Ø·ÙØ© 2", "Ø®Ø·ÙØ© 3"],
+      "impact": "Ø§ÙØªØ£Ø«ÙØ± Ø§ÙÙØªÙÙØ¹ ÙØ«Ù: Ø²ÙØ§Ø¯Ø© Ø§ÙØ±Ø¨Ø­ 15% Ø®ÙØ§Ù Ø´ÙØ±"
     }
   ]
 }`;
@@ -2935,13 +2932,13 @@ function defaultDecisions(rep) {
   const m = rep.metrics;
   const decisions = [];
   if(m.cogsPct > 45)
-    decisions.push({rank:1,title:'تكلفة البضاعة مرتفعة',why:`تكلفة البضاعة ${m.cogsPct}% من إيراداتك — أعلى من المعدل الطبيعي بـ ${(m.cogsPct-40).toFixed(0)}%`,steps:['راجع عقود الموردين الحاليين','ابحث عن موردين بديلين','فاوض على خصم كمية'],impact:`تخفيض 5% يوفر ${fmt(m.revenue*0.05)} ر شهرياً`});
+    decisions.push({rank:1,title:'ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø© ÙØ±ØªÙØ¹Ø©',why:`ØªÙÙÙØ© Ø§ÙØ¨Ø¶Ø§Ø¹Ø© ${m.cogsPct}% ÙÙ Ø¥ÙØ±Ø§Ø¯Ø§ØªÙ â Ø£Ø¹ÙÙ ÙÙ Ø§ÙÙØ¹Ø¯Ù Ø§ÙØ·Ø¨ÙØ¹Ù Ø¨Ù ${(m.cogsPct-40).toFixed(0)}%`,steps:['Ø±Ø§Ø¬Ø¹ Ø¹ÙÙØ¯ Ø§ÙÙÙØ±Ø¯ÙÙ Ø§ÙØ­Ø§ÙÙÙÙ','Ø§Ø¨Ø­Ø« Ø¹Ù ÙÙØ±Ø¯ÙÙ Ø¨Ø¯ÙÙÙÙ','ÙØ§ÙØ¶ Ø¹ÙÙ Ø®ØµÙ ÙÙÙØ©'],impact:`ØªØ®ÙÙØ¶ 5% ÙÙÙØ± ${fmt(m.revenue*0.05)} Ø± Ø´ÙØ±ÙØ§Ù`});
   if(m.netMargin < 10)
-    decisions.push({rank:decisions.length+1,title:'هامش الربح منخفض',why:`هامش ${m.netMargin}% أقل من المعدل الطبيعي ${m.bizType?.includes('مطعم')?'15-25%':'10-20%'}`,steps:['حدّد المنتجات ذات الهامش المنخفض','ارفع أسعارها 5-8%','أوقف المنتجات الخاسرة'],impact:`رفع الهامش 3% يضيف ${fmt(m.revenue*0.03)} ر شهرياً`});
+    decisions.push({rank:decisions.length+1,title:'ÙØ§ÙØ´ Ø§ÙØ±Ø¨Ø­ ÙÙØ®ÙØ¶',why:`ÙØ§ÙØ´ ${m.netMargin}% Ø£ÙÙ ÙÙ Ø§ÙÙØ¹Ø¯Ù Ø§ÙØ·Ø¨ÙØ¹Ù ${m.bizType?.includes('ÙØ·Ø¹Ù')?'15-25%':'10-20%'}`,steps:['Ø­Ø¯ÙØ¯ Ø§ÙÙÙØªØ¬Ø§Øª Ø°Ø§Øª Ø§ÙÙØ§ÙØ´ Ø§ÙÙÙØ®ÙØ¶','Ø§Ø±ÙØ¹ Ø£Ø³Ø¹Ø§Ø±ÙØ§ 5-8%','Ø£ÙÙÙ Ø§ÙÙÙØªØ¬Ø§Øª Ø§ÙØ®Ø§Ø³Ø±Ø©'],impact:`Ø±ÙØ¹ Ø§ÙÙØ§ÙØ´ 3% ÙØ¶ÙÙ ${fmt(m.revenue*0.03)} Ø± Ø´ÙØ±ÙØ§Ù`});
   if(m.salPct > 35)
-    decisions.push({rank:decisions.length+1,title:'الرواتب مرتفعة',why:`الرواتب ${m.salPct}% من الإيرادات — أعلى من المعدل`,steps:['راجع جداول الدوام','حدّد ساعات الذروة','فكّر في أتمتة بعض المهام'],impact:`تخفيض 10% يوفر ${fmt(m.salaries*0.1)} ر شهرياً`});
+    decisions.push({rank:decisions.length+1,title:'Ø§ÙØ±ÙØ§ØªØ¨ ÙØ±ØªÙØ¹Ø©',why:`Ø§ÙØ±ÙØ§ØªØ¨ ${m.salPct}% ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª â Ø£Ø¹ÙÙ ÙÙ Ø§ÙÙØ¹Ø¯Ù`,steps:['Ø±Ø§Ø¬Ø¹ Ø¬Ø¯Ø§ÙÙ Ø§ÙØ¯ÙØ§Ù','Ø­Ø¯ÙØ¯ Ø³Ø§Ø¹Ø§Øª Ø§ÙØ°Ø±ÙØ©','ÙÙÙØ± ÙÙ Ø£ØªÙØªØ© Ø¨Ø¹Ø¶ Ø§ÙÙÙØ§Ù'],impact:`ØªØ®ÙÙØ¶ 10% ÙÙÙØ± ${fmt(m.salaries*0.1)} Ø± Ø´ÙØ±ÙØ§Ù`});
   if(decisions.length === 0)
-    decisions.push({rank:1,title:'ركّز على النمو',why:`مشروعك بصحة جيدة (${rep.scoreData?.total}/100) — الآن وقت التوسع`,steps:['زِد ميزانية التسويق 20%','افتح قناة مبيعات جديدة','اطلق منتج جديد بهامش عالٍ'],impact:`نمو 10% يضيف ${fmt(m.revenue*0.1)} ر شهرياً`});
+    decisions.push({rank:1,title:'Ø±ÙÙØ² Ø¹ÙÙ Ø§ÙÙÙÙ',why:`ÙØ´Ø±ÙØ¹Ù Ø¨ØµØ­Ø© Ø¬ÙØ¯Ø© (${rep.scoreData?.total}/100) â Ø§ÙØ¢Ù ÙÙØª Ø§ÙØªÙØ³Ø¹`,steps:['Ø²ÙØ¯ ÙÙØ²Ø§ÙÙØ© Ø§ÙØªØ³ÙÙÙ 20%','Ø§ÙØªØ­ ÙÙØ§Ø© ÙØ¨ÙØ¹Ø§Øª Ø¬Ø¯ÙØ¯Ø©','Ø§Ø·ÙÙ ÙÙØªØ¬ Ø¬Ø¯ÙØ¯ Ø¨ÙØ§ÙØ´ Ø¹Ø§ÙÙ'],impact:`ÙÙÙ 10% ÙØ¶ÙÙ ${fmt(m.revenue*0.1)} Ø± Ø´ÙØ±ÙØ§Ù`});
   return decisions.slice(0,3);
 }
 
@@ -2953,7 +2950,7 @@ function drawHealthAdvisor(decisions) {
     <div class="kpi-row kpi-row-3" style="margin-bottom:20px;">
       ${decisions.map((d,i)=>`
         <div class="kpi" style="border-right:3px solid ${borderColors[i]||'var(--gold)'};">
-          <div style="font-size:22px;margin-bottom:6px;">${i===0?'1️⃣':i===1?'2️⃣':'3️⃣'}</div>
+          <div style="font-size:22px;margin-bottom:6px;">${i===0?'1ï¸â£':i===1?'2ï¸â£':'3ï¸â£'}</div>
           <div class="kpi-label" style="font-size:13px;color:var(--white);font-weight:600;">${d.title}</div>
         </div>`).join('')}
     </div>
@@ -2967,13 +2964,13 @@ function drawHealthAdvisor(decisions) {
         <div class="decision-actions">
           ${(d.steps||[]).map((s,j)=>`<div class="da-step"><div class="da-num">${j+1}</div><span>${s}</span></div>`).join('')}
         </div>
-        <div class="decision-impact">📈 ${d.impact}</div>
+        <div class="decision-impact">ð ${d.impact}</div>
       </div>`).join('')}`;
 }
 
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 // PATCH showPage to trigger page-specific logic
-// ══════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââ
 
 // CSS animation
 const style=document.createElement('style');
