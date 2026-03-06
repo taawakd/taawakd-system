@@ -2495,7 +2495,7 @@ async function sendCFO(quickMsg) {
         'Authorization': 'Bearer ' + window.__AUTH_TOKEN__
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'gpt-4o-mini',
         max_tokens: 1000,
         system: systemPrompt,
         messages: messages
@@ -2600,7 +2600,7 @@ async function generateActionPlan() {
         'Authorization': 'Bearer ' + (window.__AUTH_TOKEN__ || '')
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        model: 'gpt-4o-mini', max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -3057,7 +3057,7 @@ async function renderHealthAdvisor() {
     const resp = await fetch('/api/analyze', {
       method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+(window.__AUTH_TOKEN__||'')},
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:800,
+        model:'gpt-4o-mini', max_tokens:800,
         messages:[{role:'user',content:prompt}]
       })
     });
