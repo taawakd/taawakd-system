@@ -2156,6 +2156,57 @@ function handleExcel(input) {
       const wb = XLSX.read(e.target.result, {type:'binary'});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(ws, {header:1});
+
+      // دالة تحويل الأرقام العربية للإنجليزية
+      function parseNum(v) {
+        if (v === null || v === undefined || v === '') return 0;
+        const s = String(v).replace(/[٠١٢٣٤٥٦٧٨٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+                            .replace(/٫/g, '.').replace(/,/g, '');
+        return parseFloat(s) || 0;
+      }
+
+      // === نوع ١: جدول طلبات يومية (تاريخ + مبيعات) ===
+      const headers = data[0] ? data[0].map(h => String(h||'').trim()) : [];
+      const hasDateCol = headers.some(h => h.includes('تاريخ') || h.includes('date') || h.includes('Date'));
+      const hasSalesCol = headers.some(h => h.includes('مبيعات') || h.includes('sales') || h.includes('Sales') || h.includes('المبيعات'));
+
+      if (hasDateCol && hasSalesCol) {
+        // إيجاد فهرس عمود المبيعات الإجمالية
+        const salesIdx = headers.findIndex(h => h.includes('المبيعات') || (h.includes('مبيعات') && !h.includes('عبر') && !h.includes('نقد') && !h.includes('تسليم') && !h.includes('بيك')));
+        const ordersIdx = headers.findIndex(h => h === 'الطلبات' || h === 'orders' || h === 'Orders');
+
+        let totalRevenue = 0;
+        let totalOrders = 0;
+        let days = 0;
+
+        data.slice(1).forEach(row => {
+          if (!row[0]) return;
+          totalRevenue += parseNum(row[salesIdx]);
+          if (ordersIdx >= 0) totalOrders += parseNum(row[ordersIdx]);
+          days++;
+        });
+
+        // ملء حقل الإيرادات
+        const revEl = document.getElementById('f-rev');
+        if (revEl) { revEl.value = totalRevenue.toLocaleString('en'); revEl.dispatchEvent(new Event('input')); }
+
+        // عرض ملاحظة للمستخدم
+        const note = document.getElementById('excel-note') || (() => {
+          const d = document.createElement('div');
+          d.id = 'excel-note';
+          d.style = 'background:#1a3a2a;border:1px solid #4caf50;border-radius:8px;padding:12px;margin-top:8px;font-size:13px;color:#4caf50;direction:rtl;text-align:right';
+          input.parentElement.appendChild(d);
+          return d;
+        })();
+        note.innerHTML = `✅ تم قراءة تقرير الطلبات اليومية (<b>${days} يوم</b>)<br>
+          💰 إجمالي المبيعات: <b>${totalRevenue.toLocaleString('ar-SA')} ريال</b><br>
+          📦 إجمالي الطلبات: <b>${totalOrders}</b><br>
+          📊 متوسط يومي: <b>${Math.round(totalRevenue/days).toLocaleString('ar-SA')} ريال</b><br>
+          <span style="color:#aaa;font-size:11px">⚠️ أدخل المصاريف يدوياً لإكمال التحليل</span>`;
+        return;
+      }
+
+      // === نوع ٢: الطريقة الأصلية — key/value pairs ===
       const pairs = [];
       data.forEach(row=>{
         if(!row) return;
@@ -2167,9 +2218,9 @@ function handleExcel(input) {
       });
       const map=[
         {ids:['اسم','name','project'], field:'f-name', type:'text'},
-        {ids:['إيرادات','مبيعات','revenue','sales'], field:'f-rev', type:'num'},
-        {ids:['تكلفة البضاعة','cogs','cost of goods'], field:'f-cogs', type:'num'},
-        {ids:['إيجار','rent'], field:'f-rent', type:'num'},
+        {ids:['مبيعات','ايرادات','إيرادات','revenue','sales'], field:'f-rev', type:'num'},
+        {ids:['cogs','تكلفة البضاعة','cost of goods'], field:'f-cogs', type:'num'},
+        {ids:['إيجار','ايجار','rent'], field:'f-rent', type:'num'},
         {ids:['رواتب','salaries'], field:'f-sal', type:'num'},
         {ids:['تسويق','marketing'], field:'f-mkt', type:'num'},
         {ids:['مصاريف أخرى','other'], field:'f-other', type:'num'},
@@ -2183,9 +2234,9 @@ function handleExcel(input) {
           if(el){el.value=m.type==='num'?(parseFloat(match.v)||0).toLocaleString('en'):match.v;filled++;}
         }
       });
-      showMsg('excelMsg',`✓ تم قراءة "${file.name}" — ملء ${filled} حقل`,'success');
-      liveCalc();
-    } catch(err){showMsg('excelMsg','تعذّر قراءة الملف','error');}
+    } catch(err) {
+      console.error('Excel error:', err);
+    }
   };
   reader.readAsBinaryString(file);
 }
