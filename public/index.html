@@ -482,7 +482,10 @@ function signOut() {
     <div class="nav-item" onclick="showPage('scenarios')">
       <span class="nav-icon">🎯</span> سيناريوهات
     </div>
-    <div class="nav-item" onclick="showPage('compare')">
+    <div class="nav-item" onclick="showPage('profile')">
+        <span class="nav-icon">🏢</span> ملف المشروع
+      </div>
+      <div class="nav-item" onclick="showPage('compare')">
       <span class="nav-icon">⚖️</span> مقارنة الفترات
     </div>
 
@@ -1130,6 +1133,124 @@ function signOut() {
     <button class="btn btn-primary" style="margin-top:16px;" onclick="showPage('analysis')">+ تحليل جديد</button></div>
   </div>
 </div>
+
+  <!-- صفحة ملف المشروع -->
+  <div class="page" id="page-profile">
+    <div class="page-header">
+      <div class="page-title"><h1>🏢 ملف المشروع</h1></div>
+      <p style="color:var(--gray);margin-top:4px">سجّل بيانات مشروعك مرة واحدة — النظام يبني عليها كل تحليل</p>
+    </div>
+
+    <div class="grid-2" style="gap:16px">
+
+      <!-- العمود الأيمن: معلومات المشروع + التكاليف الثابتة -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- معلومات أساسية -->
+        <div class="card">
+          <div class="card-title"><div class="card-title-icon">🏷️</div>معلومات المشروع</div>
+          <div class="form-grid">
+            <div class="form-group"><label>اسم المشروع</label>
+              <input class="input" id="bp-name" type="text" placeholder="مطعم الوليد"></div>
+            <div class="form-group"><label>نوع النشاط</label>
+              <select class="input" id="bp-type">
+                <option value="">اختر النوع</option>
+                <option value="restaurant">🍽️ مطعم</option>
+                <option value="cafe">☕ مقهى / كافيه</option>
+                <option value="juice_kiosk">🥤 كيوسك عصائر</option>
+                <option value="bakery">🥐 مخبز / حلويات</option>
+                <option value="food_truck">🚚 فود ترك</option>
+                <option value="retail">🛍️ متجر تجزئة</option>
+                <option value="services">⚙️ خدمات</option>
+                <option value="barber">✂️ حلاقة وتجميل</option>
+                <option value="ecom">💻 تجارة إلكترونية</option>
+                <option value="other">📦 أخرى</option>
+              </select></div>
+          </div>
+        </div>
+
+        <!-- التكاليف الثابتة -->
+        <div class="card">
+          <div class="card-title"><div class="card-title-icon">📌</div>التكاليف الثابتة الشهرية</div>
+          <p style="color:var(--gray);font-size:12px;margin-bottom:12px">تكاليف لا تتغير بغض النظر عن حجم المبيعات</p>
+          <div class="form-grid">
+            <div class="form-group"><label>الإيجار (﷼)</label>
+              <input class="input num-input" id="bp-rent" type="number" placeholder="0" min="0"></div>
+            <div class="form-group"><label>الرواتب (﷼)</label>
+              <input class="input num-input" id="bp-salaries" type="number" placeholder="0" min="0"></div>
+            <div class="form-group"><label>الكهرباء والمياه (﷼)</label>
+              <input class="input num-input" id="bp-utilities" type="number" placeholder="0" min="0"></div>
+            <div class="form-group"><label>الاشتراكات والتراخيص (﷼)</label>
+              <input class="input num-input" id="bp-subscriptions" type="number" placeholder="0" min="0"></div>
+            <div class="form-group full"><label>مصاريف ثابتة أخرى (﷼)</label>
+              <input class="input num-input" id="bp-fixed-other" type="number" placeholder="0" min="0"></div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:var(--bg-card);border-radius:8px;display:flex;justify-content:space-between">
+            <span style="color:var(--gray)">إجمالي التكاليف الثابتة / شهر</span>
+            <span style="color:var(--gold);font-weight:700" id="bp-fixed-total">﷼ 0</span>
+          </div>
+        </div>
+
+        <!-- التكاليف المتغيرة -->
+        <div class="card">
+          <div class="card-title"><div class="card-title-icon">📊</div>التكاليف المتغيرة (% من الإيرادات)</div>
+          <p style="color:var(--gray);font-size:12px;margin-bottom:12px">تكاليف ترتفع وتنخفض مع حجم المبيعات</p>
+          <div class="form-grid">
+            <div class="form-group"><label>تكلفة البضاعة COGS %</label>
+              <input class="input num-input" id="bp-cogs" type="number" placeholder="30" min="0" max="100"></div>
+            <div class="form-group"><label>عمولات التوصيل %</label>
+              <input class="input num-input" id="bp-delivery" type="number" placeholder="15" min="0" max="100"></div>
+            <div class="form-group"><label>التسويق %</label>
+              <input class="input num-input" id="bp-marketing" type="number" placeholder="5" min="0" max="100"></div>
+            <div class="form-group"><label>متغيرة أخرى %</label>
+              <input class="input num-input" id="bp-var-other" type="number" placeholder="0" min="0" max="100"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- العمود الأيسر: قائمة المنتجات -->
+      <div class="card" style="height:fit-content">
+        <div class="card-title"><div class="card-title-icon">📦</div>قائمة المنتجات</div>
+        <p style="color:var(--gray);font-size:12px;margin-bottom:12px">سعر التكلفة وسعر البيع لكل منتج — النظام يحسب الهامش الحقيقي</p>
+
+        <!-- إضافة منتج -->
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:12px;align-items:end">
+          <div>
+            <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">اسم المنتج</label>
+            <input class="input" id="bp-prod-name" type="text" placeholder="قهوة عربية">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">التكلفة ﷼</label>
+            <input class="input num-input" id="bp-prod-cost" type="number" placeholder="5" min="0">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--gray);display:block;margin-bottom:4px">سعر البيع ﷼</label>
+            <input class="input num-input" id="bp-prod-price" type="number" placeholder="18" min="0">
+          </div>
+          <button onclick="addBPProduct()" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700;font-size:16px;height:42px">+</button>
+        </div>
+
+        <!-- أو رفع Excel -->
+        <div style="border:1px dashed #333;border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;cursor:pointer" onclick="document.getElementById('bp-products-file').click()">
+          <div style="font-size:20px">📎</div>
+          <div style="font-size:12px;color:var(--gray)">أو ارفع ملف Excel بالمنتجات</div>
+          <input type="file" id="bp-products-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importBPProducts(this)">
+        </div>
+
+        <!-- جدول المنتجات -->
+        <div id="bp-products-table" style="max-height:400px;overflow-y:auto">
+          <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">لا يوجد منتجات بعد</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- زر الحفظ -->
+    <div style="margin-top:20px;display:flex;gap:12px;justify-content:flex-end">
+      <div id="bp-save-status" style="color:var(--gray);font-size:13px;align-self:center"></div>
+      <button onclick="saveBusinessProfile()" class="btn-primary" style="padding:12px 32px;font-size:15px">💾 حفظ ملف المشروع</button>
+    </div>
+  </div>
+
 
 </div><!-- end main-area -->
 </div><!-- end app -->
@@ -2043,7 +2164,7 @@ async function runAnalysis() {
     ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n')
     : 'لا توجد بيانات منتجات.';
 
-  const prompt = `أنت مستشار مالي خبير للمشاريع الصغيرة والمتوسطة السعودية.
+  const prompt = `${bpContext}\nأنت مستشار مالي خبير للمشاريع الصغيرة والمتوسطة السعودية.
 
 بيانات ${bizName} (${bizType}) — تحليل ${period}:
 - الإيرادات: ${revenue.toLocaleString()} ريال
@@ -3318,6 +3439,151 @@ function drawHealthAdvisor(decisions) {
 const style=document.createElement('style');
 style.textContent='@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}';
 document.head.appendChild(style);
+
+// ============ ملف المشروع ============
+let BP_PRODUCTS = []; // قائمة المنتجات في الذاكرة
+
+function calcBPFixed() {
+  const ids = ['bp-rent','bp-salaries','bp-utilities','bp-subscriptions','bp-fixed-other'];
+  const total = ids.reduce((s,id) => s + (parseFloat(document.getElementById(id)?.value)||0), 0);
+  const el = document.getElementById('bp-fixed-total');
+  if (el) el.textContent = '﷼ ' + total.toLocaleString('en');
+}
+document.querySelectorAll('#bp-rent,#bp-salaries,#bp-utilities,#bp-subscriptions,#bp-fixed-other')
+  .forEach(el => el?.addEventListener('input', calcBPFixed));
+
+function renderBPProducts() {
+  const el = document.getElementById('bp-products-table');
+  if (!el) return;
+  if (!BP_PRODUCTS.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">لا يوجد منتجات بعد</div>';
+    return;
+  }
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
+    '<thead><tr style="background:#1a1a1a;color:#aaa">' +
+    '<th style="padding:6px 8px;text-align:right;border-bottom:1px solid #222">المنتج</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">التكلفة ﷼</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">السعر ﷼</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">الهامش %</th>' +
+    '<th style="padding:6px 8px;border-bottom:1px solid #222"></th>' +
+    '</tr></thead><tbody>' +
+    BP_PRODUCTS.map((p,i) => {
+      const margin = p.price > 0 ? ((p.price - p.cost) / p.price * 100).toFixed(1) : 0;
+      const color  = margin >= 50 ? '#4caf82' : margin >= 30 ? '#d4af37' : '#d95f5f';
+      return '<tr style="background:' + (i%2===0?'#111':'#0d0d0d') + '">' +
+        '<td style="padding:6px 8px;color:#eee">' + p.name + '</td>' +
+        '<td style="padding:6px 8px;text-align:center;color:#aaa">' + p.cost + '</td>' +
+        '<td style="padding:6px 8px;text-align:center;color:#d4af37">' + p.price + '</td>' +
+        '<td style="padding:6px 8px;text-align:center;color:' + color + ';font-weight:700">' + margin + '%</td>' +
+        '<td style="padding:6px 8px;text-align:center"><button onclick="removeBPProduct(' + i + ')" style="background:none;border:none;color:#d95f5f;cursor:pointer;font-size:14px">🗑</button></td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+function addBPProduct() {
+  const name  = document.getElementById('bp-prod-name')?.value.trim();
+  const cost  = parseFloat(document.getElementById('bp-prod-cost')?.value) || 0;
+  const price = parseFloat(document.getElementById('bp-prod-price')?.value) || 0;
+  if (!name) { toast('أدخل اسم المنتج'); return; }
+  if (price <= 0) { toast('أدخل سعر البيع'); return; }
+  BP_PRODUCTS.push({ name, cost, price });
+  document.getElementById('bp-prod-name').value  = '';
+  document.getElementById('bp-prod-cost').value  = '';
+  document.getElementById('bp-prod-price').value = '';
+  renderBPProducts();
+}
+
+function removeBPProduct(i) {
+  BP_PRODUCTS.splice(i, 1);
+  renderBPProducts();
+}
+
+function importBPProducts(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb   = XLSX.read(e.target.result, {type:'binary'});
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, {header:1});
+    const headers = (data[0]||[]).map(h => String(h||'').trim());
+    const nameIdx  = headers.findIndex(h => h.includes('اسم') || h.includes('منتج') || h.includes('name'));
+    const costIdx  = headers.findIndex(h => h.includes('تكلفة') || h.includes('cost') || h.includes('Cost'));
+    const priceIdx = headers.findIndex(h => h.includes('سعر') || h.includes('price') || h.includes('Price') || h.includes('بيع'));
+    let added = 0;
+    data.slice(1).forEach(row => {
+      const name  = String(row[nameIdx]||'').trim();
+      const cost  = parseFloat(row[costIdx])  || 0;
+      const price = parseFloat(row[priceIdx]) || 0;
+      if (name && price > 0) { BP_PRODUCTS.push({name, cost, price}); added++; }
+    });
+    renderBPProducts();
+    toast('✅ تم استيراد ' + added + ' منتج');
+  };
+  reader.readAsBinaryString(file);
+}
+
+async function saveBusinessProfile() {
+  const statusEl = document.getElementById('bp-save-status');
+  if (statusEl) statusEl.textContent = 'جاري الحفظ...';
+  try {
+    const { data: { user } } = await window.supabase.auth.getUser();
+    if (!user) { toast('يجب تسجيل الدخول أولاً'); return; }
+    const profile = {
+      user_id: user.id,
+      biz_name: document.getElementById('bp-name')?.value || '',
+      biz_type: document.getElementById('bp-type')?.value || '',
+      fixed_rent:          parseFloat(document.getElementById('bp-rent')?.value)          || 0,
+      fixed_salaries:      parseFloat(document.getElementById('bp-salaries')?.value)      || 0,
+      fixed_utilities:     parseFloat(document.getElementById('bp-utilities')?.value)     || 0,
+      fixed_subscriptions: parseFloat(document.getElementById('bp-subscriptions')?.value) || 0,
+      fixed_other:         parseFloat(document.getElementById('bp-fixed-other')?.value)   || 0,
+      var_cogs_pct:        parseFloat(document.getElementById('bp-cogs')?.value)          || 0,
+      var_delivery_pct:    parseFloat(document.getElementById('bp-delivery')?.value)      || 0,
+      var_marketing_pct:   parseFloat(document.getElementById('bp-marketing')?.value)     || 0,
+      var_other_pct:       parseFloat(document.getElementById('bp-var-other')?.value)     || 0,
+      products: BP_PRODUCTS,
+    };
+    const { error } = await window.supabase.from('business_profile')
+      .upsert(profile, { onConflict: 'user_id' });
+    if (error) throw error;
+    window._businessProfile = profile;
+    if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
+    toast('✅ تم حفظ ملف المشروع');
+  } catch(err) {
+    console.error(err);
+    if (statusEl) statusEl.textContent = '❌ خطأ في الحفظ';
+    toast('❌ خطأ: ' + err.message);
+  }
+}
+
+async function loadBusinessProfile() {
+  try {
+    const { data: { user } } = await window.supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await window.supabase.from('business_profile')
+      .select('*').eq('user_id', user.id).single();
+    if (error || !data) return;
+    window._businessProfile = data;
+    BP_PRODUCTS = data.products || [];
+    // ملء الحقول
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('bp-name', data.biz_name);
+    set('bp-type', data.biz_type);
+    set('bp-rent', data.fixed_rent);
+    set('bp-salaries', data.fixed_salaries);
+    set('bp-utilities', data.fixed_utilities);
+    set('bp-subscriptions', data.fixed_subscriptions);
+    set('bp-fixed-other', data.fixed_other);
+    set('bp-cogs', data.var_cogs_pct);
+    set('bp-delivery', data.var_delivery_pct);
+    set('bp-marketing', data.var_marketing_pct);
+    set('bp-var-other', data.var_other_pct);
+    calcBPFixed();
+    renderBPProducts();
+  } catch(e) { console.warn('loadBusinessProfile:', e); }
+}
+// ============ نهاية ملف المشروع ============
 </script>
 </body>
 </html>
