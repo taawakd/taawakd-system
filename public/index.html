@@ -463,6 +463,7 @@ function signOut() {
   const url  = window.__SUPABASE_URL__  || '';
   const anon = window.__SUPABASE_ANON__ || '';
   if (!url) { window.location.href = '/auth.html'; return; }
+</script>
 <!-- ============================================================ -->
 <!-- JS مقسّم لملفات منفصلة -->
 <!-- ============================================================ -->
@@ -1437,7 +1438,7 @@ function showPage(name) {
   if (!url || !anon) return; // لو Supabase مش مهيّأ، اشتغل بدون auth
 
   const sb = window.supabase.createClient(url, anon);
-  sb = sb; // expose for global use
+  window.sb = sb; // expose for global use
 
   // استرداد الـ token عند تحميل الصفحة
   sb.auth.getSession().then(({ data: { session } }) => {
