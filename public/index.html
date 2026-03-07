@@ -763,8 +763,8 @@ function signOut() {
           <div class="live-item"><div class="live-val" id="lv-be">—</div><div class="live-lbl">نقطة التعادل</div></div>
         </div>
       </div>
-      <button class="btn-primary" style="width:100%;padding:18px;font-size:16px;border-radius:14px" onclick="runAnalysis()" id="analyzBtn">
-        <span id="analyzBtnText">🔍 تحليل المشروع الآن</span>
+      <button class="btn-primary" style="width:100%;padding:18px;font-size:16px;border-radius:14px" onclick="runAnalysis()" id="analyzeBtn">
+        <span id="analyzeBtnText">🔍 تحليل المشروع الآن</span>
         <div class="spin-sm" id="analyzeSpin" style="border-top-color:#000;display:none"></div>
       </button>
       <div class="msg error" id="analysisError"></div>
@@ -1399,29 +1399,32 @@ function showPage(name) {
 // LIVE CALCULATOR
 // ══════════════════════════════════════════
 function liveCalc() {
-  const rev = getN('f-rev');
-  if(!rev){document.getElementById('liveBar').style.display='none';return;}
-  const exp = getN('f-cogs')+getN('f-rent')+getN('f-sal')+getN('f-mkt')+getN('f-other');
-  const profit = rev-exp;
-  const margin = pct(profit,rev);
-  const be = exp; // simplified break-even = fixed costs + variable ratio
+  const getN = id => { const e = document.getElementById(id); return e ? parseFloat(e.value)||0 : 0; };
+  const fmt = n => Math.abs(n).toLocaleString('en');
+  const pct = (a,b) => b===0 ? 0 : Math.round(a/b*100);
 
-  document.getElementById('liveBar').style.display = 'grid';
-  document.getElementById('lv-exp').textContent = fmt(exp)+' ر';
-  document.getElementById('lv-exp').style.color = 'var(--white)';
+  const rev  = getN('f-rev');
+  const exp  = getN('f-cogs')+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
+  const profit = rev - exp;
+  const margin = pct(profit, rev);
+  const be = exp;
 
-  const pv = document.getElementById('lv-profit');
-  pv.textContent = (profit>=0?'+':'')+fmt(profit)+' ر';
-  pv.style.color = profit>=0 ? 'var(--green)' : 'var(--red)';
+  const setEl = (id, text, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    if (color) el.style.color = color;
+  };
 
-  const mv = document.getElementById('lv-margin');
-  mv.textContent = margin+'%';
-  mv.style.color = parseFloat(margin)>15 ? 'var(--green)' : parseFloat(margin)<5 ? 'var(--red)' : 'var(--warn)';
+  setEl('lv-total-exp', fmt(exp) + ' ر', 'var(--white)');
+  setEl('lv-profit',    (profit>=0?'+':'-') + fmt(profit) + ' ر', profit>=0 ? 'var(--green)' : 'var(--red)');
+  setEl('lv-margin',    margin + '%', margin>=15 ? 'var(--green)' : margin>=0 ? 'var(--gold)' : 'var(--red)');
+  setEl('lv-be',        fmt(be) + ' ر', 'var(--white)');
 
-  document.getElementById('lv-be').textContent = fmt(be)+' ر';
-
-  // also update product analysis
-  updateProductAnalysis();
+  // backward compat — العناصر القديمة إن وجدت
+  setEl('lv-exp',    fmt(exp) + ' ر');
+  const liveBar = document.getElementById('liveBar');
+  if (liveBar) liveBar.style.display = 'grid';
 }
 
 // ══════════════════════════════════════════
