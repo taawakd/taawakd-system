@@ -1904,12 +1904,17 @@ function initChart() {
 
 function togglePeriod() {
   const v = (document.getElementById('f-period')||{}).value || 'شهري';
+  const map = {
+    'شهري':'month','يومي':'day','أسبوعي':'week',
+    'سنوي':'year','ربع سنوي':'quarter','نصف سنوي':'half','مخصص':'custom',
+    'month':'month','day':'day','week':'week','year':'year',
+    'quarter':'quarter','half':'half','custom':'custom'
+  };
+  const key = map[v] || 'month';
   const all = ['pi-month','pi-day','pi-week','pi-year','pi-quarter','pi-half','pi-custom'];
   all.forEach(id => { const e = document.getElementById(id); if(e) e.style.display='none'; });
-  const map = { 'شهري':'pi-month','يومي':'pi-day','أسبوعي':'pi-week',
-    'سنوي':'pi-year','ربع سنوي':'pi-quarter','نصف سنوي':'pi-half','مخصص':'pi-custom' };
-  const show = document.getElementById(map[v] || 'pi-month');
-  if(show) show.style.display = 'block';
+  const show = document.getElementById('pi-' + key);
+  if(show) show.style.display = '';
 }
 
 function updateCustomPeriodLabel() {
@@ -2074,7 +2079,7 @@ async function runAnalysis() {
   const bizName   = document.getElementById('f-name').value || 'مشروعك';
   const bizType   = document.getElementById('f-type').value || 'غير محدد';
   const period    = getPeriodLabel();
-  const employees = getN('f-employees');
+  const employees = getN('f-emp');
   const notes     = document.getElementById('f-notes').value;
   const products  = collectProducts();
   const sectorKey = getSectorKey(bizType);
