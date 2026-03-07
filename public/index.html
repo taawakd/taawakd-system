@@ -772,50 +772,7 @@ function signOut() {
       </div>
     </div>
 
-    <!-- Right column — Products -->
-    <div class="card">
-      <div class="card-title"><div class="card-title-icon">📦</div>المنتجات / الخدمات</div>
-      <div class="prod-head">
-        <span>المنتج</span><span>سعر البيع</span><span>التكلفة</span><span>الكمية</span><span>الهامش</span><span></span>
-      </div>
-      <div id="prodsContainer">
-        <div class="prod-row">
-          <input class="input" type="text" placeholder="اسم المنتج">
-          <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
-          <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
-          <input class="input num-input" inputmode="numeric" placeholder="0">
-          <input class="input" type="text" placeholder="—" readonly style="color:var(--gold);font-weight:700;">
-          <button class="btn-rm" onclick="removeRow(this)">×</button>
-        </div>
-        <div class="prod-row">
-          <input class="input" type="text" placeholder="اسم المنتج">
-          <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
-          <input class="input num-input" inputmode="numeric" placeholder="0" oninput="calcRowMargin(this)">
-          <input class="input num-input" inputmode="numeric" placeholder="0">
-          <input class="input" type="text" placeholder="—" readonly style="color:var(--gold);font-weight:700;">
-          <button class="btn-rm" onclick="removeRow(this)">×</button>
-        </div>
-      </div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center;" onclick="addProdRow()">+ إضافة منتج</button>
-
-      <!-- Products analysis preview -->
-      <div id="prodAnalysis" style="margin-top:20px;display:none;">
-        <div class="card-title" style="margin-bottom:12px;"><div class="card-title-icon">🏆</div>ترتيب المنتجات</div>
-        <div id="prodRanking"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Analyze Button -->
-  <button class="btn btn-primary" style="width:100%;justify-content:center;padding:18px;font-size:16px;margin-top:20px;border-radius:14px;" onclick="runAnalysis()" id="analyzeBtn">
-    <span id="analyzeBtnText">تحليل المشروع الآن</span>
-    <div class="spin-sm" id="analyzeSpin" style="border-top-color:#000;"></div>
-    <span id="analyzeBtnIcon">🔍</span>
-  </button>
-  <div class="msg error" id="analysisError"></div>
-</div>
-</div>
-<!-- ════ RESULTS PAGE ════ -->
+>
 <div class="page" id="page-results">
   <div class="page-header">
     <div class="page-title">
