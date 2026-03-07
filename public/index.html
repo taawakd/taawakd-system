@@ -2093,8 +2093,8 @@ async function runAnalysis() {
   document.getElementById('loadingOverlay').classList.add('show');
 
   const cogs=getN('f-cogs'), rent=getN('f-rent'), salaries=getN('f-sal');
-  const marketing=getN('f-mkt'), other=getN('f-other');
-  const totalExpenses = cogs+rent+salaries+marketing+other;
+  const marketing=getN('f-mkt'), other=getN('f-other'), utilities=getN('f-utilities');
+  const totalExpenses = cogs+rent+salaries+marketing+other+utilities+utilities;
   const netProfit = revenue-totalExpenses;
   const netMargin = parseFloat(pct(netProfit,revenue));
   const grossMargin = parseFloat(pct(revenue-cogs, revenue));
