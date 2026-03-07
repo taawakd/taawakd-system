@@ -2432,172 +2432,90 @@ function deleteSavedReport(id) {
 // EXCEL IMPORT
 // ══════════════════════════════════════════
 function handleExcel(input) {
-  const file = input.files[0]; if(!file) return;
+  const file = input.files[0];
+  if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const wb = XLSX.read(e.target.result, {type:'binary'});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, {header:1});
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if (!rows.length) { toast('الملف فارغ'); return; }
 
-      function parseNum(v) {
-        if (v === null || v === undefined || v === '') return 0;
-        const s = String(v).replace(/[٠١٢٣٤٥٦٧٨٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-                           .replace(/,/g, '').replace(/٫/g, '.');
-        return parseFloat(s) || 0;
+      const clean = s => String(s||'').trim().replace(/\s+/g,' ');
+      const num = v => { const n=parseFloat(String(v).replace(/[,،\s]/g,'')); return isNaN(n)?0:n; };
+      const set = (id,v) => { const el=document.getElementById(id); if(el){el.value=v; el.dispatchEvent(new Event('input'));} };
+
+      // النوع ١: جدول منتجات (أعمدة)
+      const headers = rows[0].map(h => clean(h).toLowerCase());
+      const hasProduct = headers.some(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف'));
+      const hasQty = headers.some(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد'));
+      const hasRev = headers.some(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue'));
+      if (hasProduct && (hasQty||hasRev)) {
+        const nI=headers.findIndex(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف'));
+        const qI=headers.findIndex(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد'));
+        const rI=headers.findIndex(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue'));
+        const cI=headers.findIndex(h=>h.includes('تكلفة')||h.includes('cost'));
+        const products=rows.slice(1).filter(r=>clean(r[nI])).map(r=>({
+          name:clean(r[nI]), qty:qI>=0?num(r[qI]):0, revenue:rI>=0?num(r[rI]):0, cost:cI>=0?num(r[cI]):0
+        })).filter(p=>p.qty>0||p.revenue>0);
+        if(products.length){showProductTable(products);toast('✅ تم قراءة '+products.length+' منتج');return;}
       }
 
-      const headers = data[0] ? data[0].map(h => String(h||'').trim()) : [];
-      const rows = data.slice(1).filter(r => r && r[0]);
-
-      // === نوع ١: ملخص مبيعات المنتجات ===
-      const hasProductCol = headers.some(h => h.includes('منتج') || h.includes('product') || h.includes('Product'));
-      const hasSalesCol   = headers.some(h => h.includes('مبيعات') || h.includes('sales') || h.includes('Sales'));
-
-      if (hasProductCol && hasSalesCol) {
-        const productIdx = headers.findIndex(h => h.includes('منتج') || h.includes('product') || h.includes('Product'));
-        const salesIdx   = headers.findIndex(h => h.includes('مبيعات') && !h.includes('ضريبة') && !h.includes('شامل') && !h.includes('توصيل') && !h.includes('بيك') && !h.includes('انترنت') && !h.includes('نقد'));
-        const salesWithTaxIdx = headers.findIndex(h => h.includes('شامل'));
-        const taxIdx     = headers.findIndex(h => h.includes('ضريبة') && !h.includes('شامل'));
-        const qtyIdx     = headers.findIndex(h => h.includes('كمية') || h.includes('qty') || h.includes('Qty'));
-        const discountIdx= headers.findIndex(h => h.includes('خصم') || h.includes('discount'));
-        const profitIdx  = headers.findIndex(h => h.includes('ربح') || h.includes('profit'));
-
-        let totalRevenue = 0, totalTax = 0, totalQty = 0, totalDiscount = 0;
-        const products = [];
-
-        rows.forEach(row => {
-          const name    = String(row[productIdx] || '').trim();
-          const rev     = salesIdx >= 0        ? parseNum(row[salesIdx])     : 0;
-          const tax     = taxIdx >= 0          ? parseNum(row[taxIdx])       : 0;
-          const qty     = qtyIdx >= 0          ? parseNum(row[qtyIdx])       : 0;
-          const disc    = discountIdx >= 0     ? parseNum(row[discountIdx])  : 0;
-          const profit  = profitIdx >= 0       ? parseNum(row[profitIdx])    : rev;
-
-          totalRevenue  += rev;
-          totalTax      += tax;
-          totalQty      += qty;
-          totalDiscount += disc;
-
-          if (name && rev > 0) {
-            // دمج نفس المنتج إذا تكرر
-            const existing = products.find(p => p.name === name);
-            if (existing) { existing.qty += qty; existing.rev += rev; }
-            else products.push({ name, qty, rev });
-          }
-        });
-
-        products.sort((a, b) => b.rev - a.rev);
-
-        // ملء حقل الإيرادات
-        const revEl = document.getElementById('f-rev');
-        if (revEl) { revEl.value = Math.round(totalRevenue).toLocaleString('en'); revEl.dispatchEvent(new Event('input')); }
-
-        // بناء جدول المنتجات
-        const topProducts = products.slice(0, 3).map(p => p.name.substring(0,25)).join('، ');
-        const productsTableHTML = '<div style="margin-top:12px;border-top:1px solid #333;padding-top:10px">' +
-          '<div style="font-weight:700;margin-bottom:8px;color:#d4af37;">📦 تفاصيل المنتجات (' + products.length + ' منتج)</div>' +
-          '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">' +
-          '<thead><tr style="background:#1a1a1a;color:#aaa">' +
-          '<th style="padding:6px 8px;text-align:right;border-bottom:1px solid #333">المنتج</th>' +
-          '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #333">الكمية</th>' +
-          '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #333">المبيعات</th>' +
-          '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #333">%</th>' +
-          '</tr></thead><tbody>' +
-          products.map((p, i) => {
-            const pct = totalRevenue > 0 ? (p.rev / totalRevenue * 100).toFixed(1) : 0;
-            const barWidth = Math.round(pct);
-            const rowBg = i % 2 === 0 ? '#111' : '#0d0d0d';
-            return '<tr style="background:' + rowBg + '">' +
-              '<td style="padding:6px 8px;color:#eee">' + (i < 3 ? ['🥇','🥈','🥉'][i] + ' ' : '') + p.name + '</td>' +
-              '<td style="padding:6px 8px;text-align:center;color:#aaa">' + Math.round(p.qty) + '</td>' +
-              '<td style="padding:6px 8px;text-align:center;color:#d4af37;font-weight:600">﷼' + Math.round(p.rev).toLocaleString('en') + '</td>' +
-              '<td style="padding:6px 8px;text-align:center"><div style="background:#222;border-radius:4px;height:16px;position:relative"><div style="background:#d4af37;border-radius:4px;height:100%;width:' + barWidth + '%;min-width:2px"></div><span style="position:absolute;left:50%;top:0;transform:translateX(-50%);font-size:10px;color:#fff;line-height:16px">' + pct + '%</span></div></td>' +
-              '</tr>';
-          }).join('') +
-          '</tbody><tfoot><tr style="background:#1a1a1a;font-weight:700">' +
-          '<td style="padding:6px 8px;color:#fff">المجموع</td>' +
-          '<td style="padding:6px 8px;text-align:center;color:#fff">' + Math.round(totalQty) + '</td>' +
-          '<td style="padding:6px 8px;text-align:center;color:#d4af37">﷼' + Math.round(totalRevenue).toLocaleString('en') + '</td>' +
-          '<td style="padding:6px 8px;text-align:center;color:#fff">100%</td>' +
-          '</tr></tfoot></table></div></div>';
-
-        // عرض الملاحظة مع جدول المنتجات
-        const note = document.getElementById('excel-note') || (() => { const d = document.createElement('div'); d.id='excel-note'; d.style='background:#1a2a1a;border:1px solid #4a7c4a;border-radius:8px;padding:12px;margin:8px 0;font-size:13px;color:#90EE90;direction:rtl'; input.parentElement.appendChild(d); return d; })();
-        note.innerHTML =
-          '<b>✅ تم قراءة ملف مبيعات المنتجات</b><br>' +
-          '﷼ إجمالي المبيعات: <b>' + Math.round(totalRevenue).toLocaleString('ar-SA') + ' ﷼</b><br>' +
-          '🧾 ضريبة القيمة المضافة: <b>' + Math.round(totalTax).toLocaleString('ar-SA') + ' ﷼</b><br>' +
-          '📦 ' + Math.round(totalQty) + ' وحدة من ' + products.length + ' منتج | أعلى مبيعاً: ' + topProducts +
-          productsTableHTML +
-          '<span style="color:#aaa;font-size:11px;display:block;margin-top:8px">⚠️ أدخل المصاريف يدوياً لإكمال التحليل</span>';
-        return;
-      }
-
-      // === نوع ٢: جدول طلبات يومية ===
-      const hasDateCol  = headers.some(h => h.includes('تاريخ') || h.includes('date') || h.includes('Date'));
-      const hasDailySalesCol = headers.some(h => h.includes('مبيعات') || h.includes('sales') || h.includes('Sales'));
-
-      if (hasDateCol && hasDailySalesCol) {
-        const salesIdx  = headers.findIndex(h => (h.includes('مبيعات') || h.includes('sales') || h.includes('Sales')) && !h.includes('انترنت') && !h.includes('نقد') && !h.includes('توصيل') && !h.includes('بيك'));
-        const ordersIdx = headers.findIndex(h => h === 'الطلبات' || h === 'orders' || h === 'Orders');
-
-        let totalRevenue = 0, totalOrders = 0, days = 0;
-        rows.forEach(row => {
-          if (!row[0]) return;
-          totalRevenue += parseNum(salesIdx >= 0 ? row[salesIdx] : 0);
-          totalOrders  += parseNum(ordersIdx >= 0 ? row[ordersIdx] : 0);
-          days++;
-        });
-
-        const revEl = document.getElementById('f-rev');
-        if (revEl) { revEl.value = Math.round(totalRevenue).toLocaleString('en'); revEl.dispatchEvent(new Event('input')); }
-
-        const note = document.getElementById('excel-note') || (() => { const d = document.createElement('div'); d.id='excel-note'; d.style='background:#1a2a1a;border:1px solid #4a7c4a;border-radius:8px;padding:12px;margin:8px 0;font-size:13px;color:#90EE90;direction:rtl'; input.parentElement.appendChild(d); return d; })();
-        note.innerHTML =
-          '<b>✅ تم قراءة تقرير الطلبات اليومية</b> (<b>' + days + '</b> يوم)<br>' +
-          '﷼ إجمالي المبيعات: <b>' + Math.round(totalRevenue).toLocaleString('ar-SA') + ' ﷼</b><br>' +
-          '🛒 إجمالي الطلبات: <b>' + totalOrders + '</b><br>' +
-          '📊 متوسط يومي: <b>' + Math.round(totalRevenue/days).toLocaleString('ar-SA') + ' ﷼</b><br>' +
-          '<span style="color:#aaa;font-size:11px">⚠️ أدخل المصاريف يدوياً لإكمال التحليل</span>';
-        return;
-      }
-
-      // === نوع ٣: key-value pairs ===
-      const pairs = [];
-      data.forEach(row=>{
-        if(!row) return;
-        for(let i=0;i<row.length-1;i++){
-          const k=String(row[i]||'').trim().toLowerCase();
-          const v=row[i+1];
-          if(k&&v!==undefined&&v!=='') pairs.push({k,v});
+      // النوع ٢: تقرير يومي
+      const hasDate=headers.some(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
+      const hasSales=headers.some(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
+      if(hasDate&&hasSales){
+        const dI=headers.findIndex(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
+        const sI=headers.findIndex(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
+        const data=rows.slice(1).filter(r=>r[sI]).map(r=>({date:clean(r[dI]),sales:num(r[sI])}));
+        if(data.length){
+          const total=data.reduce((s,r)=>s+r.sales,0);
+          set('f-rev',total);
+          toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en'));
+          return;
         }
-      });
-      const map=[
-        {ids:['اسم','name','project'], field:'f-name', type:'text'},
-        {ids:['إيرادات','ايرادات','revenue','sales','مبيعات'], field:'f-rev', type:'num'},
-        {ids:['cogs','تكلفة البضاعة','cost of goods'], field:'f-cogs', type:'num'},
-        {ids:['إيجار','ايجار','rent'], field:'f-rent', type:'num'},
-        {ids:['رواتب','salaries'], field:'f-sal', type:'num'},
-        {ids:['تسويق','marketing'], field:'f-mkt', type:'num'},
-        {ids:['مصاريف أخرى','other'], field:'f-other', type:'num'},
-        {ids:['موظفين','employees'], field:'f-employees', type:'num'},
+      }
+
+      // النوع ٣: key-value — البيانات الرئيسية
+      const pairs=[];
+      rows.forEach(row=>{const k=clean(row[0]),v=row[1];if(k&&v!==''&&v!==undefined)pairs.push([k,v]);});
+
+      const fieldMap=[
+        {field:'f-name',    keys:['اسم المشروع','اسم مشروع','اسم النشاط','المشروع','اسم الكافيه','اسم المطعم','اسم المتجر']},
+        {field:'f-type',    keys:['نوع النشاط','نوع المشروع','القطاع','النشاط','نوع']},
+        {field:'f-rev',     keys:['الإيرادات','إيرادات','المبيعات','مبيعات','إجمالي المبيعات','إجمالي الإيرادات','الدخل','revenue','sales']},
+        {field:'f-cogs',    keys:['تكلفة المواد','تكلفة البضاعة','تكلفة المنتجات','تكلفة الخامات','cogs','تكلفة المبيعات','تكلفة البضائع']},
+        {field:'f-sal',     keys:['رواتب الموظفين','الرواتب','رواتب','أجور','salaries','wages']},
+        {field:'f-rent',    keys:['الإيجار','إيجار','rent','اجار']},
+        {field:'f-utilities',keys:['الكهرباء والماء','الكهرباء والمياه','كهرباء وماء','كهرباء','utilities']},
+        {field:'f-mkt',     keys:['التسويق','تسويق','إعلانات','دعاية وإعلان','marketing']},
+        {field:'f-other',   keys:['مصروفات أخرى','مصاريف أخرى','أخرى','متنوع','other']},
       ];
-      let filled=0;
-      map.forEach(m=>{
-        const match=pairs.find(p=>m.ids.some(id=>p.k.includes(id)));
-        if(match){
-          const el=document.getElementById(m.field);
-          if(el){el.value=m.type==='num'?(parseFloat(match.v)||0).toLocaleString('en'):match.v;filled++;}
+
+      let matched=0;
+      pairs.forEach(([k,v])=>{
+        const kC=k.replace(/\s+/g,'');
+        for(const {field,keys} of fieldMap){
+          if(keys.some(key=>kC.includes(key.replace(/\s+/g,''))||key.replace(/\s+/g,'').includes(kC))){
+            if(field==='f-name'||field==='f-type') set(field,String(v).trim());
+            else set(field,num(v));
+            matched++; break;
+          }
+        }
+        if(k.includes('الفترة')||k.includes('فترة')){
+          const el=document.getElementById('f-period');
+          if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof toggleCustomPeriod==='function')toggleCustomPeriod();}
+        }
+        if(k.includes('الشهر')||k.includes('شهر')){
+          const el=document.getElementById('f-month');if(el)set('f-month',String(v).trim());
         }
       });
-      const note = document.getElementById('excel-note') || (() => { const d = document.createElement('div'); d.id='excel-note'; d.style='background:#1a2a1a;border:1px solid #4a7c4a;border-radius:8px;padding:12px;margin:8px 0;font-size:13px;color:#90EE90;direction:rtl'; input.parentElement.appendChild(d); return d; })();
-      note.innerHTML = '✅ تم قراءة الملف — ملء ' + filled + ' حقل';
 
-    } catch(err) {
-      console.error('Excel error:', err);
-      alert('خطأ في قراءة الملف: ' + err.message);
-    }
+      if(matched>0){if(typeof liveCalc==='function')liveCalc();toast('✅ تم قراءة '+matched+' حقل من الملف');}
+      else toast('⚠️ تنسيق الملف غير معروف — استخدم عمودين: البند والمبلغ');
+
+    } catch(err){console.error('handleExcel:',err);toast('❌ خطأ: '+err.message);}
   };
   reader.readAsBinaryString(file);
 }
