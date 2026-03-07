@@ -423,6 +423,10 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   sb.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
       localStorage.removeItem('tw_user_id');
+      window.__USER__ = null;
+      window.__AUTH_TOKEN__ = null;
+      window.bpContext = '';
+      window.CFO_HISTORY = [];
       window.location.href = '/auth.html';
     } else if (event === 'SIGNED_IN' && session) {
       const prev = localStorage.getItem('tw_user_id');
@@ -434,6 +438,13 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       }
       localStorage.setItem('tw_user_id', session.user.id);
       window.__AUTH_TOKEN__ = session.access_token;
+      // تصفير بيانات المستخدم السابق
+      window.bpContext = '';
+      window.CFO_HISTORY = [];
+      // مسح التقارير المحفوظة من المستخدم السابق وإعادة جلبها من Supabase
+      localStorage.removeItem('tw_reports');
+      STATE.savedReports = [];
+      loadReportsFromDB();
     }
   });
 
@@ -1402,6 +1413,7 @@ function showPage(name) {
   if(name==='forecast' && STATE.currentReport) renderSmartForecast();
   if(name==='healthadvisor' && STATE.currentReport) renderHealthAdvisor();
   if(name==='profile') loadBusinessProfile();
+  loadReportsFromDB();
   window.scrollTo(0,0);
 }
 
@@ -2333,6 +2345,33 @@ function updateDashboard() {
 // ══════════════════════════════════════════
 // SAVED REPORTS
 // ══════════════════════════════════════════
+async function loadReportsFromDB() {
+  try {
+    const user = window.__USER__;
+    if (!user) return;
+    const userId = typeof user === 'string' ? user : user.id;
+    const { data, error } = await window.supabase
+      .from('reports')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (error || !data) return;
+    // تحويل البيانات لشكل STATE
+    STATE.savedReports = data.map(r => ({
+      id: r.id,
+      bizName: r.biz_name,
+      bizType: r.biz_type,
+      period: r.period,
+      metrics: { revenue: r.revenue, totalExpenses: r.total_expenses, netProfit: r.net_profit, netMargin: r.net_margin, healthScore: r.health_score },
+      scoreData: { total: r.health_score },
+      reportJson: r.report_json,
+      date: r.created_at
+    }));
+    localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
+  } catch(e) { console.warn('loadReportsFromDB error:', e); }
+}
+
 function renderSavedReports() {
   const grid = document.getElementById('savedReportsGrid');
   if(!STATE.savedReports.length){
@@ -2624,11 +2663,10 @@ async function sendCFO(quickMsg) {
 
   try {
     // ✅ إصلاح 401: تأكد من وجود التوكن قبل الإرسال
-    if (!window.__AUTH_TOKEN__) {
-      const { data: { session } } = await window.supabase.auth.getSession();
-      if (!session) { window.location.href = '/auth.html'; return; }
-      window.__AUTH_TOKEN__ = session.access_token;
-    }
+    const { data: { session: freshSession } } = await window.supabase.auth.getSession();
+    if (!freshSession) { window.location.href = '/auth.html'; return; }
+    window.__AUTH_TOKEN__ = freshSession.access_token;
+    window.__USER__ = freshSession.user;
 
     const systemPrompt = buildCFOSystemPrompt(ctx);
 
