@@ -70,6 +70,7 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(
 /* ── PAGES ── */
 .page{display:none;padding:28px 36px 60px;}
 .page.active{display:block;}
+#page-cfo.active{display:flex;flex-direction:column;padding-bottom:24px;}
 
 /* ── CARDS ── */
 .card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;}
@@ -255,7 +256,7 @@ textarea.input{resize:vertical;min-height:80px;}
 }
 
 /* ── AI CFO ── */
-.cfo-wrap{display:flex;flex-direction:column;height:calc(100vh - 130px);min-height:500px;}
+.cfo-wrap{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
 .cfo-messages{flex:1;overflow-y:auto;padding:20px 0;display:flex;flex-direction:column;gap:16px;}
 .cfo-msg{display:flex;gap:12px;animation:fadeUp 0.3s ease;}
 .cfo-msg.user{flex-direction:row-reverse;}
@@ -384,6 +385,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   if (!url || !anon) return; // لو Supabase مش مهيّأ، اشتغل بدون auth
 
   const sb = window.supabase.createClient(url, anon);
+  window._sb = sb; // expose for global use
 
   // استرداد الـ token عند تحميل الصفحة
   sb.auth.getSession().then(({ data: { session } }) => {
@@ -2350,7 +2352,7 @@ async function loadReportsFromDB() {
     const user = window.__USER__;
     if (!user) return;
     const userId = typeof user === 'string' ? user : user.id;
-    const { data, error } = await window.supabase
+    const { data, error } = await window._sb
       .from('reports')
       .select('*')
       .eq('user_id', userId)
@@ -2663,10 +2665,8 @@ async function sendCFO(quickMsg) {
 
   try {
     // ✅ إصلاح 401: تأكد من وجود التوكن قبل الإرسال
-    const { data: { session: freshSession } } = await sb.auth.getSession();
-    if (!freshSession) { window.location.href = '/auth.html'; return; }
-    window.__AUTH_TOKEN__ = freshSession.access_token;
-    window.__USER__ = freshSession.user;
+    // التوكن محفوظ من onAuthStateChange — نستخدمه مباشرة
+    if (!window.__AUTH_TOKEN__) { window.location.href = '/auth.html'; return; }
 
     const systemPrompt = buildCFOSystemPrompt(ctx);
 
