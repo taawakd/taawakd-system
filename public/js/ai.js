@@ -611,7 +611,7 @@ async function sendCFO(quickMsg) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + window.__AUTH_TOKEN__
+        'Authorization': 'Bearer ' + (window.__AUTH_TOKEN__ || '')
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
