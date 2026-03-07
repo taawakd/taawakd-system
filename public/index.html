@@ -626,7 +626,8 @@ function signOut() {
       <h1>تحليل مشروع</h1>
       <p>أدخل بياناتك أو ارفع ملف Excel للحصول على تشخيص كامل</p>
     </div>
-  </div>
+  
+
 
   <!-- Excel Upload -->
   <div class="excel-zone" id="excelZone">
@@ -813,7 +814,7 @@ function signOut() {
   </button>
   <div class="msg error" id="analysisError"></div>
 </div>
-
+</div>
 <!-- ════ RESULTS PAGE ════ -->
 <div class="page" id="page-results">
   <div class="page-header">
@@ -1432,6 +1433,7 @@ function showPage(name) {
   if(name==='pricing')      renderPricingPage();
   if(name==='forecast' && STATE.currentReport) renderSmartForecast();
   if(name==='healthadvisor' && STATE.currentReport) renderHealthAdvisor();
+  if(name==='profile') loadBusinessProfile();
   window.scrollTo(0,0);
 }
 
