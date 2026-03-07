@@ -384,6 +384,14 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   if (!url || !anon) return; // لو Supabase مش مهيّأ، اشتغل بدون auth
 
   const sb = window.supabase.createClient(url, anon);
+
+  // استرداد الـ token عند تحميل الصفحة
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      window.__AUTH_TOKEN__ = session.access_token;
+      window.__USER__ = session.user.id;
+    }
+  });
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
