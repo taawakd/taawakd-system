@@ -1986,45 +1986,47 @@ function initChart() {
 }
 
 function toggleCustomPeriod() {
-  const val = document.getElementById('f-period').value;
-  const wrap = document.getElementById('customPeriodWrap');
-  const types = ['يومي','أسبوعي','شهري','ربع سنوي','نصف سنوي','سنوي','مخصص'];
+  const val = document.getElementById('f-period')?.value || '';
+  const cpw = document.getElementById('customPeriodWrap');
+  if (!cpw) return;
 
-  // أخفِ كل الحقول أولاً
-  types.forEach(t => {
+  const allWraps = ['يومي','أسبوعي','شهري','ربع سنوي','نصف سنوي','سنوي','مخصص'];
+
+  // إخفاء الكل أولاً
+  allWraps.forEach(t => {
     const el = document.getElementById('wrap-' + t);
     if (el) el.style.display = 'none';
   });
 
-  if (val === 'يومي' || val === 'أسبوعي' || val === 'شهري' ||
-      val === 'ربع سنوي' || val === 'نصف سنوي' || val === 'سنوي' || val === 'مخصص') {
-    wrap.style.display = 'block';
-    const target = document.getElementById('wrap-' + val);
-    if (target) target.style.display = val.includes('ربع') || val.includes('نصف') || val === 'مخصص' ? 'grid' : 'block';
-    // تعيين قيمة افتراضية لشهري وسنوي
+  if (!val || val === 'مخصص' && false) {
+    cpw.style.display = 'none';
+    return;
+  }
+
+  cpw.style.display = 'block';
+
+  // إظهار الـ wrap المناسب فقط
+  const target = document.getElementById('wrap-' + val);
+  if (target) {
+    target.style.display = 'block';
+    // تعبئة قيمة افتراضية
+    const now = new Date();
     if (val === 'شهري') {
-      const el = document.getElementById('f-month');
-      if (el && !el.value) { const d = new Date(); el.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+      const m = document.getElementById('f-month');
+      if (m && !m.value) m.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    } else if (val === 'سنوي') {
+      const y = document.getElementById('f-year');
+      if (y && !y.value) y.value = now.getFullYear();
+    } else if (val === 'يومي') {
+      const dt = document.getElementById('f-single-date');
+      if (dt && !dt.value) dt.value = now.toISOString().slice(0,10);
+    } else if (val === 'مخصص') {
+      const from = document.getElementById('f-from');
+      const to   = document.getElementById('f-to');
+      const d30  = new Date(now); d30.setDate(d30.getDate()-30);
+      if (from && !from.value) from.value = d30.toISOString().slice(0,10);
+      if (to   && !to.value)   to.value   = now.toISOString().slice(0,10);
     }
-    if (val === 'سنوي') {
-      const el = document.getElementById('f-year');
-      if (el && !el.value) el.value = new Date().getFullYear();
-    }
-    if (val === 'يومي') {
-      const el = document.getElementById('f-single-date');
-      if (el && !el.value) el.value = new Date().toISOString().slice(0,10);
-    }
-    if (val === 'مخصص') {
-      const today = new Date();
-      const from  = new Date(today); from.setDate(today.getDate()-30);
-      const toEl   = document.getElementById('f-date-to');
-      const fromEl = document.getElementById('f-date-from');
-      if (toEl && !toEl.value)   toEl.value   = today.toISOString().slice(0,10);
-      if (fromEl && !fromEl.value) fromEl.value = from.toISOString().slice(0,10);
-    }
-    updateCustomPeriodLabel();
-  } else {
-    wrap.style.display = 'none';
   }
 }
 
