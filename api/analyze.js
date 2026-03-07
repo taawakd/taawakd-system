@@ -95,9 +95,35 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: body.model || 'gpt-4o-mini',
-        max_tokens: body.max_tokens || 1000,
-        messages: messages,
+        model: 'gpt-4o-mini',
+        temperature: 0.2,
+        max_tokens: 600,
+        messages: [
+          {
+            role: 'system',
+            content: `أنت مستشار مالي متخصص في تحليل المشاريع الصغيرة والمتوسطة في السوق السعودي.
+نوع النشاط يُحدد من البيانات المُرسلة تلقائياً — مطعم، مقهى، متجر، خدمات، صالون، مغسلة، أو غيره.
+
+القواعد الصارمة:
+- لا تكتب مقدمات أو مجاملات أو خاتمة.
+- لا تستخدم كلام عام مثل "قد يكون" أو "ربما" أو "يُنصح".
+- كل توصية يجب أن تحتوي رقماً أو نسبة مئوية محددة.
+- الحد الأقصى لكل قسم: نقطتان فقط.
+- الرد كله أقل من 120 كلمة.
+- لا تعد المعلومات الموجودة في البيانات.
+- لا تستخدم تنسيق تقني مثل [SECTION] أو markdown headers.
+
+هيكل الرد الإلزامي (أربعة أقسام فقط):
+التشخيص
+نقاط القوة
+المشاكل
+أفضل 3 إجراءات لتحسين الربح`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
       })
     });
 
