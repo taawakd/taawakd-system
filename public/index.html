@@ -1477,33 +1477,20 @@ function collectProducts(){
   },[]);
 }
 
-function updateProductAnalysis(){
-  const products = collectProducts().filter(p=>p.price>0);
-  if(!products.length){document.getElementById('prodAnalysis').style.display='none';return;}
-
-  const rev = getN('f-rev');
-  const withMargins = products.map(p=>{
-    const margin = p.price>0 ? ((p.price-p.cost)/p.price*100) : 0;
-    const revenue = p.price * p.qty;
-    const profit  = (p.price-p.cost) * p.qty;
-    return {...p, margin, revenue, profit};
-  }).sort((a,b)=>b.margin-a.margin);
-
-  const totalProfit = withMargins.reduce((s,p)=>s+p.profit,0);
-
-  document.getElementById('prodAnalysis').style.display='block';
-  document.getElementById('prodRanking').innerHTML = withMargins.map((p,i)=>`
-    <div class="prod-analysis-row">
-      <div class="prod-rank ${i===0?'rank-1':i===1?'rank-2':'rank-3'}">${i+1}</div>
-      <div style="flex:1;">
-        <div class="prod-an-name">${p.name}</div>
-        <div class="prod-an-bar"><div class="prod-an-fill" style="width:${Math.min(100,p.margin)}%;background:${p.margin>30?'var(--green)':p.margin<10?'var(--red)':'var(--warn)'};"></div></div>
-      </div>
-      <div style="text-align:center;">
-        <div class="prod-an-margin" style="color:${p.margin>30?'var(--green)':p.margin<10?'var(--red)':'var(--warn)'};">${p.margin.toFixed(0)}%</div>
-        <div class="prod-an-contrib">هامش الربح</div>
-      </div>
-    </div>`).join('');
+function updateProductAnalysis(products) {
+  const el = document.getElementById('prodAnalysis');
+  const ranking = document.getElementById('prodRanking');
+  if (!el || !ranking) return; // العناصر غير موجودة في هذه الصفحة
+  if (!products || !products.length) { el.style.display='none'; return; }
+  el.style.display = 'block';
+  const sorted = [...products].sort((a,b)=>(b.revenue||0)-(a.revenue||0));
+  const total = sorted.reduce((s,p)=>s+(p.revenue||0),0);
+  const medals = ['🥇','🥈','🥉'];
+  ranking.innerHTML = sorted.map((p,i) => {
+    const pct = total>0 ? ((p.revenue/total)*100).toFixed(1) : 0;
+    const margin = p.price>0 ? (((p.price-p.cost)/p.price)*100).toFixed(1) : (p.cost>0&&p.revenue>0 ? (((p.revenue-p.cost)/p.revenue)*100).toFixed(1) : 0);
+    return '<div class="prod-rank-item"><span>'+(medals[i]||'▪️')+' '+p.name+'</span><span style="color:var(--gold)">'+pct+'%</span><span style="color:#4caf82">هامش '+margin+'%</span></div>';
+  }).join('');
 }
 
 // ══════════════════════════════════════════
