@@ -673,13 +673,54 @@ function signOut() {
             </select>
           </div>
           <div class="form-group"><label>عدد الموظفين</label><input class="input" id="f-employees" inputmode="numeric" placeholder="0"></div>
-          <div class="form-gr<div class="form-group" id="customPeriodWrap" style="display:none;">
-            <label>تحديد الفترة</label>
+          <div class="form-gr<div class="form-gr<div class="form-group" id="customPeriodWrap" style="display:none">
+            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">تحديد الفترة</label>
 
             <div id="wrap-يومي" style="display:none">
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">اليوم</label>
               <input class="input" type="date" id="f-single-date">
             </div>
+
+            <div id="wrap-أسبوعي" style="display:none">
+              <input class="input" type="week" id="f-week">
+            </div>
+
+            <div id="wrap-شهري" style="display:none">
+              <input class="input" type="month" id="f-month" placeholder="2026-03">
+            </div>
+
+            <div id="wrap-ربع سنوي" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <select class="input" id="f-quarter">
+                  <option value="Q1">Q1 يناير-مارس</option>
+                  <option value="Q2">Q2 أبريل-يونيو</option>
+                  <option value="Q3">Q3 يوليو-سبتمبر</option>
+                  <option value="Q4">Q4 أكتوبر-ديسمبر</option>
+                </select>
+                <input class="input" type="number" id="f-year-q" placeholder="2026">
+              </div>
+            </div>
+
+            <div id="wrap-نصف سنوي" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <select class="input" id="f-half">
+                  <option value="H1">H1 يناير-يونيو</option>
+                  <option value="H2">H2 يوليو-ديسمبر</option>
+                </select>
+                <input class="input" type="number" id="f-year-h" placeholder="2026">
+              </div>
+            </div>
+
+            <div id="wrap-سنوي" style="display:none">
+              <input class="input" type="number" id="f-year" placeholder="2026">
+            </div>
+
+            <div id="wrap-مخصص" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <input class="input" type="date" id="f-from">
+                <input class="input" type="date" id="f-to">
+              </div>
+            </div>
+          </div>
 
             <div id="wrap-أسبوعي" style="display:none">
               <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الأسبوع</label>
