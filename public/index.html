@@ -385,7 +385,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   if (!url || !anon) return; // لو Supabase مش مهيّأ، اشتغل بدون auth
 
   const sb = window.supabase.createClient(url, anon);
-  window._sb = sb; // expose for global use
+  sb = sb; // expose for global use
 
   // استرداد الـ token عند تحميل الصفحة
   sb.auth.getSession().then(({ data: { session } }) => {
@@ -2352,7 +2352,7 @@ async function loadReportsFromDB() {
     const user = window.__USER__;
     if (!user) return;
     const userId = typeof user === 'string' ? user : user.id;
-    const { data, error } = await window._sb
+    const { data, error } = await sb
       .from('reports')
       .select('*')
       .eq('user_id', userId)
