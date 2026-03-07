@@ -2044,15 +2044,15 @@ async function runAnalysis() {
   if(!revenue){ showMsg('analysisError','من فضلك أدخل إجمالي الإيرادات'); return; }
 
   const btn = document.getElementById('analyzeBtn');
-  document.getElementById('analyzeBtnText').textContent = 'جاري التحليل...';
-  document.getElementById('analyzeSpin').style.display = 'block';
-  document.getElementById('analyzeBtnIcon').style.display = 'none';
+  if(document.getElementById('analyzeBtnText')) document.getElementById('analyzeBtnText').textContent = 'جاري التحليل...';
+  if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'block';
+  
   btn.disabled = true;
-  document.getElementById('loadingOverlay').classList.add('show');
+  if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.add('show');
 
   const cogs=getN('f-cogs'), rent=getN('f-rent'), salaries=getN('f-sal');
   const marketing=getN('f-mkt'), other=getN('f-other'), utilities=getN('f-utilities');
-  const totalExpenses = cogs+rent+salaries+marketing+other+utilities+utilities;
+  const totalExpenses = cogs+rent+salaries+marketing+other+utilities;
   const netProfit = revenue-totalExpenses;
   const netMargin = parseFloat(pct(netProfit,revenue));
   const grossMargin = parseFloat(pct(revenue-cogs, revenue));
@@ -2181,14 +2181,14 @@ async function runAnalysis() {
     }
   } catch(saveErr) { console.warn('Supabase save error:', saveErr); }
 
-  document.getElementById('loadingOverlay').classList.remove('show');
+  if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
 
   // Render results
   renderResults(report);
   showPage('results');
 
   document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';
-  document.getElementById('analyzeSpin').style.display = 'none';
+  if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'none';
   document.getElementById('analyzeBtnIcon').style.display = 'inline';
   btn.disabled = false;
 
@@ -2478,10 +2478,7 @@ function handleExcel(input) {
   reader.readAsBinaryString(file);
 }
 
-const ez=document.getElementById('excelZone');
-ez.addEventListener('dragover',e=>{e.preventDefault();ez.classList.add('drag-over');});
-ez.addEventListener('dragleave',()=>ez.classList.remove('drag-over'));
-ez.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f){document.getElementById('excelFile').files=e.dataTransfer.files;handleExcel(document.getElementById('excelFile'));}});
+// excelZone drag-drop removed — using excel-input directly
 
 // ══════════════════════════════════════════
 // PDF EXPORT
