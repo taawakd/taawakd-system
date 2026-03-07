@@ -2083,50 +2083,31 @@ async function runAnalysis() {
     ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n')
     : 'لا توجد بيانات منتجات.';
 
-  const prompt = `${bpContext}\nأنت مستشار مالي خبير للمشاريع الصغيرة والمتوسطة السعودية.
-
-بيانات ${bizName} (${bizType}) — تحليل ${period}:
-- الإيرادات: ${revenue.toLocaleString()} ريال
-- تكلفة البضاعة: ${cogs.toLocaleString()} (${cogsPct}%)
-- الإيجار: ${rent.toLocaleString()} (${rentPct}%)
-- الرواتب: ${salaries.toLocaleString()} (${salPct}%)
-- التسويق: ${marketing.toLocaleString()} (${mktPct}%)
-- إجمالي المصاريف: ${totalExpenses.toLocaleString()}
-- صافي الربح: ${netProfit.toLocaleString()} | هامش: ${netMargin}% | هامش إجمالي: ${grossMargin}%
-- مؤشر الصحة: ${scoreData.total}/100
-المنتجات: ${productsText}
-ملاحظات: ${notes||'لا يوجد'}
-
-المعدلات الطبيعية في ${bench.label}: هامش صافي ${bench.netMargin.min}–${bench.netMargin.max}%، رواتب ${bench.salPct.min}–${bench.salPct.max}%، إيجار ${bench.rentPct.min}–${bench.rentPct.max}%.
-
-قدّم تقريراً مالياً تشخيصياً. استخدم هذا التنسيق:
-
-[SECTION:التشخيص العام]
-فقرة تشخيصية (3-4 جمل) مباشرة مع أرقام.
-[/SECTION]
-[SECTION:نقاط القوة]
-- نقطة مع رقم
-- نقطة مع رقم
-- نقطة مع رقم
-[/SECTION]
-[SECTION:نقاط الخطر]
-- خطر مع رقم
-- خطر مع رقم
-- خطر مع رقم
-[/SECTION]
-[SECTION:تحليل المنتجات]
-تحليل هوامش المنتجات وتوصيات التسعير مع أرقام.
-[/SECTION]
-[SECTION:توصيات عملية]
-- إجراء فوري
-- إجراء قصير المدى
-- إجراء قصير المدى
-- إجراء متوسط المدى
-- إجراء استراتيجي
-[/SECTION]
-[SECTION:توقع الأداء]
-سيناريوهان بأرقام: مع التوصيات وبدونها خلال 3 أشهر.
-[/SECTION]`;
+  const prompt = JSON.stringify({
+    business_type: bizType || 'غير محدد',
+    business_name: bizName,
+    period: period,
+    team_size: employees,
+    revenue: revenue,
+    food_cost: cogs,
+    food_cost_percent: cogsMargin,
+    salary: salaries,
+    salary_percent: salPct,
+    rent: rent,
+    rent_percent: rentPct,
+    utilities: utilities,
+    marketing: marketing,
+    marketing_percent: mktPct,
+    other_expenses: other,
+    total_expenses: totalExpenses,
+    net_profit: netProfit,
+    profit_margin: netMargin,
+    gross_margin: grossMargin,
+    health_score: scoreData ? scoreData.total : null,
+    products: productsText || null,
+    notes: notes || null,
+    request: 'حلل بيانات المشروع وأعطني التشخيص ونقاط القوة والمشاكل وأفضل 3 إجراءات لتحسين الربح مع أرقام محددة'
+  }, null, 2);
 
   let reportText = '';
   try {
