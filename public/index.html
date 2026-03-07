@@ -621,253 +621,157 @@ function signOut() {
 
 <!-- ════ ANALYSIS PAGE ════ -->
 <div class="page" id="page-analysis">
-  <div class="page-header">
-    <div class="page-title">
-      <h1>تحليل مشروع</h1>
-      <p>أدخل بياناتك أو ارفع ملف Excel للحصول على تشخيص كامل</p>
-    </div>
-  
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;height:100%">
 
-
-  <!-- Excel Upload -->
-  <div class="excel-zone" id="excelZone">
-    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcel(this)">
-    <div style="font-size:28px;margin-bottom:10px;">📊</div>
-    <h3>ارفع ملف Excel أو CSV</h3>
-    <p>يُقرأ تلقائياً ويملأ الحقول — أو أدخل يدوياً</p>
-  </div>
-  <div class="msg success" id="excelMsg"></div>
-
-  <!-- Form Sections -->
-  <div class="grid-2" style="gap:16px;">
-
-    <!-- Left column -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:12px">
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">🏢</div>معلومات المشروع</div>
-        <div class="form-grid">
-          <div class="form-group"><label>اسم المشروع</label><input class="input" id="f-name" type="text" placeholder="مثال: مقهى النخيل"></div>
-          <div class="form-group"><label>نوع النشاط</label>
+        <div class="card-title" style="color:var(--gold)">🏢 معلومات المشروع</div>
+        <div class="form-group">
+          <label>اسم المشروع</label>
+          <input class="input" id="f-name" type="text" placeholder="مثال: مقهى النخيل">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="form-group">
+            <label>نوع النشاط</label>
             <select class="input" id="f-type">
-              <option value="">اختر النوع</option>
-          <option value="restaurant">🍽️ مطعم</option>
-          <option value="cafe">☕ مقهى / كافيه</option>
-          <option value="juice_kiosk">🥤 كيوسك عصائر</option>
-          <option value="bakery">🥐 مخبز / حلويات</option>
-          <option value="food_truck">🚚 فود ترك</option>
-          <option value="retail">🛍️ متجر تجزئة</option>
-          <option value="services">⚙️ خدمات</option>
-          <option value="barber">✂️ حلاقة وتجميل</option>
-          <option value="ecom">💻 تجارة إلكترونية</option>
-          <option value="other">📦 أخرى</option></select>
-          </div>
-          <div class="form-group"><label>الفترة الزمنية</label>
-            <select class="input" id="f-period" onchange="toggleCustomPeriod()">
-              <option value="يومي">يومي</option>
-              <option value="أسبوعي">أسبوعي</option>
-              <option value="شهري" selected>شهري</option>
-              <option value="ربع سنوي">ربع سنوي</option>
-              <option value="نصف سنوي">نصف سنوي</option>
-              <option value="سنوي">سنوي</option>
-              <option value="مخصص">فترة مخصصة</option>
+              <option value="">اختر</option>
+              <option>مطعم</option><option>مقهى</option><option>كيوسك</option>
+              <option>مخبز</option><option>متجر</option><option>خدمات</option>
+              <option>حلاقة وتجميل</option><option>تجارة إلكترونية</option><option>أخرى</option>
             </select>
           </div>
-          <div class="form-group"><label>عدد الموظفين</label><input class="input" id="f-employees" inputmode="numeric" placeholder="0"></div>
-          <div class="form-gr<div class="form-gr<div class="form-group" id="customPeriodWrap" style="display:none">
-            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">تحديد الفترة</label>
-
-            <div id="wrap-يومي" style="display:none">
-              <input class="input" type="date" id="f-single-date">
-            </div>
-
-            <div id="wrap-أسبوعي" style="display:none">
-              <input class="input" type="week" id="f-week">
-            </div>
-
-            <div id="wrap-شهري" style="display:none">
-              <input class="input" type="month" id="f-month" placeholder="2026-03">
-            </div>
-
-            <div id="wrap-ربع سنوي" style="display:none">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <select class="input" id="f-quarter">
-                  <option value="Q1">Q1 يناير-مارس</option>
-                  <option value="Q2">Q2 أبريل-يونيو</option>
-                  <option value="Q3">Q3 يوليو-سبتمبر</option>
-                  <option value="Q4">Q4 أكتوبر-ديسمبر</option>
-                </select>
-                <input class="input" type="number" id="f-year-q" placeholder="2026">
-              </div>
-            </div>
-
-            <div id="wrap-نصف سنوي" style="display:none">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <select class="input" id="f-half">
-                  <option value="H1">H1 يناير-يونيو</option>
-                  <option value="H2">H2 يوليو-ديسمبر</option>
-                </select>
-                <input class="input" type="number" id="f-year-h" placeholder="2026">
-              </div>
-            </div>
-
-            <div id="wrap-سنوي" style="display:none">
-              <input class="input" type="number" id="f-year" placeholder="2026">
-            </div>
-
-            <div id="wrap-مخصص" style="display:none">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <input class="input" type="date" id="f-from">
-                <input class="input" type="date" id="f-to">
-              </div>
-            </div>
+          <div class="form-group">
+            <label>عدد الموظفين</label>
+            <input class="input" id="f-emp" type="number" placeholder="0" min="0">
           </div>
-
-            <div id="wrap-أسبوعي" style="display:none">
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الأسبوع</label>
-              <input class="input" type="week" id="f-week">
-            </div>
-
-            <div id="wrap-شهري" style="display:none">
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الشهر والسنة</label>
-              <input class="input" type="month" id="f-month">
-            </div>
-
-            <div id="wrap-ربع سنوي" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الربع</label>
-                <select class="input" id="f-quarter">
-                  <option value="Q1">Q1 (يناير-مارس)</option>
-                  <option value="Q2">Q2 (أبريل-يونيو)</option>
-                  <option value="Q3">Q3 (يوليو-سبتمبر)</option>
-                  <option value="Q4">Q4 (أكتوبر-ديسمبر)</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
-                <input class="input" type="number" id="f-year-q" placeholder="2026">
-              </div>
-            </div>
-
-            <div id="wrap-نصف سنوي" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">النصف</label>
-                <select class="input" id="f-half">
-                  <option value="H1">H1 (يناير-يونيو)</option>
-                  <option value="H2">H2 (يوليو-ديسمبر)</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
-                <input class="input" type="number" id="f-year-h" placeholder="2026">
-              </div>
-            </div>
-
-            <div id="wrap-سنوي" style="display:none">
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
-              <input class="input" type="number" id="f-year" placeholder="2026">
-            </div>
-
-            <div id="wrap-مخصص" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">من</label>
-                <input class="input" type="date" id="f-from">
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">إلى</label>
-                <input class="input" type="date" id="f-to">
-              </div>
-            </div>
-          </div>
-
-          <!-- أسبوعي -->
-          <div id="wrap-أسبوعي" style="display:none">
-            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الأسبوع</label>
-            <input class="input" type="week" id="f-week">
-          </div>
-
-          <!-- شهري -->
-          <div id="wrap-شهري" style="display:none">
-            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الشهر والسنة</label>
-            <input class="input" type="month" id="f-month">
-          </div>
-
-          <!-- ربع سنوي -->
-          <div id="wrap-ربع سنوي" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">الربع</label>
+        </div>
+        <div class="form-group">
+          <label>الفترة الزمنية</label>
+          <select class="input" id="f-period" onchange="togglePeriod()">
+            <option value="شهري">شهري</option>
+            <option value="يومي">يومي</option>
+            <option value="أسبوعي">أسبوعي</option>
+            <option value="ربع سنوي">ربع سنوي</option>
+            <option value="نصف سنوي">نصف سنوي</option>
+            <option value="سنوي">سنوي</option>
+            <option value="مخصص">مخصص</option>
+          </select>
+        </div>
+        <div id="pi-month" class="form-group">
+          <label>الشهر والسنة</label>
+          <input class="input" id="f-month" type="month">
+        </div>
+        <div id="pi-day" class="form-group" style="display:none">
+          <label>التاريخ</label>
+          <input class="input" id="f-single-date" type="date">
+        </div>
+        <div id="pi-week" class="form-group" style="display:none">
+          <label>الأسبوع</label>
+          <input class="input" id="f-week" type="week">
+        </div>
+        <div id="pi-year" class="form-group" style="display:none">
+          <label>السنة</label>
+          <input class="input" id="f-year" type="number" placeholder="2026">
+        </div>
+        <div id="pi-quarter" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="form-group"><label>الربع</label>
               <select class="input" id="f-quarter">
-                <option value="الأول">الأول</option>
-                <option value="الثاني">الثاني</option>
-                <option value="الثالث">الثالث</option>
-                <option value="الرابع">الرابع</option>
+                <option value="Q1">Q1 يناير-مارس</option>
+                <option value="Q2">Q2 أبريل-يونيو</option>
+                <option value="Q3">Q3 يوليو-سبتمبر</option>
+                <option value="Q4">Q4 أكتوبر-ديسمبر</option>
               </select>
             </div>
-            <div>
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
-              <input class="input" type="number" id="f-quarter-year" placeholder="2025" min="2020" max="2030">
+            <div class="form-group"><label>السنة</label>
+              <input class="input" id="f-year-q" type="number" placeholder="2026">
             </div>
           </div>
-
-          <!-- نصف سنوي -->
-          <div id="wrap-نصف سنوي" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">النصف</label>
+        </div>
+        <div id="pi-half" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="form-group"><label>النصف</label>
               <select class="input" id="f-half">
-                <option value="الأول">الأول</option>
-                <option value="الثاني">الثاني</option>
+                <option value="H1">H1 يناير-يونيو</option>
+                <option value="H2">H2 يوليو-ديسمبر</option>
               </select>
             </div>
-            <div>
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
-              <input class="input" type="number" id="f-half-year" placeholder="2025" min="2020" max="2030">
+            <div class="form-group"><label>السنة</label>
+              <input class="input" id="f-year-h" type="number" placeholder="2026">
             </div>
           </div>
-
-          <!-- سنوي -->
-          <div id="wrap-سنوي" style="display:none">
-            <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">السنة</label>
-            <input class="input" type="number" id="f-year" placeholder="2025" min="2020" max="2030">
+        </div>
+        <div id="pi-custom" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="form-group"><label>من</label>
+              <input class="input" id="f-from" type="date">
+            </div>
+            <div class="form-group"><label>إلى</label>
+              <input class="input" id="f-to" type="date">
+            </div>
           </div>
-
-          <!-- مخصص -->
-          <div id="wrap-مخصص" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">من</label>
-              <input class="input" type="date" id="f-date-from">
-            </div>
-            <div>
-              <label style="font-size:11px;color:var(--gray);margin-bottom:4px;display:block">إلى</label>
-              <input class="input" type="date" id="f-date-to">
-            </div>
-          </div>font-size:11px;color:var(--gray);margin-bottom:4px;display:block;">إلى</label>
-                <input class="input" type="date" id="f-date-to">
-              </div>
-            </div>
-            <div id="customPeriodLabel" style="font-size:12px;color:var(--gold);margin-top:6px;"></div>
-          </div><textarea class="input" id="f-notes" placeholder="أي تفاصيل تساعد في دقة التحليل..."></textarea></div>
+        </div>
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea class="input" id="f-notes" rows="2" placeholder="أي تفاصيل تساعد في دقة التحليل..."></textarea>
         </div>
       </div>
+    </div>
 
-      <!-- Revenues -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="cursor:pointer;text-align:center;padding:16px" onclick="document.getElementById('excel-input').click()">
+        <div style="font-size:32px">📊</div>
+        <div style="font-weight:700;margin:4px 0">ارفع ملف Excel أو CSV</div>
+        <div style="font-size:12px;color:var(--gray)">يُقرأ تلقائياً ويملأ الحقول — أو أدخل يدوياً</div>
+        <input type="file" id="excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcel(this)">
+      </div>
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">💰</div>الإيرادات والمصاريف</div>
-        <div class="form-grid">
-          <div class="form-group"><label>إجمالي الإيرادات (ريال)</label><input class="input num-input" id="f-rev" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>تكلفة البضاعة / الإنتاج</label><input class="input num-input" id="f-cogs" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>الإيجار</label><input class="input num-input" id="f-rent" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>الرواتب</label><input class="input num-input" id="f-sal" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>التسويق والإعلان</label><input class="input num-input" id="f-mkt" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
-          <div class="form-group"><label>مصاريف أخرى</label><input class="input num-input" id="f-other" inputmode="numeric" placeholder="0" oninput="liveCalc()"></div>
+        <div class="card-title">💰 الإيرادات والمصاريف</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="form-group"><label>إجمالي الإيرادات (ريال)</label>
+            <input class="input" id="f-rev" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
+          <div class="form-group"><label>تكلفة البضاعة / الإنتاج</label>
+            <input class="input" id="f-cogs" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
+          <div class="form-group"><label>الإيجار</label>
+            <input class="input" id="f-rent" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
+          <div class="form-group"><label>الرواتب</label>
+            <input class="input" id="f-sal" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
+          <div class="form-group"><label>الكهرباء والمياه</label>
+            <input class="input" id="f-utilities" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
+          <div class="form-group"><label>التسويق والإعلان</label>
+            <input class="input" id="f-mkt" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
+          <div class="form-group" style="grid-column:span 2"><label>مصاريف أخرى</label>
+            <input class="input" id="f-other" type="number" placeholder="0" min="0" oninput="liveCalc()">
+          </div>
         </div>
-        <!-- Live calculator -->
-        <div class="live-bar" id="liveBar">
-          <div class="live-item"><div class="live-val" id="lv-exp">—</div><div class="live-lbl">إجمالي المصاريف</div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="card-title">📈 النتائج الحية</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="live-item"><div class="live-val" id="lv-total-exp">—</div><div class="live-lbl">إجمالي المصاريف</div></div>
           <div class="live-item"><div class="live-val" id="lv-profit">—</div><div class="live-lbl">صافي الربح</div></div>
           <div class="live-item"><div class="live-val" id="lv-margin">—</div><div class="live-lbl">هامش الربح</div></div>
           <div class="live-item"><div class="live-val" id="lv-be">—</div><div class="live-lbl">نقطة التعادل</div></div>
         </div>
       </div>
+      <button class="btn-primary" style="width:100%;padding:18px;font-size:16px;border-radius:14px" onclick="runAnalysis()" id="analyzBtn">
+        <span id="analyzBtnText">🔍 تحليل المشروع الآن</span>
+        <div class="spin-sm" id="analyzeSpin" style="border-top-color:#000;display:none"></div>
+      </button>
+      <div class="msg error" id="analysisError"></div>
     </div>
+
+  </div>
+</div>
 
 >
 <div class="page" id="page-results">
@@ -1985,49 +1889,14 @@ function initChart() {
   });
 }
 
-function toggleCustomPeriod() {
-  const val = document.getElementById('f-period')?.value || '';
-  const cpw = document.getElementById('customPeriodWrap');
-  if (!cpw) return;
-
-  const allWraps = ['يومي','أسبوعي','شهري','ربع سنوي','نصف سنوي','سنوي','مخصص'];
-
-  // إخفاء الكل أولاً
-  allWraps.forEach(t => {
-    const el = document.getElementById('wrap-' + t);
-    if (el) el.style.display = 'none';
-  });
-
-  if (!val || val === 'مخصص' && false) {
-    cpw.style.display = 'none';
-    return;
-  }
-
-  cpw.style.display = 'block';
-
-  // إظهار الـ wrap المناسب فقط
-  const target = document.getElementById('wrap-' + val);
-  if (target) {
-    target.style.display = 'block';
-    // تعبئة قيمة افتراضية
-    const now = new Date();
-    if (val === 'شهري') {
-      const m = document.getElementById('f-month');
-      if (m && !m.value) m.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    } else if (val === 'سنوي') {
-      const y = document.getElementById('f-year');
-      if (y && !y.value) y.value = now.getFullYear();
-    } else if (val === 'يومي') {
-      const dt = document.getElementById('f-single-date');
-      if (dt && !dt.value) dt.value = now.toISOString().slice(0,10);
-    } else if (val === 'مخصص') {
-      const from = document.getElementById('f-from');
-      const to   = document.getElementById('f-to');
-      const d30  = new Date(now); d30.setDate(d30.getDate()-30);
-      if (from && !from.value) from.value = d30.toISOString().slice(0,10);
-      if (to   && !to.value)   to.value   = now.toISOString().slice(0,10);
-    }
-  }
+function togglePeriod() {
+  const v = (document.getElementById('f-period')||{}).value || 'شهري';
+  const all = ['pi-month','pi-day','pi-week','pi-year','pi-quarter','pi-half','pi-custom'];
+  all.forEach(id => { const e = document.getElementById(id); if(e) e.style.display='none'; });
+  const map = { 'شهري':'pi-month','يومي':'pi-day','أسبوعي':'pi-week',
+    'سنوي':'pi-year','ربع سنوي':'pi-quarter','نصف سنوي':'pi-half','مخصص':'pi-custom' };
+  const show = document.getElementById(map[v] || 'pi-month');
+  if(show) show.style.display = 'block';
 }
 
 function updateCustomPeriodLabel() {
@@ -2591,7 +2460,7 @@ function handleExcel(input) {
         }
         if(k.includes('الفترة')||k.includes('فترة')){
           const el=document.getElementById('f-period');
-          if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof toggleCustomPeriod==='function')toggleCustomPeriod();}
+          if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof togglePeriod==='function')togglePeriod();}
         }
         if(k.includes('الشهر')||k.includes('شهر')){
           const el=document.getElementById('f-month');if(el)set('f-month',String(v).trim());
