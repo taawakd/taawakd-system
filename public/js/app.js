@@ -23,17 +23,6 @@ async function initApp() {
   }
 }
 
-// State + Auth + Init
-
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-let STATE = {
-  currentReport: null,
-  savedReports: JSON.parse(localStorage.getItem('tw_reports') || '[]'),
-  chartInstance: null,
-  chartMode: '6m',
-};
 
 // ══════════════════════════════════════════
 // BENCHMARKS DATA
