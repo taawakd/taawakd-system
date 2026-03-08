@@ -423,6 +423,9 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   }
   // حفظ ID المستخدم الحالي
   localStorage.setItem('tw_user_id', currUserId);
+  // تهيئة STATE إذا لم تكن الـ services حمّلته بعد
+  window.STATE = window.STATE || { currentReport: null, savedReports: JSON.parse(localStorage.getItem('tw_reports') || '[]'), chartInstance: null, chartMode: 'net' };
+
 
   sb.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
