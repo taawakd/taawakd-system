@@ -55,3 +55,13 @@ function showPage(name) {
   window.scrollTo(0,0);
 }
 window.showPage = showPage;
+
+
+// ── تسجيل الخروج ──
+function signOut() {
+  const url  = window.__SUPABASE_URL__  || '';
+  const anon = window.__SUPABASE_ANON__ || '';
+  if (!url) { window.location.href = '/auth.html'; return; }
+  const _sb = window.supabase.createClient(url, anon);
+  _sb.auth.signOut().then(() => window.location.href = '/auth.html');
+}
