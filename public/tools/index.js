@@ -191,7 +191,6 @@ function renderPricingPage() {
 
 function updatePricingRow(i, origPrice, cost, qty) {
   const slider = document.getElementById('pslider-'+i);
-  const pct = parseInt(slider.value);
   const newPrice = origPrice * (1 + pct/100);
   const oldProfit = (origPrice - cost) * qty;
   const newProfit = (newPrice - cost) * qty;
