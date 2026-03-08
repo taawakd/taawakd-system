@@ -264,7 +264,7 @@ function renderResults(report) {
   renderAlerts(alerts, 'resultAlerts');
 
   // Breakeven
-  const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0);
+  const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0)+(metrics.utilities||0);
   const beNetProfit = metrics.netProfit !== undefined ? metrics.netProfit : (revenue - (cogs||0) - fixedCosts);
   renderBreakeven(revenue, cogs, fixedCosts, 'resultBreakeven', beNetProfit);
 
@@ -434,7 +434,7 @@ function openSavedReport(id) {
   if(!rep) return;
   STATE.currentReport = rep;
   renderResults(rep);
-  showPage('results');
+  showPage('page-results');
 }
 
 function deleteSavedReport(id) {
