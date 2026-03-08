@@ -1,22 +1,7 @@
 // services/supabase.js — Supabase client + STATE + auth
+// ✅ parseNum / getN / fmt مُعرَّفة في utils/helpers.js — لا تكرار هنا
 
-
-// ══════════════════════════════════════════
-// BENCHMARKS DATA
-
-// ══════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════
-const parseNum = v => parseFloat(String(v||'').replace(/[,،\s]/g,'')) || 0;
-const getN = id => parseNum(document.getElementById(id)?.value);
-const fmt = n => {
-  const a = Math.abs(n);
-  if(a>=1e6) return (n/1e6).toFixed(1)+'م';
-  if(a>=1e3) return (n/1e3).toFixed(1)+'ك';
-  return Math.round(n).toLocaleString('ar-SA');
-};
 const delay = ms => new Promise(r=>setTimeout(r,ms));
-
 
 async function loadBusinessProfile() {
   try {
@@ -27,7 +12,6 @@ async function loadBusinessProfile() {
     if (error || !data) return;
     window._businessProfile = data;
     BP_PRODUCTS = data.products || [];
-    // ملء الحقول
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
     set('bp-name', data.biz_name);
     set('bp-type', data.biz_type);
@@ -56,15 +40,15 @@ async function saveBusinessProfile() {
       user_id: user.id,
       biz_name: document.getElementById('bp-name')?.value || '',
       biz_type: document.getElementById('bp-type')?.value || '',
-      fixed_rent:          parseFloat(document.getElementById('bp-rent')?.value)          || 0,
-      fixed_salaries:      parseFloat(document.getElementById('bp-salaries')?.value)      || 0,
-      fixed_utilities:     parseFloat(document.getElementById('bp-utilities')?.value)     || 0,
+      fixed_rent: parseFloat(document.getElementById('bp-rent')?.value) || 0,
+      fixed_salaries: parseFloat(document.getElementById('bp-salaries')?.value) || 0,
+      fixed_utilities: parseFloat(document.getElementById('bp-utilities')?.value) || 0,
       fixed_subscriptions: parseFloat(document.getElementById('bp-subscriptions')?.value) || 0,
-      fixed_other:         parseFloat(document.getElementById('bp-fixed-other')?.value)   || 0,
-      var_cogs_pct:        parseFloat(document.getElementById('bp-cogs')?.value)          || 0,
-      var_delivery_pct:    parseFloat(document.getElementById('bp-delivery')?.value)      || 0,
-      var_marketing_pct:   parseFloat(document.getElementById('bp-marketing')?.value)     || 0,
-      var_other_pct:       parseFloat(document.getElementById('bp-var-other')?.value)     || 0,
+      fixed_other: parseFloat(document.getElementById('bp-fixed-other')?.value) || 0,
+      var_cogs_pct: parseFloat(document.getElementById('bp-cogs')?.value) || 0,
+      var_delivery_pct: parseFloat(document.getElementById('bp-delivery')?.value) || 0,
+      var_marketing_pct: parseFloat(document.getElementById('bp-marketing')?.value) || 0,
+      var_other_pct: parseFloat(document.getElementById('bp-var-other')?.value) || 0,
       products: BP_PRODUCTS,
     };
     const { error } = await sb.from('business_profile')
