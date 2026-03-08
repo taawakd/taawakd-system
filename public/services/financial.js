@@ -245,7 +245,7 @@ function renderResults(report) {
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
   document.getElementById('resScoreBreakdown').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
-      ${scoreData.breakdown.map(b=>`
+      ${(scoreData.breakdown||[]).map(b=>`
         <div class="progress-wrap">
           <div class="progress-head">
             <span style="font-size:12px;color:var(--gray2);">${b.label}</span>
@@ -350,7 +350,7 @@ function updateDashboard() {
   renderAlerts(rep.alerts, 'alertsContainer');
 
   const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.other||0);
-  renderBreakeven(m.revenue, m.cogs||0, fixedCosts, 'breakevenContainer');
+  renderBreakeven(m.revenue, m.cogs||0, fixedCosts, 'breakevenContainer', m.netProfit);
 
   // Forecast
   const monthly = m.netProfit;
@@ -389,7 +389,7 @@ async function loadReportsFromDB() {
       bizType: r.biz_type,
       period: r.period,
       metrics: { revenue: r.revenue, totalExpenses: r.total_expenses, netProfit: r.net_profit, netMargin: r.net_margin, healthScore: r.health_score },
-      scoreData: { total: r.health_score },
+      scoreData: r.report_json?.scoreData || { total: r.health_score },
       reportJson: r.report_json,
       date: r.created_at
     }));
