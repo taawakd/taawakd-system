@@ -1,16 +1,5 @@
 // services/supabase.js — Supabase client + STATE + auth
 
-let bpContext = "";
-
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-let STATE = {
-  currentReport: null,
-  savedReports: JSON.parse(localStorage.getItem('tw_reports') || '[]'),
-  chartInstance: null,
-  chartMode: '6m',
-};
 
 // ══════════════════════════════════════════
 // BENCHMARKS DATA
