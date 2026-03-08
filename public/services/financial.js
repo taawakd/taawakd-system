@@ -348,7 +348,7 @@ function updateDashboard() {
   document.getElementById('dk-health').textContent = rep.scoreData.total+'/100';
 
   renderScore('scoreRingFill','scoreVal','scoreLabel','scoreBreakdown', rep.scoreData.total);
-  renderAlerts(rep.alerts, 'alertsContainer');
+  renderAlerts(rep.alerts || generateAlerts({...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct}, resolvedSectorKey), 'alertsContainer');
 
   const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.other||0);
   renderBreakeven(m.revenue, m.cogs||0, fixedCosts, 'breakevenContainer', m.netProfit);
