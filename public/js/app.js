@@ -24,7 +24,6 @@ async function initApp() {
 }
 
 // State + Auth + Init
-let bpContext = "";
 
 // ══════════════════════════════════════════
 // STATE
