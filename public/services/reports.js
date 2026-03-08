@@ -292,11 +292,11 @@ function calcBreakeven(revenue, cogs, fixedCosts) {
   return { be, contribution: (contribution*100).toFixed(1), variableRatio: (variableRatio*100).toFixed(1) };
 }
 
-function renderBreakeven(revenue, cogs, fixedCosts, containerId) {
+function renderBreakeven(revenue, cogs, fixedCosts, containerId, netProfitOverride) {
   const { be, contribution } = calcBreakeven(revenue, cogs, fixedCosts);
   const diff = revenue - be;
   const pctAbove = be > 0 ? ((diff/be)*100).toFixed(1) : 0;
-  const status = diff >= 0 ? 'good' : 'bad';
+  const status = (netProfitOverride !== undefined ? netProfitOverride >= 0 : diff >= 0) ? 'good' : 'bad';
 
   const html = `
     <div class="kpi-row kpi-row-2" style="margin-bottom:14px;">
