@@ -1,0 +1,69 @@
+
+<div class="app">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <div class="sb-icon">ت</div>
+      <div>
+        <div class="sb-name"><span>توكّد</span></div>
+        <div class="sb-tagline">يقين قبل الاستثمار</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">الرئيسية</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span> لوحة التحكم
+    </div>
+    <div class="nav-item" onclick="showPage('analysis')">
+      <span class="nav-icon">🔍</span> تحليل جديد
+    </div>
+    <div class="nav-item" onclick="showPage('reports')">
+      <span class="nav-icon">📁</span> التقارير المحفوظة
+    </div>
+
+    <div class="sb-section" style="margin-top:16px;">الأدوات</div>
+    <div class="nav-item" onclick="showPage('benchmark')">
+      <span class="nav-icon">📈</span> مقارنة السوق
+    </div>
+    <div class="nav-item" onclick="showPage('scenarios')">
+      <span class="nav-icon">🎯</span> سيناريوهات
+    </div>
+    <div class="nav-item" onclick="showPage('profile')">
+        <span class="nav-icon">🏢</span> ملف المشروع
+      </div>
+      <div class="nav-item" onclick="showPage('compare')">
+      <span class="nav-icon">⚖️</span> مقارنة الفترات
+    </div>
+
+    <div class="sb-section" style="margin-top:16px;">ذكاء اصطناعي</div>
+    <div class="nav-item" id="nav-cfo" onclick="showPage('cfo')">
+      <span class="nav-icon">🤖</span> <span>AI CFO</span>
+      <span style="font-size:10px;background:var(--gold);color:#000;padding:2px 7px;border-radius:10px;font-weight:700;margin-right:auto;">جديد</span>
+    </div>
+    <div class="nav-item" onclick="showPage('actionplan')"><span class="nav-icon">📋</span> خطة العمل</div>
+    <div class="nav-item" onclick="showPage('cashflow')"><span class="nav-icon">💧</span> التدفق النقدي</div>
+    <div class="nav-item" onclick="showPage('integrations')"><span class="nav-icon">🔌</span> الربط والاستيراد</div>
+    <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon">💲</span> تحليل التسعير</div>
+    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">🔮</span> التوقعات الذكية</div>
+    <div class="nav-item" onclick="showPage('healthadvisor')"><span class="nav-icon">❤️</span> مستشار الصحة</div>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-user-av" id="sbAvatar">م</div>
+      <div class="sb-user-info">
+        <div class="sb-user-name" id="sbName">مستخدم</div>
+        <div class="sb-user-plan">النسخة المجانية</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main-area">
+
+<!-- ════ DASHBOARD PAGE ════ -->
