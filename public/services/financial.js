@@ -118,7 +118,7 @@ async function runAnalysis() {
   const notes     = document.getElementById('f-notes').value;
   const products  = collectProducts();
   const sectorKey = getSectorKey(bizType);
-  const bench     = BENCHMARKS[sectorKey];
+  const bench     = BENCHMARKS[resolvedSectorKey];
 
   const metrics = { revenue, cogs, rent, salaries, marketing, other, totalExpenses,
     netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
@@ -228,6 +228,7 @@ async function runAnalysis() {
 
 function renderResults(report) {
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey, createdAt} = report;
+  const resolvedSectorKey = sectorKey || getSectorKey(bizType);
   const {revenue, netProfit, netMargin, grossMargin, totalExpenses, rentPct, salPct, cogsPct, mktPct, cogs, rent} = metrics;
 
   document.getElementById('resultTitle').textContent = `تقرير ${bizName}`;
@@ -256,7 +257,7 @@ function renderResults(report) {
     </div>`;
 
   // Benchmark
-  const bench = BENCHMARKS[sectorKey];
+  const bench = BENCHMARKS[resolvedSectorKey];
   const bMetrics = { netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
   renderBenchmarkItems(bMetrics, bench, 'benchmarkContainer');
 
