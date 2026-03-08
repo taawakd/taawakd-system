@@ -265,7 +265,8 @@ function renderResults(report) {
 
   // Breakeven
   const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0);
-  renderBreakeven(revenue, cogs, fixedCosts, 'resultBreakeven');
+  const beNetProfit = metrics.netProfit !== undefined ? metrics.netProfit : (revenue - (cogs||0) - fixedCosts);
+  renderBreakeven(revenue, cogs, fixedCosts, 'resultBreakeven', beNetProfit);
 
   // Products analysis
   if(products.length) {
@@ -408,7 +409,7 @@ function renderSavedReports() {
   }
   grid.innerHTML = STATE.savedReports.map((r,i)=>{
     const m = r.metrics;
-    return `<div class="card" style="cursor:pointer;transition:all 0.2s;animation:fadeUp 0.4s ease ${i*0.06}s forwards;opacity:0;" onmouseenter="this.style.borderColor='var(--gold-b)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="openSavedReport(${r.id})">
+    return `<div class="card" style="cursor:pointer;transition:all 0.2s;animation:fadeUp 0.4s ease ${i*0.06}s forwards;opacity:0;" onmouseenter="this.style.borderColor='var(--gold-b)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="openSavedReport('${r.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
         <div style="font-size:15px;font-weight:700;color:var(--white);">${r.bizName}</div>
         <div style="font-size:11px;padding:3px 10px;background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-b);border-radius:20px;">${r.bizType||'—'}</div>
@@ -420,8 +421,8 @@ function renderSavedReports() {
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;color:var(--gray);">${new Date(r.createdAt).toLocaleDateString('ar-SA')}</div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSavedReport(${r.id})">عرض</button>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSavedReport(${r.id})">حذف</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSavedReport('${r.id}')">عرض</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSavedReport('${r.id}')">حذف</button>
         </div>
       </div>
     </div>`;
