@@ -110,7 +110,6 @@ const fmt = n => {
   if(a>=1e3) return (n/1e3).toFixed(1)+'ك';
   return Math.round(n).toLocaleString('ar-SA');
 };
-const pct = (a,b) => b>0 ? ((a/b)*100).toFixed(1) : 0;
 const delay = ms => new Promise(r=>setTimeout(r,ms));
 
 
