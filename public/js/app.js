@@ -13,7 +13,11 @@ async function initApp() {
     if (pc) pc.innerHTML = pagesHTML;
     if (typeof initNumInputs === 'function') initNumInputs();
     if (typeof loadBusinessProfile === 'function') loadBusinessProfile();
-    if (typeof renderSavedReports === 'function') renderSavedReports();
+    if (typeof renderSavedReports === 'function') {
+      // تأكّد من وجود STATE قبل الاستدعاء
+      window.STATE = window.STATE || { currentReport: null, savedReports: JSON.parse(localStorage.getItem('tw_reports')||'[]'), chartInstance: null, chartMode: 'net' };
+      renderSavedReports();
+    }
     if (typeof showPage === 'function') showPage('dashboard');
   } catch (err) {
     console.error('initApp error:', err);
