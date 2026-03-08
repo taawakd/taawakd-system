@@ -5,9 +5,7 @@
 // ============================================================
 
 function liveCalc() {
-  const getN = id => { const e = document.getElementById(id); return e ? parseFloat(e.value)||0 : 0; };
-  const fmt = n => Math.abs(n).toLocaleString('en');
-  const pct = (a,b) => b===0 ? 0 : Math.round(a/b*100);
+// ✅ getN / fmt / pct تأتي من helpers.js
 
   const rev  = getN('f-rev');
   const exp  = getN('f-cogs')+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
