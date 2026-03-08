@@ -581,4 +581,3 @@ window.openSavedReport = openSavedReport;
 window.deleteSavedReport = deleteSavedReport;
 window.getCFOContext = getCFOContext;
 window.buildCFOSystemPrompt = buildCFOSystemPrompt;
-window.liveCalc = liveCalc;
