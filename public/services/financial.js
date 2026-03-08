@@ -1,102 +1,25 @@
 // services/financial.js — تحليل مالي + Excel + PDF + CFO context
-
 const BENCHMARKS = {
-  restaurant: {
-    label: 'مطعم',
-    netMargin:   { min: 10, max: 18, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 55, max: 70, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 6,  max: 12, label: 'نسبة الإيجار',       lowerIsBetter: true },
-    salPct:      { min: 22, max: 35, label: 'نسبة الرواتب',       lowerIsBetter: true },
-    cogsPct:     { min: 28, max: 40, label: 'تكلفة البضاعة',      lowerIsBetter: true },
-    mktPct:      { min: 2,  max: 6,  label: 'نسبة التسويق',       lowerIsBetter: true },
-  },
-  cafe: {
-    label: 'مقهى / كافيه',
-    netMargin:   { min: 18, max: 32, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 8,  max: 15, label: 'نسبة الإيجار',       lowerIsBetter: true },
-    salPct:      { min: 18, max: 28, label: 'نسبة الرواتب',       lowerIsBetter: true },
-    cogsPct:     { min: 18, max: 30, label: 'تكلفة البضاعة',      lowerIsBetter: true },
-    mktPct:      { min: 3,  max: 8,  label: 'نسبة التسويق',       lowerIsBetter: true },
-  },
-  juice_kiosk: {
-    label: 'كيوسك عصائر',
-    netMargin:   { min: 20, max: 35, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 5,  max: 12, label: 'نسبة الإيجار',       lowerIsBetter: true },
-    salPct:      { min: 15, max: 25, label: 'نسبة الرواتب',       lowerIsBetter: true },
-    cogsPct:     { min: 18, max: 30, label: 'تكلفة البضاعة',      lowerIsBetter: true },
-    mktPct:      { min: 2,  max: 6,  label: 'نسبة التسويق',       lowerIsBetter: true },
-  },
-  bakery: {
-    label: 'مخبز / حلويات',
-    netMargin:   { min: 12, max: 22, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 55, max: 72, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 5,  max: 10, label: 'نسبة الإيجار',       lowerIsBetter: true },
-    salPct:      { min: 20, max: 30, label: 'نسبة الرواتب',       lowerIsBetter: true },
-    cogsPct:     { min: 25, max: 38, label: 'تكلفة البضاعة',      lowerIsBetter: true },
-    mktPct:      { min: 2,  max: 6,  label: 'نسبة التسويق',       lowerIsBetter: true },
-  },
-  food_truck: {
-    label: 'فود ترك',
-    netMargin:   { min: 15, max: 25, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 60, max: 75, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 0,  max: 5,  label: 'نسبة الإيجار / موقع', lowerIsBetter: true },
-    salPct:      { min: 15, max: 25, label: 'نسبة الرواتب',        lowerIsBetter: true },
-    cogsPct:     { min: 25, max: 38, label: 'تكلفة البضاعة',       lowerIsBetter: true },
-    mktPct:      { min: 3,  max: 8,  label: 'نسبة التسويق',        lowerIsBetter: true },
-  },
-  retail: {
-    label: 'متجر تجزئة',
-    netMargin:   { min: 10, max: 20, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 30, max: 50, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 5,  max: 10, label: 'نسبة الإيجار',        lowerIsBetter: true },
-    salPct:      { min: 10, max: 20, label: 'نسبة الرواتب',        lowerIsBetter: true },
-    cogsPct:     { min: 50, max: 70, label: 'تكلفة البضاعة',       lowerIsBetter: true },
-    mktPct:      { min: 2,  max: 5,  label: 'نسبة التسويق',        lowerIsBetter: true },
-  },
-  services: {
-    label: 'خدمات',
-    netMargin:   { min: 20, max: 40, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 50, max: 75, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 3,  max: 8,  label: 'نسبة الإيجار',        lowerIsBetter: true },
-    salPct:      { min: 30, max: 50, label: 'نسبة الرواتب',        lowerIsBetter: true },
-    cogsPct:     { min: 20, max: 40, label: 'تكلفة الخدمة',        lowerIsBetter: true },
-    mktPct:      { min: 5,  max: 12, label: 'نسبة التسويق',        lowerIsBetter: true },
-  },
-  barber: {
-    label: 'حلاقة وتجميل',
-    netMargin:   { min: 18, max: 30, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 10, max: 18, label: 'نسبة الإيجار',        lowerIsBetter: true },
-    salPct:      { min: 25, max: 40, label: 'نسبة الرواتب',        lowerIsBetter: true },
-    cogsPct:     { min: 15, max: 30, label: 'تكلفة اللوازم',       lowerIsBetter: true },
-    mktPct:      { min: 2,  max: 6,  label: 'نسبة التسويق',        lowerIsBetter: true },
-  },
-  ecom: {
-    label: 'تجارة إلكترونية',
-    netMargin:   { min: 8,  max: 20, label: 'هامش الربح الصافي' },
-    grossMargin: { min: 30, max: 55, label: 'هامش الربح الإجمالي' },
-    rentPct:     { min: 0,  max: 3,  label: 'نسبة الإيجار',        lowerIsBetter: true },
-    salPct:      { min: 10, max: 25, label: 'نسبة الرواتب',        lowerIsBetter: true },
-    cogsPct:     { min: 45, max: 65, label: 'تكلفة البضاعة',       lowerIsBetter: true },
-    mktPct:      { min: 10, max: 20, label: 'نسبة التسويق',        lowerIsBetter: true },
-  },
+  restaurant: { label: 'مطعم', netMargin: { min: 10, max: 18, label: 'هامش الربح الصافي' }, grossMargin: { min: 55, max: 70, label: 'هامش الربح الإجمالي' }, rentPct: { min: 6, max: 12, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 22, max: 35, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 28, max: 40, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 2, max: 6, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  cafe: { label: 'مقهى / كافيه', netMargin: { min: 18, max: 32, label: 'هامش الربح الصافي' }, grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' }, rentPct: { min: 8, max: 15, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 18, max: 28, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 18, max: 30, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 3, max: 8, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  juice_kiosk: { label: 'كيوسك عصائر', netMargin: { min: 20, max: 35, label: 'هامش الربح الصافي' }, grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' }, rentPct: { min: 5, max: 12, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 15, max: 25, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 18, max: 30, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 2, max: 6, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  bakery: { label: 'مخبز / حلويات', netMargin: { min: 12, max: 22, label: 'هامش الربح الصافي' }, grossMargin: { min: 55, max: 72, label: 'هامش الربح الإجمالي' }, rentPct: { min: 5, max: 10, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 20, max: 30, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 25, max: 38, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 2, max: 6, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  food_truck: { label: 'فود ترك', netMargin: { min: 15, max: 25, label: 'هامش الربح الصافي' }, grossMargin: { min: 60, max: 75, label: 'هامش الربح الإجمالي' }, rentPct: { min: 0, max: 5, label: 'نسبة الإيجار / موقع', lowerIsBetter: true }, salPct: { min: 15, max: 25, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 25, max: 38, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 3, max: 8, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  retail: { label: 'متجر تجزئة', netMargin: { min: 10, max: 20, label: 'هامش الربح الصافي' }, grossMargin: { min: 30, max: 50, label: 'هامش الربح الإجمالي' }, rentPct: { min: 5, max: 10, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 10, max: 20, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 50, max: 70, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 2, max: 5, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  services: { label: 'خدمات', netMargin: { min: 20, max: 40, label: 'هامش الربح الصافي' }, grossMargin: { min: 50, max: 75, label: 'هامش الربح الإجمالي' }, rentPct: { min: 3, max: 8, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 30, max: 50, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 20, max: 40, label: 'تكلفة الخدمة', lowerIsBetter: true }, mktPct: { min: 5, max: 12, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  barber: { label: 'حلاقة وتجميل', netMargin: { min: 18, max: 30, label: 'هامش الربح الصافي' }, grossMargin: { min: 65, max: 80, label: 'هامش الربح الإجمالي' }, rentPct: { min: 10, max: 18, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 25, max: 40, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 15, max: 30, label: 'تكلفة اللوازم', lowerIsBetter: true }, mktPct: { min: 2, max: 6, label: 'نسبة التسويق', lowerIsBetter: true }, },
+  ecom: { label: 'تجارة إلكترونية', netMargin: { min: 8, max: 20, label: 'هامش الربح الصافي' }, grossMargin: { min: 30, max: 55, label: 'هامش الربح الإجمالي' }, rentPct: { min: 0, max: 3, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 10, max: 25, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 45, max: 65, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 10, max: 20, label: 'نسبة التسويق', lowerIsBetter: true }, },
 };
 
-
 // ============================================================
-// ai.js — التحليل المالي، عرض النتائج، AI CFO
+// التحليل المالي الرئيسي
 // ============================================================
-
 async function runAnalysis() {
   const revenue = getN('f-rev');
   if(!revenue){ showMsg('analysisError','من فضلك أدخل إجمالي الإيرادات'); return; }
-
   const btn = document.getElementById('analyzeBtn');
   if(document.getElementById('analyzeBtnText')) document.getElementById('analyzeBtnText').textContent = 'جاري التحليل...';
   if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'block';
-  
   btn.disabled = true;
   if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.add('show');
 
@@ -107,29 +30,27 @@ async function runAnalysis() {
   const netMargin = parseFloat(pct(netProfit,revenue));
   const grossMargin = parseFloat(pct(revenue-cogs, revenue));
   const rentPct = parseFloat(pct(rent,revenue));
-  const salPct  = parseFloat(pct(salaries,revenue));
+  const salPct = parseFloat(pct(salaries,revenue));
   const cogsPct = parseFloat(pct(cogs,revenue));
-  const mktPct  = parseFloat(pct(marketing,revenue));
+  const mktPct = parseFloat(pct(marketing,revenue));
 
-  const bizName   = document.getElementById('f-name').value || 'مشروعك';
-  const bizType   = document.getElementById('f-type').value || 'غير محدد';
-  const period    = getPeriodLabel();
+  const bizName = document.getElementById('f-name').value || 'مشروعك';
+  const bizType = document.getElementById('f-type').value || 'غير محدد';
+  const period = getPeriodLabel();
   const employees = getN('f-emp');
-  const notes     = document.getElementById('f-notes').value;
-  const products  = collectProducts();
+  const notes = document.getElementById('f-notes').value;
+  const products = collectProducts();
+
   const sectorKey = getSectorKey(bizType);
-  const bench     = BENCHMARKS[resolvedSectorKey];
+  // ✅ إصلاح 1: استخدام sectorKey المعرّف بدلاً من resolvedSectorKey غير المعرّف
+  const bench = BENCHMARKS[sectorKey];
 
-  const metrics = { revenue, cogs, rent, salaries, marketing, other, totalExpenses,
-    netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
-
+  const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
   const scoreData = calcScore({ netMargin, grossMargin, rentPct, salPct, cogsPct });
   const alerts = generateAlerts({ ...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct }, sectorKey);
   const scenarios = buildScenarios({ revenue, totalExpenses, netProfit, cogs, salaries, rent });
 
-  const productsText = products.length
-    ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n')
-    : 'لا توجد بيانات منتجات.';
+  const productsText = products.length ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n') : 'لا توجد بيانات منتجات.';
 
   const prompt = JSON.stringify({
     business_type: bizType || 'غير محدد',
@@ -162,24 +83,15 @@ async function runAnalysis() {
     const resp = await fetch('/api/analyze', {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+(window.__AUTH_TOKEN__||'')},
-      body:JSON.stringify({
-        model:"gpt-4o-mini",
-        max_tokens:1000,
-        messages:[{role:"user",content:prompt}]
-      })
+      body:JSON.stringify({ model:"gpt-4o-mini", max_tokens:1000, messages:[{role:"user",content:prompt}] })
     });
     const data = await resp.json();
     reportText = data.content?.map(i=>i.text||'').join('') || '';
-  } catch(e) {
-    reportText = '';
-  }
+  } catch(e) { reportText = ''; }
 
-  // Build report object
   const report = {
-    id: Date.now(),
-    bizName, bizType, period,
-    metrics, scoreData, alerts, scenarios,
-    reportText, products, sectorKey,
+    id: Date.now(), bizName, bizType, period, metrics,
+    scoreData, alerts, scenarios, reportText, products, sectorKey,
     createdAt: new Date().toISOString()
   };
 
@@ -187,54 +99,41 @@ async function runAnalysis() {
   STATE.savedReports.unshift(report);
   localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
 
-  // حفظ في Supabase
   try {
     const token = window.__AUTH_TOKEN__;
     if (token) {
       const { data: { user } } = await sb.auth.getUser();
       if (user) {
         await sb.from('reports').insert({
-          user_id:        user.id,
-          biz_name:       report.bizName,
-          biz_type:       report.bizType,
-          period:         report.period,
-          revenue:        report.metrics?.revenue || 0,
-          total_expenses: report.metrics?.totalExpenses || 0,
-          net_profit:     report.metrics?.netProfit || 0,
-          net_margin:     report.metrics?.netMargin || 0,
-          health_score:   report.scoreData?.total || 0,
-          report_json:    report
+          user_id: user.id, biz_name: report.bizName, biz_type: report.bizType,
+          period: report.period, revenue: report.metrics?.revenue || 0,
+          total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
+          net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
+          report_json: report
         });
-        await sb.from('profiles').update({
-          analyses_used: (window._profileUsed || 0) + 1
-        }).eq('id', user.id);
+        await sb.from('profiles').update({ analyses_used: (window._profileUsed || 0) + 1 }).eq('id', user.id);
       }
     }
   } catch(saveErr) { console.warn('Supabase save error:', saveErr); }
 
   if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
-
-  // Render results
   renderResults(report);
   showPage('results');
-
   document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';
   if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'none';
-    btn.disabled = false;
-
+  btn.disabled = false;
   toast('تم حفظ التقرير ✓');
 }
 
-
 function renderResults(report) {
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey, createdAt} = report;
+  // ✅ resolvedSectorKey معرّف هنا بشكل صحيح — لا تغيير مطلوب هنا
   const resolvedSectorKey = sectorKey || getSectorKey(bizType);
   const {revenue, netProfit, netMargin, grossMargin, totalExpenses, rentPct, salPct, cogsPct, mktPct, cogs, rent} = metrics;
 
   document.getElementById('resultTitle').textContent = `تقرير ${bizName}`;
-  document.getElementById('resultMeta').textContent  = `${bizType} — تحليل ${period} — ${new Date(createdAt).toLocaleDateString('ar-SA')}`;
+  document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${new Date(createdAt).toLocaleDateString('ar-SA')}`;
 
-  // KPIs
   document.getElementById('resultKpis').innerHTML = [
     {val:fmt(revenue)+' ر', label:'الإيرادات', cls:'neu'},
     {val:(netProfit>=0?'+':'')+fmt(netProfit)+' ر', label:'صافي الربح', cls:netProfit>=0?'pos':'neg'},
@@ -242,7 +141,6 @@ function renderResults(report) {
     {val:scoreData.total+'/100', label:'مؤشر الصحة', cls:scoreData.total>=65?'pos':scoreData.total>=40?'warn':'neg'},
   ].map(k=>`<div class="kpi"><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
-  // Score
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
   document.getElementById('resScoreBreakdown').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
@@ -256,20 +154,16 @@ function renderResults(report) {
         </div>`).join('')}
     </div>`;
 
-  // Benchmark
   const bench = BENCHMARKS[resolvedSectorKey];
   const bMetrics = { netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
   renderBenchmarkItems(bMetrics, bench, 'benchmarkContainer');
 
-  // Alerts
   renderAlerts(alerts, 'resultAlerts');
 
-  // Breakeven
   const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0)+(metrics.utilities||0);
   const beNetProfit = metrics.netProfit !== undefined ? metrics.netProfit : (revenue - (cogs||0) - fixedCosts);
   renderBreakeven(revenue, cogs, fixedCosts, 'resultBreakeven', beNetProfit);
 
-  // Products analysis
   if(products.length) {
     const withMargins = products.map(p=>{
       const margin = p.price>0 ? ((p.price-p.cost)/p.price*100) : 0;
@@ -277,12 +171,9 @@ function renderResults(report) {
       return {...p,margin,profit};
     }).sort((a,b)=>b.margin-a.margin);
     const totalProd = withMargins.reduce((s,p)=>s+Math.max(0,p.profit),0);
-
     document.getElementById('resultProducts').innerHTML = withMargins.map((p,i)=>{
       const contrib = totalProd>0 ? ((p.profit/totalProd)*100).toFixed(0) : 0;
-      const suggestion = p.margin < 15
-        ? `رفع السعر 5% يرفع الربح ${fmt(p.qty*p.cost*0.05)} ﷼`
-        : p.margin > 50 ? 'منتج رابح — ركّز عليه' : 'أداء طبيعي';
+      const suggestion = p.margin < 15 ? `رفع السعر 5% يرفع الربح ${fmt(p.qty*p.cost*0.05)} ﷼` : p.margin > 50 ? 'منتج رابح — ركّز عليه' : 'أداء طبيعي';
       return `<div class="prod-analysis-row">
         <div class="prod-rank ${i===0?'rank-1':i===1?'rank-2':'rank-3'}">${i+1}</div>
         <div style="flex:1;">
@@ -304,10 +195,7 @@ function renderResults(report) {
     document.getElementById('resultProducts').innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">لم يتم إدخال منتجات</div>';
   }
 
-  // AI Analysis
   renderAIBlocks(reportText, 'aiBlocks');
-
-  // Scenarios
   renderScenarios(scenarios, revenue, 'scenariosContainer');
 }
 
@@ -338,24 +226,32 @@ function updateDashboard() {
   const rep = STATE.savedReports[0];
   if(!rep){ return; }
   const m = rep.metrics;
+
   document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ر';
+
   const pk = document.getElementById('dk-profit');
   pk.textContent = (m.netProfit>=0?'+':'')+fmt(m.netProfit)+' ر';
   pk.className = 'kpi-val '+(m.netProfit>=0?'pos':'neg');
+
   const mk = document.getElementById('dk-margin');
   mk.textContent = m.netMargin+'%';
   mk.className = 'kpi-val '+(m.netMargin>15?'pos':m.netMargin<5?'neg':'warn');
-  document.getElementById('dk-health').textContent = rep.scoreData.total+'/100';
 
+  document.getElementById('dk-health').textContent = rep.scoreData.total+'/100';
   renderScore('scoreRingFill','scoreVal','scoreLabel','scoreBreakdown', rep.scoreData.total);
-  renderAlerts(rep.alerts || generateAlerts({...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct}, resolvedSectorKey), 'alertsContainer');
+
+  // ✅ إصلاح 2: تعريف صريح لكل المتغيرات المطلوبة بدلاً من استخدامها مباشرة
+  const { netMargin, grossMargin, rentPct, salPct, cogsPct } = m;
+  const resolvedSectorKey = getSectorKey(rep.bizType || '');
+  renderAlerts(
+    rep.alerts || generateAlerts({ ...m, netMargin, grossMargin, rentPct, salPct, cogsPct }, resolvedSectorKey),
+    'alertsContainer'
+  );
 
   const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.other||0);
   renderBreakeven(m.revenue, m.cogs||0, fixedCosts, 'breakevenContainer', m.netProfit);
 
-  // Forecast
-  const monthly = m.netProfit;
-  const forecast3m = monthly * 3;
+  const forecast3m = m.netProfit * 3;
   const optimistic = (m.netProfit + m.revenue*0.1) * 3;
   document.getElementById('forecastContainer').innerHTML = `
     <div class="kpi-row kpi-row-2">
@@ -383,16 +279,11 @@ async function loadReportsFromDB() {
       .order('created_at', { ascending: false })
       .limit(20);
     if (error || !data) return;
-    // تحويل البيانات لشكل STATE
     STATE.savedReports = data.map(r => ({
-      id: r.id,
-      bizName: r.biz_name,
-      bizType: r.biz_type,
-      period: r.period,
+      id: r.id, bizName: r.biz_name, bizType: r.biz_type, period: r.period,
       metrics: { revenue: r.revenue, totalExpenses: r.total_expenses, netProfit: r.net_profit, netMargin: r.net_margin, healthScore: r.health_score },
       scoreData: r.report_json?.scoreData || { total: r.health_score },
-      reportJson: r.report_json,
-      date: r.created_at
+      reportJson: r.report_json, date: r.created_at
     }));
     localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
   } catch(e) { console.warn('loadReportsFromDB error:', e); }
@@ -464,11 +355,11 @@ function handleExcel(input) {
       const num = v => { const n=parseFloat(String(v).replace(/[,،\s]/g,'')); return isNaN(n)?0:n; };
       const set = (id,v) => { const el=document.getElementById(id); if(el){el.value=v; el.dispatchEvent(new Event('input'));} };
 
-      // النوع ١: جدول منتجات (أعمدة)
       const headers = rows[0].map(h => clean(h).toLowerCase());
       const hasProduct = headers.some(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف'));
       const hasQty = headers.some(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد'));
       const hasRev = headers.some(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue'));
+
       if (hasProduct && (hasQty||hasRev)) {
         const nI=headers.findIndex(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف'));
         const qI=headers.findIndex(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد'));
@@ -480,37 +371,28 @@ function handleExcel(input) {
         if(products.length){showProductTable(products);toast('✅ تم قراءة '+products.length+' منتج');return;}
       }
 
-      // النوع ٢: تقرير يومي
       const hasDate=headers.some(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
       const hasSales=headers.some(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
       if(hasDate&&hasSales){
         const dI=headers.findIndex(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
         const sI=headers.findIndex(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
         const data=rows.slice(1).filter(r=>r[sI]).map(r=>({date:clean(r[dI]),sales:num(r[sI])}));
-        if(data.length){
-          const total=data.reduce((s,r)=>s+r.sales,0);
-          set('f-rev',total);
-          toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en'));
-          return;
-        }
+        if(data.length){ const total=data.reduce((s,r)=>s+r.sales,0); set('f-rev',total); toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en')); return; }
       }
 
-      // النوع ٣: key-value — البيانات الرئيسية
       const pairs=[];
       rows.forEach(row=>{const k=clean(row[0]),v=row[1];if(k&&v!==''&&v!==undefined)pairs.push([k,v]);});
-
       const fieldMap=[
-        {field:'f-name',    keys:['اسم المشروع','اسم مشروع','اسم النشاط','المشروع','اسم الكافيه','اسم المطعم','اسم المتجر']},
-        {field:'f-type',    keys:['نوع النشاط','نوع المشروع','القطاع','النشاط','نوع']},
-        {field:'f-rev',     keys:['الإيرادات','إيرادات','المبيعات','مبيعات','إجمالي المبيعات','إجمالي الإيرادات','الدخل','revenue','sales']},
-        {field:'f-cogs',    keys:['تكلفة المواد','تكلفة البضاعة','تكلفة المنتجات','تكلفة الخامات','cogs','تكلفة المبيعات','تكلفة البضائع']},
-        {field:'f-sal',     keys:['رواتب الموظفين','الرواتب','رواتب','أجور','salaries','wages']},
-        {field:'f-rent',    keys:['الإيجار','إيجار','rent','اجار']},
+        {field:'f-name', keys:['اسم المشروع','اسم مشروع','اسم النشاط','المشروع','اسم الكافيه','اسم المطعم','اسم المتجر']},
+        {field:'f-type', keys:['نوع النشاط','نوع المشروع','القطاع','النشاط','نوع']},
+        {field:'f-rev', keys:['الإيرادات','إيرادات','المبيعات','مبيعات','إجمالي المبيعات','إجمالي الإيرادات','الدخل','revenue','sales']},
+        {field:'f-cogs', keys:['تكلفة المواد','تكلفة البضاعة','تكلفة المنتجات','تكلفة الخامات','cogs','تكلفة المبيعات','تكلفة البضائع']},
+        {field:'f-sal', keys:['رواتب الموظفين','الرواتب','رواتب','أجور','salaries','wages']},
+        {field:'f-rent', keys:['الإيجار','إيجار','rent','اجار']},
         {field:'f-utilities',keys:['الكهرباء والماء','الكهرباء والمياه','كهرباء وماء','كهرباء','utilities']},
-        {field:'f-mkt',     keys:['التسويق','تسويق','إعلانات','دعاية وإعلان','marketing']},
-        {field:'f-other',   keys:['مصروفات أخرى','مصاريف أخرى','أخرى','متنوع','other']},
+        {field:'f-mkt', keys:['التسويق','تسويق','إعلانات','دعاية وإعلان','marketing']},
+        {field:'f-other', keys:['مصروفات أخرى','مصاريف أخرى','أخرى','متنوع','other']},
       ];
-
       let matched=0;
       pairs.forEach(([k,v])=>{
         const kC=k.replace(/\s+/g,'');
@@ -521,24 +403,15 @@ function handleExcel(input) {
             matched++; break;
           }
         }
-        if(k.includes('الفترة')||k.includes('فترة')){
-          const el=document.getElementById('f-period');
-          if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof togglePeriod==='function')togglePeriod();}
-        }
-        if(k.includes('الشهر')||k.includes('شهر')){
-          const el=document.getElementById('f-month');if(el)set('f-month',String(v).trim());
-        }
+        if(k.includes('الفترة')||k.includes('فترة')){ const el=document.getElementById('f-period'); if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof togglePeriod==='function')togglePeriod();} }
+        if(k.includes('الشهر')||k.includes('شهر')){ const el=document.getElementById('f-month');if(el)set('f-month',String(v).trim()); }
       });
-
       if(matched>0){if(typeof liveCalc==='function')liveCalc();toast('✅ تم قراءة '+matched+' حقل من الملف');}
       else toast('⚠️ تنسيق الملف غير معروف — استخدم عمودين: البند والمبلغ');
-
     } catch(err){console.error('handleExcel:',err);toast('❌ خطأ: '+err.message);}
   };
   reader.readAsBinaryString(file);
 }
-
-// excelZone drag-drop removed — using excel-input directly
 
 // ══════════════════════════════════════════
 // PDF EXPORT
@@ -551,13 +424,12 @@ async function exportPDF() {
 
   doc.setFillColor(7,8,10); doc.rect(0,0,210,297,'F');
   doc.setFillColor(200,164,90); doc.rect(0,0,210,3,'F');
-
   doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(200,164,90);
   doc.text('Tawakkad Financial Report',105,22,{align:'center'});
   doc.setFontSize(11); doc.setTextColor(180,175,165);
   doc.text(`${r.bizName} — ${r.bizType} — ${r.period}`,105,31,{align:'center'});
   doc.setFontSize(9); doc.setTextColor(100,95,88);
-  doc.text(`${new Date(r.createdAt).toLocaleDateString('ar-SA')}  |  Health Score: ${r.scoreData.total}/100`,105,39,{align:'center'});
+  doc.text(`${new Date(r.createdAt).toLocaleDateString('ar-SA')} | Health Score: ${r.scoreData.total}/100`,105,39,{align:'center'});
   doc.setDrawColor(200,164,90); doc.setLineWidth(0.3); doc.line(20,44,190,44);
 
   let y=55;
@@ -584,6 +456,7 @@ async function exportPDF() {
       y+=5;
     });
   }
+
   doc.setFillColor(200,164,90); doc.rect(0,293,210,4,'F');
   doc.setFontSize(7); doc.setTextColor(80,75,70);
   doc.text('Generated by Tawakkad — Certainty Before Investment — tawakkad.sa',105,291,{align:'center'});
@@ -591,9 +464,8 @@ async function exportPDF() {
   toast('تم تحميل PDF ✓');
 }
 
-
 // ══════════════════════════════════════════
-// AI CFO
+// AI CFO CONTEXT
 // ══════════════════════════════════════════
 let CFO_HISTORY = [];
 
@@ -602,40 +474,25 @@ function getCFOContext() {
   if (!rep) return null;
   const m = rep.metrics;
   return {
-    bizName: rep.bizName,
-    bizType: rep.bizType,
-    period: rep.period,
-    revenue: m.revenue,
-    netProfit: m.netProfit,
-    netMargin: m.netMargin,
-    grossMargin: m.grossMargin,
-    totalExpenses: m.totalExpenses,
-    rentPct: m.rentPct,
-    salPct: m.salPct,
-    cogsPct: m.cogsPct,
-    mktPct: m.mktPct,
-    healthScore: rep.scoreData?.total,
-    products: rep.products || [],
+    bizName: rep.bizName, bizType: rep.bizType, period: rep.period,
+    revenue: m.revenue, netProfit: m.netProfit, netMargin: m.netMargin,
+    grossMargin: m.grossMargin, totalExpenses: m.totalExpenses,
+    rentPct: m.rentPct, salPct: m.salPct, cogsPct: m.cogsPct, mktPct: m.mktPct,
+    healthScore: rep.scoreData?.total, products: rep.products || [],
     alerts: rep.alerts?.map(a => a.msg) || [],
   };
 }
 
 function buildCFOSystemPrompt(ctx) {
   if (!ctx) {
-    return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية.
-لا تتوفر بيانات مشروع حالياً. أجب على الأسئلة المالية بشكل عام ومفيد.
-تحدث بالعربية دائماً. كن موجزاً ومباشراً. استخدم الأرقام والأمثلة.`;
+    return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية. لا تتوفر بيانات مشروع حالياً. أجب على الأسئلة المالية بشكل عام ومفيد. تحدث بالعربية دائماً. كن موجزاً ومباشراً. استخدم الأرقام والأمثلة.`;
   }
-
-  const prodsText = ctx.products.length
-    ? ctx.products.map(p => {
-        const m = p.price > 0 ? (((p.price-p.cost)/p.price)*100).toFixed(0) : 0;
-        return `${p.name} (هامش ${m}%, كمية ${p.qty})`;
-      }).join('، ')
-    : 'لا توجد بيانات';
+  const prodsText = ctx.products.length ? ctx.products.map(p => {
+    const m = p.price > 0 ? (((p.price-p.cost)/p.price)*100).toFixed(0) : 0;
+    return `${p.name} (هامش ${m}%, كمية ${p.qty})`;
+  }).join('، ') : 'لا توجد بيانات';
 
   return `أنت AI CFO لمشروع "${ctx.bizName}" — مستشار مالي متخصص.
-
 بيانات المشروع الحالية:
 - النشاط: ${ctx.bizType} | الفترة: ${ctx.period}
 - الإيرادات: ${ctx.revenue?.toLocaleString()} ريال
@@ -646,7 +503,6 @@ function buildCFOSystemPrompt(ctx) {
 - مؤشر الصحة: ${ctx.healthScore}/100
 - المنتجات: ${prodsText}
 - التنبيهات: ${ctx.alerts?.join(' | ') || 'لا توجد'}
-
 أنت تعرف هذه البيانات بشكل كامل. أجب على أسئلة المستخدم كمستشار مالي خبير:
 - كن مباشراً وموجزاً (3-5 جمل في الغالب)
 - استخدم أرقام المشروع الفعلية في إجاباتك
@@ -655,7 +511,6 @@ function buildCFOSystemPrompt(ctx) {
 - تحدث بالعربية دائماً بأسلوب مستشار محترف وليس روبوت
 - استخدم **bold** للأرقام المهمة والنقاط الرئيسية`;
 }
-
 
 // expose to window
 window.runAnalysis = runAnalysis;
