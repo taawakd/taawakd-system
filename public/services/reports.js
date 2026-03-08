@@ -309,9 +309,9 @@ function renderBreakeven(revenue, cogs, fixedCosts, containerId, netProfitOverri
         <div class="kpi-label">${diff>=0?'فوق نقطة التعادل':'تحت نقطة التعادل'}</div>
       </div>
     </div>
-    <div class="alert alert-${diff>=0?'good':'danger'}">
-      <span class="alert-icon">${diff>=0?'✅':'⚠️'}</span>
-      <span>${diff>=0
+    <div class="alert alert-${status==='good'?'good':'danger'}">
+      <span class="alert-icon">${status==='good'?'✅':'⚠️'}</span>
+      <span>${status==='good'
         ? `مبيعاتك أعلى من نقطة التعادل بـ ${fmt(diff)} ريال (${pctAbove}%) — المشروع مربح.`
         : `تحتاج ${fmt(Math.abs(diff))} ريال إضافية للوصول لنقطة التعادل.`
       }</span>
