@@ -450,7 +450,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       // مسح التقارير المحفوظة من المستخدم السابق وإعادة جلبها من Supabase
       localStorage.removeItem('tw_reports');
       STATE.savedReports = [];
-      loadReportsFromDB();
+      if (typeof loadReportsFromDB === 'function') loadReportsFromDB();
     }
   });
 
@@ -471,20 +471,23 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     <div id="pages-container"></div>
   </div>
 </div>
+<div id="toast" class="toast"></div>
 
 <!-- Utilities -->
-<script src="/utils/helpers.js"></script>
+<script src="utils/helpers.js"></script>
 
-<!-- Services -->
-<script src="/services/supabase.js"></script>
-<script src="/services/financial.js"></script>
-<script src="/services/ai-cfo.js"></script>
-<script src="/services/reports.js"></script>
+<!-- Services (order matters: supabase → dashboard → results → financial → ai-cfo → reports) -->
+<script src="services/supabase.js"></script>
+<script src="services/dashboard.js"></script>
+<script src="services/results.js"></script>
+<script src="services/financial.js"></script>
+<script src="services/ai-cfo.js"></script>
+<script src="services/reports.js"></script>
 
 <!-- Tools -->
-<script src="/tools/index.js"></script>
+<script src="tools/index.js"></script>
 
 <!-- App -->
-<script src="/js/app.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

@@ -2,8 +2,8 @@
 async function initApp() {
   try {
     const [sidebarRes, pagesRes] = await Promise.all([
-      fetch('/components/sidebar.html'),
-      fetch('/components/pages.html')
+      fetch('components/sidebar.html'),
+      fetch('components/pages.html')
     ]);
     const sidebarHTML = await sidebarRes.text();
     const pagesHTML   = await pagesRes.text();

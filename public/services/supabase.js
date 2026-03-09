@@ -11,7 +11,7 @@ async function loadBusinessProfile() {
       .select('*').eq('user_id', user.id).single();
     if (error || !data) return;
     window._businessProfile = data;
-    BP_PRODUCTS = data.products || [];
+    window.BP_PRODUCTS = data.products || [];
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
     set('bp-name', data.biz_name);
     set('bp-type', data.biz_type);
@@ -49,7 +49,7 @@ async function saveBusinessProfile() {
       var_delivery_pct: parseFloat(document.getElementById('bp-delivery')?.value) || 0,
       var_marketing_pct: parseFloat(document.getElementById('bp-marketing')?.value) || 0,
       var_other_pct: parseFloat(document.getElementById('bp-var-other')?.value) || 0,
-      products: BP_PRODUCTS,
+      products: window.BP_PRODUCTS || [],
     };
     const { error } = await sb.from('business_profile')
       .upsert(profile, { onConflict: 'user_id' });

@@ -11,6 +11,9 @@ const BENCHMARKS = {
   ecom: { label: 'تجارة إلكترونية', netMargin: { min: 8, max: 20, label: 'هامش الربح الصافي' }, grossMargin: { min: 30, max: 55, label: 'هامش الربح الإجمالي' }, rentPct: { min: 0, max: 3, label: 'نسبة الإيجار', lowerIsBetter: true }, salPct: { min: 10, max: 25, label: 'نسبة الرواتب', lowerIsBetter: true }, cogsPct: { min: 45, max: 65, label: 'تكلفة البضاعة', lowerIsBetter: true }, mktPct: { min: 10, max: 20, label: 'نسبة التسويق', lowerIsBetter: true }, },
 };
 
+// expose BENCHMARKS for results.js and reports.js (loaded before financial.js)
+window.BENCHMARKS = BENCHMARKS;
+
 // ============================================================
 // التحليل المالي الرئيسي
 // ============================================================
@@ -145,7 +148,7 @@ function openSavedReport(id) {
   if(!rep) return;
   STATE.currentReport = rep;
   renderResults(rep);
-  showPage('page-results');
+  showPage('results');
 }
 
 function deleteSavedReport(id) {
@@ -286,7 +289,7 @@ async function exportPDF() {
 // ══════════════════════════════════════════
 // AI CFO CONTEXT
 // ══════════════════════════════════════════
-let CFO_HISTORY = [];
+window.CFO_HISTORY = window.CFO_HISTORY || [];
 
 function getCFOContext() {
   const rep = STATE.currentReport;

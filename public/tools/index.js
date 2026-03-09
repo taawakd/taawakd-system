@@ -190,20 +190,21 @@ function renderPricingPage() {
 }
 
 function updatePricingRow(i, origPrice, cost, qty) {
-  const slider = document.getElementById('pslider-'+i);
-  const newPrice = origPrice * (1 + pct/100);
+  const slider    = document.getElementById('pslider-'+i);
+  const sliderPct = parseInt(slider.value);
+  const newPrice  = origPrice * (1 + sliderPct/100);
   const oldProfit = (origPrice - cost) * qty;
   const newProfit = (newPrice - cost) * qty;
   const delta     = newProfit - oldProfit;
-  const newMargin = ((newPrice-cost)/newPrice*100).toFixed(0);
+  const newMargin = newPrice > 0 ? ((newPrice-cost)/newPrice*100).toFixed(0) : 0;
 
-  document.getElementById('pslider-val-'+i).textContent = (pct>=0?'+':'')+pct+'%';
+  document.getElementById('pslider-val-'+i).textContent = (sliderPct>=0?'+':'')+sliderPct+'%';
   document.getElementById('pr-new-'+i).textContent      = newPrice.toFixed(0)+' ر';
   document.getElementById('pr-impact-'+i).textContent   = (delta>=0?'+':'')+fmt(delta)+' ر';
   document.getElementById('pr-impact-'+i).style.color   = delta>=0?'var(--green)':'var(--red)';
 
   document.getElementById('pricingSuggestion').innerHTML =
-    `💡 رفع سعر <strong>${pct>=0?'رفع':'خفض'} ${Math.abs(pct)}%</strong> — السعر الجديد <strong>${newPrice.toFixed(0)} ﷼</strong> — هامش <strong>${newMargin}%</strong> — تأثير على الربح: <strong style="color:${delta>=0?'var(--green)':'var(--red)'};">${delta>=0?'+':''}${fmt(delta)} ﷼</strong>`;
+    `💡 <strong>${sliderPct>=0?'رفع':'خفض'} ${Math.abs(sliderPct)}%</strong> — السعر الجديد <strong>${newPrice.toFixed(0)} ﷼</strong> — هامش <strong>${newMargin}%</strong> — تأثير على الربح: <strong style="color:${delta>=0?'var(--green)':'var(--red)'};">${delta>=0?'+':''}${fmt(delta)} ﷼</strong>`;
 }
 
 // ══════════════════════════════════════════
@@ -409,7 +410,8 @@ style.textContent='@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}t
 document.head.appendChild(style);
 
 // ============ ملف المشروع ============
-let BP_PRODUCTS = []; // قائمة المنتجات في الذاكرة
+window.BP_PRODUCTS = window.BP_PRODUCTS || []; // قائمة المنتجات — مشتركة عبر السكريبتات
+var BP_PRODUCTS = window.BP_PRODUCTS;          // alias for local use in this script
 
 function calcBPFixed() {
   const ids = ['bp-rent','bp-salaries','bp-utilities','bp-subscriptions','bp-fixed-other'];
