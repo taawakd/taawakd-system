@@ -95,8 +95,10 @@ async function runAnalysis() {
   const report = {
     id: Date.now(), bizName, bizType, period, metrics,
     scoreData, alerts, scenarios, reportText, products, sectorKey,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    reportPeriod: window._excelReportPeriod || null
   };
+  window._excelReportPeriod = null;
 
   STATE.currentReport = report;
   STATE.savedReports.unshift(report);
@@ -112,7 +114,7 @@ async function runAnalysis() {
           period: report.period, revenue: report.metrics?.revenue || 0,
           total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
           net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
-          report_json: report
+          report_json: report, report_period: report.reportPeriod || null
         });
         await sb.from('profiles').update({ analyses_used: (window._profileUsed || 0) + 1 }).eq('id', user.id);
       }
@@ -199,7 +201,20 @@ function handleExcel(input) {
         const dI=headers.findIndex(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
         const sI=headers.findIndex(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
         const data=rows.slice(1).filter(r=>r[sI]).map(r=>({date:clean(r[dI]),sales:num(r[sI])}));
-        if(data.length){ const total=data.reduce((s,r)=>s+r.sales,0); set('f-rev',total); toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en')); return; }
+        if(data.length){
+          const total=data.reduce((s,r)=>s+r.sales,0);
+          set('f-rev',total);
+          // Extract date range for reportPeriod
+          const validDates=data.map(r=>new Date(r.date)).filter(d=>!isNaN(d));
+          if(validDates.length>=2){
+            const minD=new Date(Math.min(...validDates.map(d=>d.getTime())));
+            const maxD=new Date(Math.max(...validDates.map(d=>d.getTime())));
+            window._excelReportPeriod=minD.toLocaleDateString('ar-SA')+' ← '+maxD.toLocaleDateString('ar-SA');
+          } else if(validDates.length===1){
+            window._excelReportPeriod=validDates[0].toLocaleDateString('ar-SA');
+          }
+          toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en')); return;
+        }
       }
 
       const pairs=[];
@@ -227,7 +242,16 @@ function handleExcel(input) {
         }
         if(k.includes('الفترة')||k.includes('فترة')){ const el=document.getElementById('f-period'); if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof togglePeriod==='function')togglePeriod();} }
         if(k.includes('الشهر')||k.includes('شهر')){ const el=document.getElementById('f-month');if(el)set('f-month',String(v).trim()); }
+        // Scan for date-range indicators to build reportPeriod
+        const kL=k.toLowerCase().replace(/\s+/g,'');
+        if(kL==='period'||kL==='الفترة'||kL==='فترة'){if(!window._excelReportPeriod)window._excelReportPeriod=String(v).trim();}
+        if(kL.includes('from')||kL.includes('startdate')||kL.includes('start')||k.includes('من')){window._excelPStart=String(v).trim();}
+        if(kL.includes('to')||kL.includes('enddate')||kL.includes('end')||k.includes('إلى')||k.includes('الى')){window._excelPEnd=String(v).trim();}
       });
+      if(!window._excelReportPeriod && window._excelPStart && window._excelPEnd){
+        window._excelReportPeriod=window._excelPStart+' ← '+window._excelPEnd;
+      }
+      delete window._excelPStart; delete window._excelPEnd;
       if(matched>0){if(typeof liveCalc==='function')liveCalc();toast('✅ تم قراءة '+matched+' حقل من الملف');}
       else toast('⚠️ تنسيق الملف غير معروف — استخدم عمودين: البند والمبلغ');
     } catch(err){console.error('handleExcel:',err);toast('❌ خطأ: '+err.message);}
@@ -251,7 +275,8 @@ async function exportPDF() {
   doc.setFontSize(11); doc.setTextColor(180,175,165);
   doc.text(`${r.bizName} — ${r.bizType} — ${r.period}`,105,31,{align:'center'});
   doc.setFontSize(9); doc.setTextColor(100,95,88);
-  doc.text(`${new Date(r.createdAt).toLocaleDateString('ar-SA')} | Health Score: ${r.scoreData.total}/100`,105,39,{align:'center'});
+  const _d = r.createdAt||r.date; const _ds = _d&&!isNaN(new Date(_d))?new Date(_d).toLocaleDateString('ar-SA'):'—';
+  doc.text(`${_ds} | Health Score: ${r.scoreData.total}/100`,105,39,{align:'center'});
   doc.setDrawColor(200,164,90); doc.setLineWidth(0.3); doc.line(20,44,190,44);
 
   let y=55;

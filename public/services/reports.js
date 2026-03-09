@@ -422,7 +422,7 @@ function renderComparePage() {
     <div class="card">
       <div class="compare-row" style="grid-template-columns:1fr auto 1fr;margin-bottom:20px;">
         <div class="compare-period">
-          <div class="compare-period-label">📅 ${r2.bizName} — ${new Date(r2.createdAt).toLocaleDateString('ar-SA')}</div>
+          <div class="compare-period-label">📅 ${r2.bizName} — ${r2.reportPeriod||(d=>d&&!isNaN(d)?d.toLocaleDateString('ar-SA'):'—')(new Date(r2.createdAt||r2.date))}</div>
           <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m2.revenue)} ﷼</span></div>
           <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m2.netProfit)} ﷼</span></div>
           <div class="compare-metric"><span>هامش الربح</span><span class="compare-metric-val">${m2.netMargin}%</span></div>
@@ -430,7 +430,7 @@ function renderComparePage() {
         </div>
         <div class="compare-arrow">⇄</div>
         <div class="compare-period">
-          <div class="compare-period-label">📅 ${r1.bizName} — ${new Date(r1.createdAt).toLocaleDateString('ar-SA')}</div>
+          <div class="compare-period-label">📅 ${r1.bizName} — ${r1.reportPeriod||(d=>d&&!isNaN(d)?d.toLocaleDateString('ar-SA'):'—')(new Date(r1.createdAt||r1.date))}</div>
           <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m1.revenue)} ﷼</span></div>
           <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m1.netProfit)} ﷼</span></div>
           <div class="compare-metric"><span>هامش الربح</span><span class="compare-metric-val">${m1.netMargin}%</span></div>

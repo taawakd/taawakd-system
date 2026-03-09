@@ -63,7 +63,8 @@ async function loadReportsFromDB() {
       id: r.id, bizName: r.biz_name, bizType: r.biz_type, period: r.period,
       metrics: { revenue: r.revenue, totalExpenses: r.total_expenses, netProfit: r.net_profit, netMargin: r.net_margin, healthScore: r.health_score },
       scoreData: r.report_json?.scoreData || { total: r.health_score },
-      reportJson: r.report_json, date: r.created_at
+      reportJson: r.report_json, createdAt: r.created_at,
+      reportPeriod: r.report_period || r.report_json?.reportPeriod || null
     }));
     localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
   } catch(e) { console.warn('loadReportsFromDB error:', e); }
@@ -91,7 +92,7 @@ function renderSavedReports() {
         <div class="kpi card-sm"><div class="kpi-val ${m.netProfit>=0?'pos':'neg'}" style="font-size:16px;">${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ﷼</div><div class="kpi-label">صافي الربح</div></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);">
-        <div style="font-size:12px;color:var(--gray);">${new Date(r.createdAt).toLocaleDateString('ar-SA')}</div>
+        <div style="font-size:12px;color:var(--gray);">${r.reportPeriod || (r.createdAt||r.date ? new Date(r.createdAt||r.date).toLocaleDateString('ar-SA') : '—')}</div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSavedReport('${r.id}')">عرض</button>
           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSavedReport('${r.id}')">حذف</button>

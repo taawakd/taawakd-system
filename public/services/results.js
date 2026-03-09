@@ -3,12 +3,14 @@
 // ============================================================
 
 function renderResults(report) {
-  const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey, createdAt} = report;
+  const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey} = report;
+  const createdAt = report.createdAt || report.date || null;
   const resolvedSectorKey = sectorKey || getSectorKey(bizType);
   const {revenue, netProfit, netMargin, grossMargin, totalExpenses, rentPct, salPct, cogsPct, mktPct, cogs, rent} = metrics;
 
   document.getElementById('resultTitle').textContent = `تقرير ${bizName}`;
-  document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${new Date(createdAt).toLocaleDateString('ar-SA')}`;
+  const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
+  document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${dateStr}`;
 
   document.getElementById('resultKpis').innerHTML = [
     {val:fmt(revenue)+' ر', label:'الإيرادات', cls:'neu'},
