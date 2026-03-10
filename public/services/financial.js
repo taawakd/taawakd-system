@@ -383,6 +383,31 @@ function getCFOContext() {
   console.log('[Tawakkad] getCFOContext — currentReport.id:', rep.id, '| bizName:', rep.bizName);
   console.log('[Tawakkad] CFO previous reports:', previousReports);
 
+  // ── Trend: period-over-period comparison (current vs most-recent previous) ──
+  const trend = {};
+  if (previousReports.length > 0) {
+    const prev = previousReports[0];
+
+    if (prev.revenue != null && m.revenue != null) {
+      trend.revenueChange = m.revenue - prev.revenue;
+      trend.revenuePct    = prev.revenue !== 0
+        ? ((m.revenue - prev.revenue) / prev.revenue) * 100
+        : null;
+    }
+
+    if (prev.profit != null && m.netProfit != null) {
+      trend.profitChange = m.netProfit - prev.profit;
+      trend.profitPct    = prev.profit !== 0
+        ? ((m.netProfit - prev.profit) / prev.profit) * 100
+        : null;
+    }
+
+    if (prev.score != null && rep.scoreData?.total != null) {
+      trend.healthChange = rep.scoreData.total - prev.score;
+    }
+  }
+  console.log('[Tawakkad] CFO trend:', trend);
+
   return {
     // ── flat fields kept for context bar UI in ai-cfo.js ──
     bizName: rep.bizName, bizType: rep.bizType, period: rep.period,
@@ -411,7 +436,8 @@ function getCFOContext() {
         alerts:        rep.alerts?.map(a => a.msg) || [],
         products:      rep.products || []
       },
-      previous: previousReports
+      previous: previousReports,
+      trend
     }
   };
 }
@@ -427,6 +453,7 @@ function buildCFOSystemPrompt(ctx) {
   const { cfoContext } = ctx;
   const latest   = cfoContext.latest;
   const previous = cfoContext.previous;
+  const trend    = cfoContext.trend || {};
 
   // Build product line
   const prodsText = (latest.products || []).length
@@ -447,6 +474,21 @@ function buildCFOSystemPrompt(ctx) {
       ).join('\n')
     : '  لا توجد تقارير كافية للمقارنة.';
 
+  // Build trend block — only rendered when previous reports exist and produced a diff
+  const hasTrend = Object.keys(trend).length > 0;
+  const fmtChg  = v => (v != null && !isNaN(Number(v)))
+    ? (Number(v) >= 0 ? '+' : '') + Number(v).toLocaleString('en', { maximumFractionDigits: 0 })
+    : '—';
+  const fmtPct  = v => (v != null && !isNaN(Number(v)))
+    ? (Number(v) >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
+    : '—';
+  const trendText = hasTrend
+    ? `\n══ اتجاه الأداء (مقارنة بآخر تقرير سابق) ══
+- الإيرادات: ${fmtChg(trend.revenueChange)} ريال (${fmtPct(trend.revenuePct)})
+- الربح: ${fmtChg(trend.profitChange)} ريال (${fmtPct(trend.profitPct)})
+- مؤشر الصحة: ${trend.healthChange != null ? fmtChg(trend.healthChange) + ' نقطة' : '—'}\n`
+    : '';
+
   return `أنت AI CFO لمشروع "${latest.bizName}" — مستشار مالي متخصص للمشاريع السعودية الصغيرة والمتوسطة.
 
 ══ آخر تحليل (المرجع الأساسي) ══
@@ -464,7 +506,7 @@ function buildCFOSystemPrompt(ctx) {
 ══ التقارير السابقة — أرقام فعلية من قاعدة البيانات ══
 [تعليمات الاستخدام: استخدم الأرقام التالية فقط ولا تستخدم أمثلة افتراضية. إذا كانت قيمة "—" فهي غير متوفرة ولا تستبدلها بأرقام.]
 ${prevText}
-
+${trendText}
 ══ تعليمات العمل ══
 - أنت المستشار المالي الحصري لهذا المشروع — ردودك مقيّدة بنطاق التحليل المالي فقط.
 - استخدم الأرقام الواردة أعلاه حصراً. لا تستخدم أمثلة افتراضية أو أرقاماً من خارج هذا النص.
