@@ -86,7 +86,8 @@ function renderResults(report) {
     btn.textContent = 'خذ رأي الخبير المالي AI CFO';
     btn.style.display = 'block';
     btn.style.margin  = '24px auto';
-kpis.after(btn);    btn.onclick = () => {
+    kpis.after(btn);
+    btn.onclick = () => {
       const question = 'حلّل هذا التقرير وقدّم أهم 3 نقاط قوة، أهم 3 مخاطر، وأهم قرار مالي يجب اتخاذه الآن.';
       showPage('cfo');
       setTimeout(() => {
