@@ -364,8 +364,10 @@ async function exportPDF() {
   // ── 7. Restore visibility ────────────────────────────────────────────────
   if (pageEl) pageEl.style.display = prevDisplay;
 
-  // ── 8. Convert canvas to image ───────────────────────────────────────────
-  const imgData = canvas.toDataURL('image/jpeg', 1.0);
+  // ── 8. Convert canvas to image (PNG — lossless, no chroma subsampling) ──
+  // JPEG chroma subsampling can corrupt fine RTL glyph edges; PNG is
+  // lossless and preserves every pixel the browser rendered exactly.
+  const imgData = canvas.toDataURL('image/png');
 
   // ── 9. Create PDF — image only, zero pdf.text() calls ───────────────────
   const { jsPDF } = window.jspdf;
@@ -375,7 +377,7 @@ async function exportPDF() {
   const pageHeight = pdf.internal.pageSize.getHeight();
 
   // ── 10. Insert the image (first page) ───────────────────────────────────
-  pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+  pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
 
   // ── 11. Pagination — repeat image at offset for each additional page ─────
   // imgHeight is the full image height in PDF mm units (preserves aspect ratio).
@@ -388,7 +390,7 @@ async function exportPDF() {
     while (heightLeft > 0) {
       const yOffset = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, yOffset, pageWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, yOffset, pageWidth, imgHeight);
       heightLeft -= pageHeight;
     }
   }
