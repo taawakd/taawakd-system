@@ -310,6 +310,18 @@ async function exportPDF() {
   el.style.direction  = 'rtl';
   el.style.fontFamily = 'Cairo, Arial, sans-serif';
 
+  // Normalize all text nodes inside the container to NFC before html2canvas
+  // captures them. Arabic text can arrive as NFD (decomposed code points) or
+  // with incorrectly decoded bytes; NFC normalization ensures every glyph
+  // sequence is in its canonical composed form, eliminating þÙ corruption.
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+  let node;
+  while ((node = walker.nextNode())) {
+    if (node.textContent) {
+      node.textContent = node.textContent.normalize('NFC');
+    }
+  }
+
   // #page-results lives inside a .page container that is display:none when
   // it is not the active page. html2canvas cannot compute fonts or layout
   // for hidden elements, which produces the þÙ glyph corruption.
