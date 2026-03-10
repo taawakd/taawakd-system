@@ -303,119 +303,216 @@ function handleExcel(input) {
 // Fix: deep-clone the results content into a self-contained light-mode wrapper
 // with all colours set via explicit inline styles so html2canvas sees real values.
 async function exportPDF() {
-  const el = document.querySelector('#page-results');
-  if (!el) return;
+  const rep = STATE.currentReport;
+  if (!rep) { alert('لا يوجد تقرير للتصدير. يرجى إجراء تحليل أولاً.'); return; }
 
-  // ── 1. تفعيل صفحة النتائج حتى يحسب المتصفح الـ layout كاملاً ──
-  const resultsPage = el.closest('.page');
-  const prevActive  = document.querySelector('.page.active');
-  if (prevActive)  prevActive.classList.remove('active');
-  if (resultsPage) resultsPage.classList.add('active');
-  await new Promise(r => requestAnimationFrame(r));
-  await new Promise(r => requestAnimationFrame(r));
+  const { bizName, bizType, period, metrics, scoreData, alerts, products, reportText } = rep;
+  const { revenue, netProfit, netMargin, grossMargin, totalExpenses,
+          rentPct, salPct, cogsPct, mktPct, cogs, rent, salaries, marketing, other, utilities } = metrics;
+  const score = scoreData ? scoreData.total : 0;
+  const scoreColor = score >= 65 ? '#16a34a' : score >= 40 ? '#d97706' : '#dc2626';
+  const profitColor = netProfit >= 0 ? '#16a34a' : '#dc2626';
+  const marginColor = netMargin > 15 ? '#16a34a' : netMargin < 5 ? '#dc2626' : '#d97706';
+  const dateStr = rep.reportPeriod || (rep.createdAt ? new Date(rep.createdAt).toLocaleDateString('ar-SA') : '');
 
-  // ── 2. إنشاء wrapper أبيض اللون وإضافته للـ DOM أولاً ──
+  // ── مساعد لتنسيق الأرقام ──
+  const f = n => (n || 0).toLocaleString('ar-SA', { maximumFractionDigits: 0 });
+
+  // ── بناء HTML نظيف بألوان صريحة بدون CSS variables ──
+  const alertsHtml = (alerts || []).slice(0, 6).map(a => {
+    const icon  = a.type === 'danger' ? '🔴' : a.type === 'warning' ? '🟡' : '🟢';
+    const color = a.type === 'danger' ? '#fee2e2' : a.type === 'warning' ? '#fef3c7' : '#dcfce7';
+    const border= a.type === 'danger' ? '#fca5a5' : a.type === 'warning' ? '#fcd34d' : '#86efac';
+    return `<div style="padding:10px 14px;margin-bottom:8px;border-radius:8px;background:${color};border-right:4px solid ${border};font-size:13px;color:#1a1a1a;">${icon} ${a.msg || a.message || ''}</div>`;
+  }).join('');
+
+  const productsHtml = (products && products.length) ? `
+    <div style="margin-top:24px;">
+      <h3 style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">🛍️ تحليل المنتجات</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#f3f4f6;">
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;color:#374151;">المنتج</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">السعر</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">التكلفة</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">الكمية</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">الهامش</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${products.map((p, i) => {
+            const margin = p.price > 0 ? ((p.price - p.cost) / p.price * 100).toFixed(0) : 0;
+            const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
+            return `<tr style="background:${bg};">
+              <td style="padding:8px;border:1px solid #e5e7eb;color:#1a1a1a;">${p.name || ''}</td>
+              <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${f(p.price)} ر</td>
+              <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${f(p.cost)} ر</td>
+              <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${p.qty || 0}</td>
+              <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:${margin > 40 ? '#16a34a' : margin > 20 ? '#d97706' : '#dc2626'};">${margin}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : '';
+
+  const expensesRows = [
+    { label: 'تكلفة البضاعة (COGS)', val: cogs },
+    { label: 'الإيجار', val: rent },
+    { label: 'الرواتب', val: salaries },
+    { label: 'التسويق', val: marketing },
+    { label: 'المرافق', val: utilities },
+    { label: 'مصاريف أخرى', val: other },
+  ].filter(r => r.val > 0);
+
+  const expensesHtml = expensesRows.map((r, i) => {
+    const pct = revenue > 0 ? ((r.val / revenue) * 100).toFixed(1) : 0;
+    const bg  = i % 2 === 0 ? '#ffffff' : '#f9fafb';
+    return `<tr style="background:${bg};">
+      <td style="padding:8px;border:1px solid #e5e7eb;color:#374151;">${r.label}</td>
+      <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-weight:600;">${f(r.val)} ر</td>
+      <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#6b7280;">${pct}%</td>
+    </tr>`;
+  }).join('');
+
+  const scoreBreakdownHtml = (scoreData && scoreData.breakdown) ? scoreData.breakdown.map(b => {
+    const pctW = Math.round((b.val / b.max) * 100);
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;color:#4b5563;">${b.label}</span>
+        <span style="font-size:12px;font-weight:600;color:#1a1a1a;">${b.val}/${b.max}</span>
+      </div>
+      <div style="height:8px;background:#e5e7eb;border-radius:4px;">
+        <div style="height:8px;width:${pctW}%;background:${b.color || '#3b82f6'};border-radius:4px;"></div>
+      </div>
+    </div>`;
+  }).join('') : '';
+
+  const aiHtml = reportText ? `
+    <div style="margin-top:24px;padding:16px;background:#f0f9ff;border-radius:10px;border-right:4px solid #3b82f6;">
+      <h3 style="font-size:15px;font-weight:700;color:#1e40af;margin-bottom:10px;">🤖 تحليل الذكاء الاصطناعي</h3>
+      <p style="font-size:12px;color:#374151;line-height:1.8;white-space:pre-wrap;">${reportText.slice(0, 1200)}${reportText.length > 1200 ? '...' : ''}</p>
+    </div>` : '';
+
+  const htmlContent = `
+    <div style="font-family:'IBM Plex Sans Arabic',Arial,sans-serif;direction:rtl;background:#ffffff;color:#1a1a1a;padding:36px;width:730px;box-sizing:border-box;">
+
+      <!-- الرأس -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #1a1a1a;">
+        <div>
+          <h1 style="font-size:22px;font-weight:800;color:#1a1a1a;margin:0 0 6px 0;">${bizName}</h1>
+          <p style="font-size:13px;color:#6b7280;margin:0;">${bizType} · ${period} · ${dateStr}</p>
+        </div>
+        <div style="text-align:center;background:#f8fafc;padding:12px 20px;border-radius:10px;border:2px solid #e5e7eb;">
+          <div style="font-size:28px;font-weight:800;color:${scoreColor};">${score}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">مؤشر الصحة / 100</div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+        <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${f(revenue)}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">الإيرادات (ر)</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="font-size:16px;font-weight:700;color:${profitColor};">${netProfit >= 0 ? '+' : ''}${f(netProfit)}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">صافي الربح (ر)</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="font-size:16px;font-weight:700;color:${marginColor};">${netMargin}%</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">هامش الربح</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${f(totalExpenses)}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">إجمالي المصاريف (ر)</div>
+        </div>
+      </div>
+
+      <!-- التنبيهات -->
+      ${alertsHtml ? `<div style="margin-bottom:24px;">
+        <h3 style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">⚡ أبرز التنبيهات</h3>
+        ${alertsHtml}
+      </div>` : ''}
+
+      <!-- تحليل المصاريف + تحليل الصحة -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+        <div>
+          <h3 style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">📊 تحليل المصاريف</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#f3f4f6;">
+                <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;color:#374151;">البند</th>
+                <th style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">المبلغ</th>
+                <th style="padding:8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">%</th>
+              </tr>
+            </thead>
+            <tbody>${expensesHtml}</tbody>
+          </table>
+        </div>
+        <div>
+          <h3 style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">🏆 تفاصيل مؤشر الصحة</h3>
+          ${scoreBreakdownHtml}
+        </div>
+      </div>
+
+      <!-- المنتجات -->
+      ${productsHtml}
+
+      <!-- تحليل الذكاء الاصطناعي -->
+      ${aiHtml}
+
+      <!-- تذييل -->
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;">
+        <p style="font-size:11px;color:#9ca3af;margin:0;">تم إنشاء هذا التقرير بواسطة توكّد · ${new Date().toLocaleDateString('ar-SA')}</p>
+      </div>
+    </div>`;
+
+  // ── إنشاء wrapper مؤقت وحقن الـ HTML ──
   const wrapper = document.createElement('div');
   Object.assign(wrapper.style, {
     position:   'fixed',
-    top:        '-9999px',   // خارج نطاق الرؤية حتى لا يُزعج المستخدم
+    top:        '-9999px',
     left:       '0',
-    width:      '794px',
+    width:      '802px',
     background: '#ffffff',
-    color:      '#1a1a1a',
-    fontFamily: '"IBM Plex Sans Arabic", Arial, sans-serif',
-    direction:  'rtl',
-    padding:    '32px',
     zIndex:     '99999',
-    boxSizing:  'border-box',
   });
-
-  // ── 3. نسخ المحتوى وإضافته للـ wrapper ثم للـ DOM ──
-  const clone = el.cloneNode(true);
-  clone.style.cssText = 'display:block !important; visibility:visible !important;';
-  wrapper.appendChild(clone);
+  wrapper.innerHTML = htmlContent;
   document.body.appendChild(wrapper);
 
-  // ── 4. انتظار reflow كامل ──
+  // انتظار reflow
   await new Promise(r => requestAnimationFrame(r));
-  await new Promise(r => requestAnimationFrame(r));
-
-  // ── 5. الآن نستدعي getComputedStyle بعد أن صار الـ clone في الـ DOM ──
-  wrapper.querySelectorAll('*').forEach(node => {
-    try {
-      const cs = window.getComputedStyle(node);
-      const bg  = cs.backgroundColor;
-      const col = cs.color;
-
-      // خلفية داكنة جداً → ابيض
-      if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-        const m = bg.match(/\d+/g);
-        if (m && (parseInt(m[0]) + parseInt(m[1]) + parseInt(m[2])) < 180) {
-          node.style.setProperty('background-color', '#ffffff', 'important');
-          node.style.setProperty('background', '#ffffff', 'important');
-        }
-      }
-
-      // نص فاتح جداً (أبيض) → أسود
-      if (col) {
-        const m = col.match(/\d+/g);
-        if (m && (parseInt(m[0]) + parseInt(m[1]) + parseInt(m[2])) > 580) {
-          node.style.setProperty('color', '#1a1a1a', 'important');
-        }
-      }
-
-      // حذف CSS variables من border-color
-      const bc = cs.borderColor;
-      if (bc && (bc.includes('var(') || (bc.match(/\d+/g) && parseInt(bc.match(/\d+/g)[0]) < 30 && bc !== 'rgb(0,0,0)'))) {
-        node.style.setProperty('border-color', '#e0e0e0', 'important');
-      }
-    } catch(e) { /* تجاهل عناصر pseudo مثل ::before */ }
-  });
-
-  // ── 6. انتظار lخيرة قبل الالتقاط ──
   await new Promise(r => requestAnimationFrame(r));
 
   try {
-    // ── 7. التقاط الصورة بـ html2canvas مباشرة ──
     const canvas = await window.html2canvas(wrapper, {
       scale:           2,
       useCORS:         true,
       allowTaint:      true,
       backgroundColor: '#ffffff',
       logging:         false,
-      width:           794,
+      width:           802,
     });
 
-    // ── 8. تحويل الصورة إلى PDF متعدد الصفحات ──
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const pageH = 297;
+    const imgW  = pageW;
+    const imgH  = (canvas.height * pageW) / canvas.width;
 
-    const pageW   = 210;  // mm
-    const pageH   = 297;  // mm
-    const imgW    = pageW;
-    const imgH    = (canvas.height * pageW) / canvas.width;
-
-    let yOffset = 0;
-    let pageNum = 0;
-
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    let yOffset = 0, pageNum = 0;
     while (yOffset < imgH) {
       if (pageNum > 0) pdf.addPage();
-      pdf.addImage(
-        canvas.toDataURL('image/jpeg', 0.92),
-        'JPEG',
-        0, -yOffset,
-        imgW, imgH
-      );
+      pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
       yOffset += pageH;
       pageNum++;
     }
 
     pdf.save('tawakkad-report.pdf');
   } finally {
-    // ── 9. تنظيف واستعادة الحالة السابقة ──
     document.body.removeChild(wrapper);
-    if (resultsPage) resultsPage.classList.remove('active');
-    if (prevActive)  prevActive.classList.add('active');
   }
 }
 
