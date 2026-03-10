@@ -353,21 +353,35 @@ window.CFO_HISTORY = window.CFO_HISTORY || [];
 function getCFOContext() {
   const rep = STATE.currentReport;
   if (!rep) return null;
-  const m = rep.metrics;
+  const m = rep.metrics || {};
 
-  // Helper: distil one report into a compact comparable summary
+  // Distil one saved report into a compact comparable summary
   const summarize = r => {
     if (!r) return null;
     const rm = r.metrics || {};
     return {
-      bizName:  r.bizName,
-      revenue:  rm.revenue,
-      profit:   rm.netProfit,
-      margin:   rm.netMargin,
-      score:    r.scoreData?.total,
-      period:   r.reportPeriod || r.period || (r.createdAt ? r.createdAt.slice(0,10) : '—')
+      bizName: r.bizName,
+      revenue: rm.revenue,
+      profit:  rm.netProfit,
+      margin:  rm.netMargin,
+      score:   r.scoreData?.total,
+      period:  r.reportPeriod || r.period || (r.createdAt ? r.createdAt.slice(0, 10) : '—')
     };
   };
+
+  // Bug fix (was slice(1,6)): slice assumed currentReport is always savedReports[0],
+  // which breaks when the user opens a non-latest report or when loadReportsFromDB
+  // sets currentReport to savedReports[0] but reports are later unshifted.
+  // Filter by id so the current report is always excluded regardless of position.
+  const previousReports = (STATE.savedReports || [])
+    .filter(r => r.id !== rep.id)
+    .slice(0, 5)
+    .map(summarize)
+    .filter(Boolean);
+
+  console.log('[Tawakkad] getCFOContext — STATE.savedReports.length:', (STATE.savedReports || []).length);
+  console.log('[Tawakkad] getCFOContext — currentReport.id:', rep.id, '| bizName:', rep.bizName);
+  console.log('[Tawakkad] CFO previous reports:', previousReports);
 
   return {
     // ── flat fields kept for context bar UI in ai-cfo.js ──
@@ -397,7 +411,7 @@ function getCFOContext() {
         alerts:        rep.alerts?.map(a => a.msg) || [],
         products:      rep.products || []
       },
-      previous: (STATE.savedReports || []).slice(1, 6).map(summarize).filter(Boolean)
+      previous: previousReports
     }
   };
 }

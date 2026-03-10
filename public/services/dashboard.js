@@ -59,15 +59,55 @@ async function loadReportsFromDB() {
       .order('created_at', { ascending: false })
       .limit(20);
     if (error || !data) return;
-    STATE.savedReports = data.map(r => ({
-      id: r.id, bizName: r.biz_name, bizType: r.biz_type, period: r.period,
-      metrics: { revenue: r.revenue, totalExpenses: r.total_expenses, netProfit: r.net_profit, netMargin: r.net_margin, healthScore: r.health_score },
-      scoreData: r.report_json?.scoreData || { total: r.health_score },
-      reportJson: r.report_json, createdAt: r.created_at,
-      reportPeriod: r.report_period || r.report_json?.reportPeriod || null
-    }));
+    STATE.savedReports = data.map(r => {
+      // Restore computed ratio fields from report_json — they are NOT stored
+      // as individual Supabase columns (only revenue/expenses/profit/margin/score are)
+      const rj  = r.report_json  || {};
+      const rjm = rj.metrics     || {};
+      return {
+        id: r.id, bizName: r.biz_name, bizType: r.biz_type, period: r.period,
+        metrics: {
+          revenue:       r.revenue,
+          totalExpenses: r.total_expenses,
+          netProfit:     r.net_profit,
+          netMargin:     r.net_margin,
+          healthScore:   r.health_score,
+          // Restore ratio fields from report_json (required by getCFOContext + system prompt)
+          grossMargin:   rjm.grossMargin,
+          rentPct:       rjm.rentPct,
+          salPct:        rjm.salPct,
+          cogsPct:       rjm.cogsPct,
+          mktPct:        rjm.mktPct,
+          cogs:          rjm.cogs,
+          rent:          rjm.rent,
+          salaries:      rjm.salaries,
+          marketing:     rjm.marketing,
+          other:         rjm.other,
+        },
+        scoreData:   rj.scoreData  || { total: r.health_score },
+        alerts:      rj.alerts     || [],
+        products:    rj.products   || [],
+        scenarios:   rj.scenarios  || [],
+        reportText:  rj.reportText || '',
+        sectorKey:   rj.sectorKey  || '',
+        reportPeriod: r.report_period || rj.reportPeriod || null,
+        reportJson:  rj,
+        createdAt:   r.created_at,
+      };
+    });
+
+    // Bug fix: loadReportsFromDB never set STATE.currentReport.
+    // Auto-restore from the most recent DB report so CFO has data even when
+    // the user hasn't run a fresh analysis this session.
+    if (!STATE.currentReport && STATE.savedReports.length) {
+      STATE.currentReport = STATE.savedReports[0];
+      console.log('[Tawakkad] loadReportsFromDB — auto-set STATE.currentReport:', STATE.currentReport.bizName);
+    }
+
     localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
-    console.log('[Tawakkad] loadReportsFromDB — reportPeriods:', STATE.savedReports.map(r=>({id:r.id,reportPeriod:r.reportPeriod})));
+    console.log('[Tawakkad] loadReportsFromDB — loaded', STATE.savedReports.length,
+      'reports | currentReport:', STATE.currentReport?.bizName,
+      '| grossMargin from report_json:', STATE.savedReports[0]?.metrics?.grossMargin);
   } catch(e) { console.error('[Tawakkad] loadReportsFromDB error:', e); }
 }
 
