@@ -297,23 +297,24 @@ function handleExcel(input) {
 // PDF EXPORT
 // ══════════════════════════════════════════
 async function exportPDF() {
-  // Resolve jsPDF from the UMD bundle regardless of how it was registered
-  const { jsPDF } = window.jspdf;
-
+  // ── 1. Select the report container ──────────────────────────────────────
   const el = document.querySelector('#page-results');
   if (!el) {
     alert('Report page not found.');
     return;
   }
 
-  // Force RTL layout and Arabic font before html2canvas takes the snapshot.
+  // ── 2. Pre-capture: force RTL + Arabic font ──────────────────────────────
+  // html2canvas reads computed styles; setting these inline guarantees they
+  // are applied even when the page is not the currently active view.
   el.style.direction  = 'rtl';
   el.style.fontFamily = 'Cairo, Arial, sans-serif';
 
-  // Normalize all text nodes inside the container to NFC before html2canvas
-  // captures them. Arabic text can arrive as NFD (decomposed code points) or
-  // with incorrectly decoded bytes; NFC normalization ensures every glyph
-  // sequence is in its canonical composed form, eliminating þÙ corruption.
+  // ── 3. Pre-capture: NFC-normalize every text node ───────────────────────
+  // Arabic can arrive as NFD (decomposed code points). NFC normalization
+  // collapses each sequence to its canonical composed form so the browser
+  // engine renders correct glyphs. NO jsPDF text() calls are used anywhere
+  // in this function — the PDF contains only the rasterised image.
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
   let node;
   while ((node = walker.nextNode())) {
@@ -322,47 +323,47 @@ async function exportPDF() {
     }
   }
 
-  // #page-results lives inside a .page container that is display:none when
-  // it is not the active page. html2canvas cannot compute fonts or layout
-  // for hidden elements, which produces the þÙ glyph corruption.
-  // Temporarily force the container to display:block, capture, then restore.
-  const page            = el.closest('.page');
-  const previousDisplay = page ? page.style.display : null;
-  if (page) page.style.display = 'block';
+  // ── 4. Pre-capture: make the page container visible ─────────────────────
+  // #page-results lives inside .page which is display:none when inactive.
+  // html2canvas cannot compute layout for hidden elements.
+  const pageEl        = el.closest('.page');
+  const prevDisplay   = pageEl ? pageEl.style.display : null;
+  if (pageEl) pageEl.style.display = 'block';
 
-  // html2canvas captures the browser-rendered DOM:
-  //   • Arabic glyph shaping handled by the browser's text engine
-  //   • RTL bidirectional layout preserved exactly as on screen
-  //   • No jsPDF font embedding required
+  // ── 5. Render canvas ────────────────────────────────────────────────────
   const canvas = await html2canvas(el, {
     scale   : 2,
     useCORS : true
   });
 
-  // Restore the page container to its previous visibility state
-  if (page) page.style.display = previousDisplay;
+  // ── 6. Restore visibility ────────────────────────────────────────────────
+  if (pageEl) pageEl.style.display = prevDisplay;
 
+  // ── 7. Convert canvas to image ───────────────────────────────────────────
   const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
-  const pdf = new jsPDF('p', 'mm', 'a4');
+  // ── 8. Create PDF — image only, zero pdf.text() calls ───────────────────
+  const { jsPDF } = window.jspdf;
+  const pdf       = new jsPDF('p', 'mm', 'a4');
 
   const pageWidth  = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  const imgWidth  = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  // ── 9. Insert the image (first page) ────────────────────────────────────
+  pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
 
-  let position = 0;
-
-  pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+  // ── 10. Pagination — repeat image at offset for each additional page ─────
+  // imgHeight is the full image height in PDF mm units (preserves aspect ratio).
+  // For content taller than one A4 page we slide the image upward by one
+  // pageHeight per additional page so each page reveals the next slice.
+  const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
   if (imgHeight > pageHeight) {
     let heightLeft = imgHeight - pageHeight;
-
     while (heightLeft > 0) {
-      position   = heightLeft - imgHeight;
+      const yOffset = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 0, yOffset, pageWidth, imgHeight);
       heightLeft -= pageHeight;
     }
   }
