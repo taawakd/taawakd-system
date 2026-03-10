@@ -348,10 +348,13 @@ async function exportPDF() {
   // letterRendering: true forces html2canvas to rasterise each glyph
   // individually rather than as a run, preventing RTL ligature shaping
   // from being lost when the text is painted onto the canvas context.
+  // foreignObjectRendering: false bypasses the SVG <foreignObject> path
+  // which can break RTL bidi shaping; forces the canvas 2D text pipeline.
   const canvas = await html2canvas(el, {
-    scale          : 2,
-    useCORS        : true,
-    letterRendering: true
+    scale                 : 2,
+    useCORS               : true,
+    letterRendering       : true,
+    foreignObjectRendering: false
   });
 
   // ── 6a. DEBUG: append canvas to body for visual inspection ───────────────
