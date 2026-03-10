@@ -272,7 +272,7 @@ function generateAlerts(data, sectorKey) {
   const alerts = [];
   const {revenue, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, netProfit} = data;
 
-  if(netProfit < 0) alerts.push({type:'danger', icon:'🔴', msg:`المشروع يعمل بخسارة ${fmt(Math.abs(netProfit))} ريال — يجب اتخاذ إجراء فوري`});
+  if(netProfit < 0) alerts.push({type:'danger', icon:'🔴', msg:`المشروع يعمل بخسارة ${fmt(Math.abs(netProfit))} ${SAR} — يجب اتخاذ إجراء فوري`});
   if(netMargin < 5 && netProfit >= 0) alerts.push({type:'warn', icon:'⚠️', msg:`هامش الربح ${netMargin}% منخفض جداً — أقل من الحد الآمن`});
 
   if(bench.rentPct && rentPct > bench.rentPct.max*1.2)
@@ -340,19 +340,19 @@ function renderBreakeven(revenue, cogs, fixedCosts, containerId, netProfitOverri
   const html = `
     <div class="kpi-row kpi-row-2" style="margin-bottom:14px;">
       <div class="kpi ${status==='good'?'':''}">
-        <div class="kpi-val neu">${fmt(be)} ﷼</div>
+        <div class="kpi-val neu">${fmt(be)} ${SAR}</div>
         <div class="kpi-label">نقطة التعادل</div>
       </div>
       <div class="kpi ${status==='good'?'gold':''}">
-        <div class="kpi-val ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)} ﷼</div>
+        <div class="kpi-val ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)} ${SAR}</div>
         <div class="kpi-label">${diff>=0?'فوق نقطة التعادل':'تحت نقطة التعادل'}</div>
       </div>
     </div>
     <div class="alert alert-${status==='good'?'good':'danger'}">
       <span class="alert-icon">${status==='good'?'✅':'⚠️'}</span>
       <span>${status==='good'
-        ? `مبيعاتك أعلى من نقطة التعادل بـ ${fmt(diff)} ريال (${pctAbove}%) — المشروع مربح.`
-        : `تحتاج ${fmt(Math.abs(diff))} ريال إضافية للوصول لنقطة التعادل.`
+        ? `مبيعاتك أعلى من نقطة التعادل بـ ${fmt(diff)} ${SAR} (${pctAbove}%) — المشروع مربح.`
+        : `تحتاج ${fmt(Math.abs(diff))} ${SAR} إضافية للوصول لنقطة التعادل.`
       }</span>
     </div>
     <div style="margin-top:12px;">
@@ -414,9 +414,9 @@ function renderScenarios(scenarios, revenue, containerId) {
     return `<div class="scenario-card">
       <div class="sc-title">${s.title}</div>
       <div class="sc-desc">${s.desc}</div>
-      <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ﷼</div>
+      <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ${SAR}</div>
       <div class="sc-delta" style="color:${s.delta>=0?'var(--green)':'var(--red)'};">
-        ${deltaSign}${fmt(s.delta)} ريال • هامش ${newMargin}%
+        ${deltaSign}${fmt(s.delta)} ${SAR} • هامش ${newMargin}%
       </div>
     </div>`;
   }).join('');
@@ -434,9 +434,9 @@ function renderScenariosPage() {
         return `<div class="scenario-card">
           <div class="sc-title">${s.title}</div>
           <div class="sc-desc">${s.desc}</div>
-          <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ﷼</div>
+          <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ${SAR}</div>
           <div class="sc-delta" style="color:${s.delta>=0?'var(--green)':'var(--red)'};">
-            +${fmt(s.delta)} ريال • هامش ${newMargin}%
+            +${fmt(s.delta)} ${SAR} • هامش ${newMargin}%
           </div>
         </div>`;
       }).join('')}</div>
@@ -464,18 +464,18 @@ function renderComparePage() {
       <div class="compare-row" style="grid-template-columns:1fr auto 1fr;margin-bottom:20px;">
         <div class="compare-period">
           <div class="compare-period-label">📅 ${r2.bizName} — ${r2.reportPeriod||(d=>d&&!isNaN(d)?d.toLocaleDateString('ar-SA'):'—')(new Date(r2.createdAt||r2.date))}</div>
-          <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m2.revenue)} ﷼</span></div>
-          <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m2.netProfit)} ﷼</span></div>
+          <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m2.revenue)} ${SAR}</span></div>
+          <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m2.netProfit)} ${SAR}</span></div>
           <div class="compare-metric"><span>هامش الربح</span><span class="compare-metric-val">${m2.netMargin}%</span></div>
-          <div class="compare-metric"><span>المصاريف</span><span class="compare-metric-val">${fmt(m2.totalExpenses)} ﷼</span></div>
+          <div class="compare-metric"><span>المصاريف</span><span class="compare-metric-val">${fmt(m2.totalExpenses)} ${SAR}</span></div>
         </div>
         <div class="compare-arrow">⇄</div>
         <div class="compare-period">
           <div class="compare-period-label">📅 ${r1.bizName} — ${r1.reportPeriod||(d=>d&&!isNaN(d)?d.toLocaleDateString('ar-SA'):'—')(new Date(r1.createdAt||r1.date))}</div>
-          <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m1.revenue)} ﷼</span></div>
-          <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m1.netProfit)} ﷼</span></div>
+          <div class="compare-metric"><span>الإيرادات</span><span class="compare-metric-val">${fmt(m1.revenue)} ${SAR}</span></div>
+          <div class="compare-metric"><span>صافي الربح</span><span class="compare-metric-val">${fmt(m1.netProfit)} ${SAR}</span></div>
           <div class="compare-metric"><span>هامش الربح</span><span class="compare-metric-val">${m1.netMargin}%</span></div>
-          <div class="compare-metric"><span>المصاريف</span><span class="compare-metric-val">${fmt(m1.totalExpenses)} ﷼</span></div>
+          <div class="compare-metric"><span>المصاريف</span><span class="compare-metric-val">${fmt(m1.totalExpenses)} ${SAR}</span></div>
         </div>
       </div>
       <div class="card-title" style="margin-bottom:14px;"><div class="card-title-icon">📊</div>التغيير بين الفترتين</div>

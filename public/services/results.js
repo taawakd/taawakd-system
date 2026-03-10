@@ -94,7 +94,7 @@ function renderResults(report) {
     withMargins.forEach((p, i) => {
       const contrib     = totalProd > 0 ? ((p.profit / totalProd) * 100).toFixed(0) : 0;
       const suggestion  = p.margin < 15
-        ? `رفع السعر 5% يرفع الربح ${fmt(p.qty * p.cost * 0.05)} ﷼`
+        ? `رفع السعر 5% يرفع الربح ${fmt(p.qty * p.cost * 0.05)} ${SAR}`
         : p.margin > 50 ? 'منتج رابح — ركّز عليه' : 'أداء طبيعي';
       const mColor = p.margin > 30 ? 'var(--green)' : p.margin < 10 ? 'var(--red)' : 'var(--warn)';
 

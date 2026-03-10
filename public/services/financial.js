@@ -247,7 +247,7 @@ function handleExcel(input) {
             window._excelReportPeriod=validDates[0].toLocaleDateString('ar-SA');
           }
           console.log('[Tawakkad] window._excelReportPeriod after handleExcel:', window._excelReportPeriod);
-          toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en')); return;
+          toast('✅ إجمالي '+data.length+' يوم: '+SAR+total.toLocaleString('en')); return;
         }
       }
 
@@ -405,7 +405,7 @@ async function exportPDF() {
       </div>
     </div>
     <div style="padding:10px 14px;border-radius:8px;background:${beGood ? '#dcfce7' : '#fee2e2'};border-right:4px solid ${beGood ? '#86efac' : '#fca5a5'};font-size:12px;color:#1a1a1a;margin-bottom:10px;">
-      ${beGood ? `✅ مبيعاتك أعلى من نقطة التعادل بـ ${f(beDiff)} ريال — المشروع مربح.` : `⚠️ تحتاج ${f(Math.abs(beDiff))} ريال إضافية للوصول لنقطة التعادل.`}
+      ${beGood ? `✅ مبيعاتك أعلى من نقطة التعادل بـ ${f(beDiff)} ${SAR} — المشروع مربح.` : `⚠️ تحتاج ${f(Math.abs(beDiff))} ${SAR} إضافية للوصول لنقطة التعادل.`}
     </div>
     <div style="margin-bottom:4px;display:flex;justify-content:space-between;">
       <span style="font-size:11px;color:#6b7280;">التقدم نحو نقطة التعادل</span>

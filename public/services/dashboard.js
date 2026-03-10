@@ -35,12 +35,12 @@ function updateDashboard() {
   const optimistic = (m.netProfit + m.revenue*0.1) * 3;
   document.getElementById('forecastContainer').innerHTML = `
     <div class="kpi-row kpi-row-2">
-      <div class="kpi"><div class="kpi-val ${forecast3m>=0?'pos':'neg'}">${fmt(forecast3m)} ﷼</div><div class="kpi-label">متوقع خلال 3 أشهر (الوضع الحالي)</div></div>
-      <div class="kpi gold"><div class="kpi-val pos">${fmt(optimistic)} ﷼</div><div class="kpi-label">متوقع مع تطبيق التوصيات</div></div>
+      <div class="kpi"><div class="kpi-val ${forecast3m>=0?'pos':'neg'}">${fmt(forecast3m)} ${SAR}</div><div class="kpi-label">متوقع خلال 3 أشهر (الوضع الحالي)</div></div>
+      <div class="kpi gold"><div class="kpi-val pos">${fmt(optimistic)} ${SAR}</div><div class="kpi-label">متوقع مع تطبيق التوصيات</div></div>
     </div>
     <div class="alert alert-info" style="margin-top:12px;">
       <span class="alert-icon">🔮</span>
-      <span>لو طبّقت توصيات التحليل، ربحك المتوقع أعلى بـ ${fmt(optimistic-forecast3m)} ريال خلال 3 أشهر</span>
+      <span>لو طبّقت توصيات التحليل، ربحك المتوقع أعلى بـ ${fmt(optimistic-forecast3m)} ${SAR} خلال 3 أشهر</span>
     </div>`;
 }
 
@@ -129,8 +129,8 @@ function renderSavedReports() {
         <div style="font-size:11px;padding:3px 10px;background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-b);border-radius:20px;">${r.bizType||'—'}</div>
       </div>
       <div class="kpi-row kpi-row-2" style="margin-bottom:12px;">
-        <div class="kpi card-sm"><div class="kpi-val neu" style="font-size:16px;">${fmt(m.revenue)} ﷼</div><div class="kpi-label">الإيرادات</div></div>
-        <div class="kpi card-sm"><div class="kpi-val ${m.netProfit>=0?'pos':'neg'}" style="font-size:16px;">${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ﷼</div><div class="kpi-label">صافي الربح</div></div>
+        <div class="kpi card-sm"><div class="kpi-val neu" style="font-size:16px;">${fmt(m.revenue)} ${SAR}</div><div class="kpi-label">الإيرادات</div></div>
+        <div class="kpi card-sm"><div class="kpi-val ${m.netProfit>=0?'pos':'neg'}" style="font-size:16px;">${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ${SAR}</div><div class="kpi-label">صافي الربح</div></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;color:var(--gray);">${r.reportPeriod || (r.createdAt||r.date ? new Date(r.createdAt||r.date).toLocaleDateString('ar-SA') : '—')}</div>

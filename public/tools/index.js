@@ -39,10 +39,10 @@ function calcCashFlow() {
       <div class="card card-sm">
         <div class="card-title"><div class="card-title-icon">📊</div>ملخص التدفق</div>
         <div class="kpi-row kpi-row-2">
-          <div class="kpi"><div class="kpi-val neu">${fmt(cash)} ﷼</div><div class="kpi-label">الرصيد الحالي</div></div>
-          <div class="kpi"><div class="kpi-val ${netMonthly>=0?'pos':'neg'}">${netMonthly>=0?'+':''}${fmt(netMonthly)} ﷼</div><div class="kpi-label">صافي شهري</div></div>
-          <div class="kpi"><div class="kpi-val neg">${fmt(monthlyBurn)} ﷼</div><div class="kpi-label">إجمالي الإنفاق</div></div>
-          <div class="kpi"><div class="kpi-val pos">${fmt(expRev)} ﷼</div><div class="kpi-label">إيرادات متوقعة</div></div>
+          <div class="kpi"><div class="kpi-val neu">${fmt(cash)} ${SAR}</div><div class="kpi-label">الرصيد الحالي</div></div>
+          <div class="kpi"><div class="kpi-val ${netMonthly>=0?'pos':'neg'}">${netMonthly>=0?'+':''}${fmt(netMonthly)} ${SAR}</div><div class="kpi-label">صافي شهري</div></div>
+          <div class="kpi"><div class="kpi-val neg">${fmt(monthlyBurn)} ${SAR}</div><div class="kpi-label">إجمالي الإنفاق</div></div>
+          <div class="kpi"><div class="kpi-val pos">${fmt(expRev)} ${SAR}</div><div class="kpi-label">إيرادات متوقعة</div></div>
         </div>
       </div>
     </div>
@@ -170,14 +170,14 @@ function renderPricingPage() {
           <div class="pr-name">${p.name}</div>
           <div style="font-size:11px;color:${margin>30?'var(--green)':margin<10?'var(--red)':'var(--warn)'};">هامش ${margin.toFixed(0)}%</div>
         </div>
-        <div class="pr-val">${p.price} ﷼</div>
+        <div class="pr-val">${p.price} ${SAR}</div>
         <div style="text-align:center;">
           <input type="range" class="price-slider" id="pslider-${i}" min="-20" max="30" value="0"
             oninput="updatePricingRow(${i},${p.price},${p.cost},${p.qty||1})">
           <div style="font-size:12px;color:var(--gold);margin-top:4px;" id="pslider-val-${i}">0%</div>
         </div>
-        <div class="pr-val" id="pr-new-${i}">${p.price} ﷼</div>
-        <div class="pr-impact" id="pr-impact-${i}">+0 ﷼</div>
+        <div class="pr-val" id="pr-new-${i}">${p.price} ${SAR}</div>
+        <div class="pr-impact" id="pr-impact-${i}">+0 ${SAR}</div>
       </div>`;
   });
 
@@ -204,7 +204,7 @@ function updatePricingRow(i, origPrice, cost, qty) {
   document.getElementById('pr-impact-'+i).style.color   = delta>=0?'var(--green)':'var(--red)';
 
   document.getElementById('pricingSuggestion').innerHTML =
-    `💡 <strong>${sliderPct>=0?'رفع':'خفض'} ${Math.abs(sliderPct)}%</strong> — السعر الجديد <strong>${newPrice.toFixed(0)} ﷼</strong> — هامش <strong>${newMargin}%</strong> — تأثير على الربح: <strong style="color:${delta>=0?'var(--green)':'var(--red)'};">${delta>=0?'+':''}${fmt(delta)} ﷼</strong>`;
+    `💡 <strong>${sliderPct>=0?'رفع':'خفض'} ${Math.abs(sliderPct)}%</strong> — السعر الجديد <strong>${newPrice.toFixed(0)} ${SAR}</strong> — هامش <strong>${newMargin}%</strong> — تأثير على الربح: <strong style="color:${delta>=0?'var(--green)':'var(--red)'};">${delta>=0?'+':''}${fmt(delta)} ${SAR}</strong>`;
 }
 
 // ══════════════════════════════════════════
@@ -279,20 +279,20 @@ function renderSmartForecast() {
         <div class="scenario-tab">
           <div class="sc-tab-item">
             <div class="sc-tab-label">تشاؤمي</div>
-            <div class="sc-tab-val ${p6m>=0?'':''}  " style="color:${p6m>=0?'var(--warn)':'var(--red)'};">${fmt(p6m)} ﷼</div>
+            <div class="sc-tab-val ${p6m>=0?'':''}  " style="color:${p6m>=0?'var(--warn)':'var(--red)'};">${fmt(p6m)} ${SAR}</div>
           </div>
           <div class="sc-tab-item active">
             <div class="sc-tab-label">الوضع الحالي</div>
-            <div class="sc-tab-val">${fmt(b6m)} ﷼</div>
+            <div class="sc-tab-val">${fmt(b6m)} ${SAR}</div>
           </div>
           <div class="sc-tab-item">
             <div class="sc-tab-label">تفاؤلي</div>
-            <div class="sc-tab-val" style="color:var(--green);">${fmt(o6m)} ﷼</div>
+            <div class="sc-tab-val" style="color:var(--green);">${fmt(o6m)} ${SAR}</div>
           </div>
         </div>
         <div class="alert alert-info">
           <span class="alert-icon">💡</span>
-          <span>الفرق بين التشاؤمي والتفاؤلي: <strong>${fmt(o6m-p6m)} ﷼</strong> خلال 6 أشهر — القرارات الآن تحدد الفرق.</span>
+          <span>الفرق بين التشاؤمي والتفاؤلي: <strong>${fmt(o6m-p6m)} ${SAR}</strong> خلال 6 أشهر — القرارات الآن تحدد الفرق.</span>
         </div>
       </div>
     </div>
@@ -364,13 +364,13 @@ function defaultDecisions(rep) {
   const m = rep.metrics;
   const decisions = [];
   if(m.cogsPct > 45)
-    decisions.push({rank:1,title:'تكلفة البضاعة مرتفعة',why:`تكلفة البضاعة ${m.cogsPct}% من إيراداتك — أعلى من المعدل الطبيعي بـ ${(m.cogsPct-40).toFixed(0)}%`,steps:['راجع عقود الموردين الحاليين','ابحث عن موردين بديلين','فاوض على خصم كمية'],impact:`تخفيض 5% يوفر ${fmt(m.revenue*0.05)} ﷼ شهرياً`});
+    decisions.push({rank:1,title:'تكلفة البضاعة مرتفعة',why:`تكلفة البضاعة ${m.cogsPct}% من إيراداتك — أعلى من المعدل الطبيعي بـ ${(m.cogsPct-40).toFixed(0)}%`,steps:['راجع عقود الموردين الحاليين','ابحث عن موردين بديلين','فاوض على خصم كمية'],impact:`تخفيض 5% يوفر ${fmt(m.revenue*0.05)} ${SAR} شهرياً`});
   if(m.netMargin < 10)
-    decisions.push({rank:decisions.length+1,title:'هامش الربح منخفض',why:`هامش ${m.netMargin}% أقل من المعدل الطبيعي ${m.bizType?.includes('مطعم')?'15-25%':'10-20%'}`,steps:['حدّد المنتجات ذات الهامش المنخفض','ارفع أسعارها 5-8%','أوقف المنتجات الخاسرة'],impact:`رفع الهامش 3% يضيف ${fmt(m.revenue*0.03)} ﷼ شهرياً`});
+    decisions.push({rank:decisions.length+1,title:'هامش الربح منخفض',why:`هامش ${m.netMargin}% أقل من المعدل الطبيعي ${m.bizType?.includes('مطعم')?'15-25%':'10-20%'}`,steps:['حدّد المنتجات ذات الهامش المنخفض','ارفع أسعارها 5-8%','أوقف المنتجات الخاسرة'],impact:`رفع الهامش 3% يضيف ${fmt(m.revenue*0.03)} ${SAR} شهرياً`});
   if(m.salPct > 35)
-    decisions.push({rank:decisions.length+1,title:'الرواتب مرتفعة',why:`الرواتب ${m.salPct}% من الإيرادات — أعلى من المعدل`,steps:['راجع جداول الدوام','حدّد ساعات الذروة','فكّر في أتمتة بعض المهام'],impact:`تخفيض 10% يوفر ${fmt(m.salaries*0.1)} ﷼ شهرياً`});
+    decisions.push({rank:decisions.length+1,title:'الرواتب مرتفعة',why:`الرواتب ${m.salPct}% من الإيرادات — أعلى من المعدل`,steps:['راجع جداول الدوام','حدّد ساعات الذروة','فكّر في أتمتة بعض المهام'],impact:`تخفيض 10% يوفر ${fmt(m.salaries*0.1)} ${SAR} شهرياً`});
   if(decisions.length === 0)
-    decisions.push({rank:1,title:'ركّز على النمو',why:`مشروعك بصحة جيدة (${rep.scoreData?.total}/100) — الآن وقت التوسع`,steps:['زِد ميزانية التسويق 20%','افتح قناة مبيعات جديدة','اطلق منتج جديد بهامش عالٍ'],impact:`نمو 10% يضيف ${fmt(m.revenue*0.1)} ﷼ شهرياً`});
+    decisions.push({rank:1,title:'ركّز على النمو',why:`مشروعك بصحة جيدة (${rep.scoreData?.total}/100) — الآن وقت التوسع`,steps:['زِد ميزانية التسويق 20%','افتح قناة مبيعات جديدة','اطلق منتج جديد بهامش عالٍ'],impact:`نمو 10% يضيف ${fmt(m.revenue*0.1)} ${SAR} شهرياً`});
   return decisions.slice(0,3);
 }
 
@@ -417,7 +417,7 @@ function calcBPFixed() {
   const ids = ['bp-rent','bp-salaries','bp-utilities','bp-subscriptions','bp-fixed-other'];
   const total = ids.reduce((s,id) => s + (parseFloat(document.getElementById(id)?.value)||0), 0);
   const el = document.getElementById('bp-fixed-total');
-  if (el) el.textContent = '﷼ ' + total.toLocaleString('en');
+  if (el) el.innerHTML = SAR + ' ' + total.toLocaleString('en');
 }
 document.querySelectorAll('#bp-rent,#bp-salaries,#bp-utilities,#bp-subscriptions,#bp-fixed-other')
   .forEach(el => el?.addEventListener('input', calcBPFixed));
@@ -432,8 +432,8 @@ function renderBPProducts() {
   el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
     '<thead><tr style="background:#1a1a1a;color:#aaa">' +
     '<th style="padding:6px 8px;text-align:right;border-bottom:1px solid #222">المنتج</th>' +
-    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">التكلفة ﷼</th>' +
-    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">السعر ﷼</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">التكلفة ${SAR}</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">السعر ${SAR}</th>' +
     '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">الهامش %</th>' +
     '<th style="padding:6px 8px;border-bottom:1px solid #222"></th>' +
     '</tr></thead><tbody>' +
