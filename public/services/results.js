@@ -42,35 +42,90 @@ function renderResults(report) {
   const beNetProfit = metrics.netProfit !== undefined ? metrics.netProfit : (revenue - (cogs||0) - fixedCosts);
   renderBreakeven(revenue, cogs, fixedCosts, 'resultBreakeven', beNetProfit);
 
-  if(products.length) {
-    const withMargins = products.map(p=>{
-      const margin = p.price>0 ? ((p.price-p.cost)/p.price*100) : 0;
-      const profit = (p.price-p.cost)*p.qty;
-      return {...p,margin,profit};
-    }).sort((a,b)=>b.margin-a.margin);
-    const totalProd = withMargins.reduce((s,p)=>s+Math.max(0,p.profit),0);
-    document.getElementById('resultProducts').innerHTML = withMargins.map((p,i)=>{
-      const contrib = totalProd>0 ? ((p.profit/totalProd)*100).toFixed(0) : 0;
-      const suggestion = p.margin < 15 ? `رفع السعر 5% يرفع الربح ${fmt(p.qty*p.cost*0.05)} ﷼` : p.margin > 50 ? 'منتج رابح — ركّز عليه' : 'أداء طبيعي';
-      return `<div class="prod-analysis-row">
-        <div class="prod-rank ${i===0?'rank-1':i===1?'rank-2':'rank-3'}">${i+1}</div>
-        <div style="flex:1;">
-          <div class="prod-an-name">${p.name}</div>
-          <div style="font-size:11px;color:var(--gray);margin-top:2px;">${suggestion}</div>
-          <div class="prod-an-bar" style="margin-top:6px;"><div class="prod-an-fill" style="width:${Math.min(100,p.margin)}%;background:${p.margin>30?'var(--green)':p.margin<10?'var(--red)':'var(--warn)'};"></div></div>
-        </div>
-        <div style="text-align:center;margin-right:12px;">
-          <div style="font-size:16px;font-weight:700;color:${p.margin>30?'var(--green)':p.margin<10?'var(--red)':'var(--warn)'};">${p.margin.toFixed(0)}%</div>
-          <div style="font-size:10px;color:var(--gray);">هامش</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:16px;font-weight:700;color:var(--gold);">${contrib}%</div>
-          <div style="font-size:10px;color:var(--gray);">مساهمة</div>
-        </div>
-      </div>`;
-    }).join('');
+  const prodContainer = document.getElementById('resultProducts');
+  prodContainer.innerHTML = '';
+  if (products.length) {
+    const withMargins = products.map(p => {
+      const margin = p.price > 0 ? ((p.price - p.cost) / p.price * 100) : 0;
+      const profit = (p.price - p.cost) * p.qty;
+      return {...p, margin, profit};
+    }).sort((a, b) => b.margin - a.margin);
+    const totalProd = withMargins.reduce((s, p) => s + Math.max(0, p.profit), 0);
+
+    withMargins.forEach((p, i) => {
+      const contrib     = totalProd > 0 ? ((p.profit / totalProd) * 100).toFixed(0) : 0;
+      const suggestion  = p.margin < 15
+        ? `رفع السعر 5% يرفع الربح ${fmt(p.qty * p.cost * 0.05)} ﷼`
+        : p.margin > 50 ? 'منتج رابح — ركّز عليه' : 'أداء طبيعي';
+      const mColor = p.margin > 30 ? 'var(--green)' : p.margin < 10 ? 'var(--red)' : 'var(--warn)';
+
+      const row = document.createElement('div');
+      row.className = 'prod-analysis-row';
+
+      // Rank badge
+      const rankEl = document.createElement('div');
+      rankEl.className = `prod-rank ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : 'rank-3'}`;
+      rankEl.textContent = i + 1;
+
+      // Info column — p.name is user input; use textContent to avoid innerHTML injection
+      const infoEl = document.createElement('div');
+      infoEl.style.flex = '1';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'prod-an-name';
+      nameEl.textContent = p.name;                     // ← textContent (was innerHTML)
+
+      const suggEl = document.createElement('div');
+      suggEl.style.cssText = 'font-size:11px;color:var(--gray);margin-top:2px;';
+      suggEl.textContent = suggestion;                 // ← textContent (was innerHTML)
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'prod-an-bar';
+      barWrap.style.marginTop = '6px';
+      const barFill = document.createElement('div');
+      barFill.className = 'prod-an-fill';
+      barFill.style.cssText = `width:${Math.min(100, p.margin)}%;background:${mColor};`;
+      barWrap.appendChild(barFill);
+
+      infoEl.appendChild(nameEl);
+      infoEl.appendChild(suggEl);
+      infoEl.appendChild(barWrap);
+
+      // Margin column
+      const marginCol = document.createElement('div');
+      marginCol.style.cssText = 'text-align:center;margin-right:12px;';
+      const marginVal = document.createElement('div');
+      marginVal.style.cssText = `font-size:16px;font-weight:700;color:${mColor};`;
+      marginVal.textContent = p.margin.toFixed(0) + '%';
+      const marginLbl = document.createElement('div');
+      marginLbl.style.cssText = 'font-size:10px;color:var(--gray);';
+      marginLbl.textContent = 'هامش';
+      marginCol.appendChild(marginVal);
+      marginCol.appendChild(marginLbl);
+
+      // Contrib column
+      const contribCol = document.createElement('div');
+      contribCol.style.textAlign = 'center';
+      const contribVal = document.createElement('div');
+      contribVal.style.cssText = 'font-size:16px;font-weight:700;color:var(--gold);';
+      contribVal.textContent = contrib + '%';
+      const contribLbl = document.createElement('div');
+      contribLbl.style.cssText = 'font-size:10px;color:var(--gray);';
+      contribLbl.textContent = 'مساهمة';
+      contribCol.appendChild(contribVal);
+      contribCol.appendChild(contribLbl);
+
+      row.appendChild(rankEl);
+      row.appendChild(infoEl);
+      row.appendChild(marginCol);
+      row.appendChild(contribCol);
+      prodContainer.appendChild(row);
+    });
   } else {
-    document.getElementById('resultProducts').innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">لم يتم إدخال منتجات</div>';
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--gray);font-size:13px;text-align:center;padding:20px;';
+    empty.textContent = 'لم يتم إدخال منتجات';
+    prodContainer.appendChild(empty);
   }
 
   renderAIBlocks(reportText, 'aiBlocks');
@@ -99,22 +154,94 @@ function renderResults(report) {
 
 function renderAIBlocks(text, containerId) {
   const wrap = document.getElementById(containerId);
-  if(!text){wrap.innerHTML='<div style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">التحليل الذكي غير متاح حالياً</div>';return;}
+  wrap.innerHTML = '';
+
+  if (!text) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--gray);font-size:13px;text-align:center;padding:20px;';
+    empty.textContent = 'التحليل الذكي غير متاح حالياً';
+    wrap.appendChild(empty);
+    return;
+  }
+
   const sections = [...text.matchAll(/\[SECTION:(.*?)\]([\s\S]*?)\[\/SECTION\]/g)];
-  const icons={'التشخيص العام':'🩺','نقاط القوة':'✅','نقاط الخطر':'⚠️','تحليل المنتجات':'📊','توصيات عملية':'🎯','توقع الأداء':'📈'};
-  if(!sections.length){wrap.innerHTML=`<div style="font-size:14px;line-height:1.9;color:var(--gray2);">${text.replace(/\n/g,'<br>')}</div>`;return;}
-  wrap.innerHTML = sections.map((s,i)=>{
-    const title=s[1].trim(), content=s[2].trim();
-    const lines=content.split('\n').filter(l=>l.trim());
-    const isGood=title==='نقاط القوة', isBad=title==='نقاط الخطر', isWarn=title==='توصيات عملية';
-    const listHtml = (isGood||isBad||isWarn)
-      ? `<div class="insight-list">${lines.map(l=>`<li class="insight-item ${isGood?'g':isBad?'r':'w'}"><span class="ii-icon">${isGood?'✓':isBad?'!':'→'}</span><span>${l.replace(/^[-•\d.]\s*/,'')}</span></li>`).join('')}</div>`
-      : `<div style="font-size:14px;line-height:1.9;color:var(--gray2);">${content.replace(/\n/g,'<br>')}</div>`;
-    return `<div style="margin-bottom:20px;animation:fadeUp 0.4s ease ${i*0.08}s forwards;opacity:0;">
-      <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-        <span style="width:28px;height:28px;background:var(--gold-d);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">${icons[title]||'📌'}</span>${title}
-      </div>${listHtml}</div>`;
-  }).join('');
+  const icons = {
+    'التشخيص العام':'🩺','نقاط القوة':'✅','نقاط الخطر':'⚠️',
+    'تحليل المنتجات':'📊','توصيات عملية':'🎯','توقع الأداء':'📈'
+  };
+
+  if (!sections.length) {
+    // No sections — render AI-generated text safely via DOM nodes (no innerHTML)
+    const div = document.createElement('div');
+    div.style.cssText = 'font-size:14px;line-height:1.9;color:var(--gray2);';
+    const lines = text.split('\n');
+    lines.forEach((line, idx) => {
+      div.appendChild(document.createTextNode(line));    // ← createTextNode
+      if (idx < lines.length - 1) div.appendChild(document.createElement('br'));
+    });
+    wrap.appendChild(div);
+    return;
+  }
+
+  // Build each section using DOM so AI-generated Arabic never touches innerHTML
+  sections.forEach((s, i) => {
+    const title   = s[1].trim();
+    const content = s[2].trim();
+    const lines   = content.split('\n').filter(l => l.trim());
+    const isGood  = title === 'نقاط القوة';
+    const isBad   = title === 'نقاط الخطر';
+    const isWarn  = title === 'توصيات عملية';
+    const isList  = isGood || isBad || isWarn;
+
+    // Outer wrapper
+    const section = document.createElement('div');
+    section.style.cssText = `margin-bottom:20px;animation:fadeUp 0.4s ease ${i * 0.08}s forwards;opacity:0;`;
+
+    // Section header
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;';
+
+    const iconSpan = document.createElement('span');
+    iconSpan.style.cssText = 'width:28px;height:28px;background:var(--gold-d);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;';
+    iconSpan.textContent = icons[title] || '📌';      // emoji — safe, hardcoded
+
+    header.appendChild(iconSpan);
+    header.appendChild(document.createTextNode(title)); // ← createTextNode (was innerHTML)
+    section.appendChild(header);
+
+    if (isList) {
+      // Build list items; each line is AI-generated Arabic — use textContent
+      const listDiv = document.createElement('div');
+      listDiv.className = 'insight-list';
+      lines.forEach(l => {
+        const li = document.createElement('li');
+        li.className = `insight-item ${isGood ? 'g' : isBad ? 'r' : 'w'}`;
+
+        const iconEl = document.createElement('span');
+        iconEl.className = 'ii-icon';
+        iconEl.textContent = isGood ? '✓' : isBad ? '!' : '→'; // hardcoded
+
+        const textEl = document.createElement('span');
+        textEl.textContent = l.replace(/^[-•\d.]\s*/, '');      // ← textContent (was innerHTML)
+
+        li.appendChild(iconEl);
+        li.appendChild(textEl);
+        listDiv.appendChild(li);
+      });
+      section.appendChild(listDiv);
+    } else {
+      // Plain-text section — render via text nodes with <br> for line breaks
+      const contentDiv = document.createElement('div');
+      contentDiv.style.cssText = 'font-size:14px;line-height:1.9;color:var(--gray2);';
+      lines.forEach((line, idx) => {
+        contentDiv.appendChild(document.createTextNode(line));   // ← createTextNode
+        if (idx < lines.length - 1) contentDiv.appendChild(document.createElement('br'));
+      });
+      section.appendChild(contentDiv);
+    }
+
+    wrap.appendChild(section);
+  });
 }
 
 window.renderResults  = renderResults;

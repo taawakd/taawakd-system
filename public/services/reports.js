@@ -94,11 +94,33 @@ function updateProductAnalysis(products) {
   const sorted = [...products].sort((a,b)=>(b.revenue||0)-(a.revenue||0));
   const total = sorted.reduce((s,p)=>s+(p.revenue||0),0);
   const medals = ['🥇','🥈','🥉'];
-  ranking.innerHTML = sorted.map((p,i) => {
-    const pct = total>0 ? ((p.revenue/total)*100).toFixed(1) : 0;
-    const margin = p.price>0 ? (((p.price-p.cost)/p.price)*100).toFixed(1) : (p.cost>0&&p.revenue>0 ? (((p.revenue-p.cost)/p.revenue)*100).toFixed(1) : 0);
-    return '<div class="prod-rank-item"><span>'+(medals[i]||'▪️')+' '+p.name+'</span><span style="color:var(--gold)">'+pct+'%</span><span style="color:#4caf82">هامش '+margin+'%</span></div>';
-  }).join('');
+  ranking.innerHTML = '';
+  sorted.forEach((p, i) => {
+    const pct    = total > 0 ? ((p.revenue / total) * 100).toFixed(1) : 0;
+    const margin = p.price > 0
+      ? (((p.price - p.cost) / p.price) * 100).toFixed(1)
+      : (p.cost > 0 && p.revenue > 0 ? (((p.revenue - p.cost) / p.revenue) * 100).toFixed(1) : 0);
+
+    const item = document.createElement('div');
+    item.className = 'prod-rank-item';
+
+    // p.name is user input — use textContent to keep it UTF-8 clean (was innerHTML)
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = (medals[i] || '▪️') + ' ' + p.name;
+
+    const pctSpan = document.createElement('span');
+    pctSpan.style.color = 'var(--gold)';
+    pctSpan.textContent = pct + '%';
+
+    const marginSpan = document.createElement('span');
+    marginSpan.style.color = '#4caf82';
+    marginSpan.textContent = 'هامش ' + margin + '%';
+
+    item.appendChild(nameSpan);
+    item.appendChild(pctSpan);
+    item.appendChild(marginSpan);
+    ranking.appendChild(item);
+  });
 }
 
 // ══════════════════════════════════════════
