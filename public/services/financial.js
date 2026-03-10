@@ -377,7 +377,9 @@ async function exportPDF() {
   const pageHeight = pdf.internal.pageSize.getHeight();
 
   // ── 10. Insert the image (first page) ───────────────────────────────────
-  pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+  // 'FAST' compression tells jsPDF to embed the PNG stream as-is without
+  // internal re-encoding, preserving every pixel produced by html2canvas.
+  pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
 
   // ── 11. Pagination — repeat image at offset for each additional page ─────
   // imgHeight is the full image height in PDF mm units (preserves aspect ratio).
@@ -390,7 +392,7 @@ async function exportPDF() {
     while (heightLeft > 0) {
       const yOffset = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, yOffset, pageWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, yOffset, pageWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pageHeight;
     }
   }
