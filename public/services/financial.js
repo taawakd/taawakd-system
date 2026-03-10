@@ -339,6 +339,12 @@ async function exportPDF() {
   }
 
   // ── 6. Render canvas ────────────────────────────────────────────────────
+  // Wait for all fonts (including Cairo) to be fully loaded and applied
+  // before html2canvas reads the DOM. Without this, html2canvas may
+  // snapshot the element while the Arabic font is still swapping in,
+  // causing glyphs to be rasterised in a fallback font or not at all.
+  await document.fonts.ready;
+
   // letterRendering: true forces html2canvas to rasterise each glyph
   // individually rather than as a run, preventing RTL ligature shaping
   // from being lost when the text is painted onto the canvas context.
