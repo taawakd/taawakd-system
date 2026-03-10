@@ -304,11 +304,12 @@ async function exportPDF() {
     return;
   }
 
-  // ── 2. Pre-capture: force RTL + Arabic font ──────────────────────────────
+  // ── 2. Pre-capture: force RTL + Arabic font + bidi ──────────────────────
   // html2canvas reads computed styles; setting these inline guarantees they
   // are applied even when the page is not the currently active view.
-  el.style.direction  = 'rtl';
-  el.style.fontFamily = 'Cairo, Arial, sans-serif';
+  el.style.direction   = 'rtl';
+  el.style.unicodeBidi = 'plaintext';
+  el.style.fontFamily  = 'Cairo, Arial, sans-serif';
 
   // ── 3. Pre-capture: NFC-normalize every text node ───────────────────────
   // Arabic can arrive as NFD (decomposed code points). NFC normalization
@@ -330,29 +331,53 @@ async function exportPDF() {
   const prevDisplay   = pageEl ? pageEl.style.display : null;
   if (pageEl) pageEl.style.display = 'block';
 
-  // ── 5. Render canvas ────────────────────────────────────────────────────
+  // ── 5. Guard: html2canvas must be loaded ────────────────────────────────
+  if (typeof html2canvas !== 'function') {
+    alert('html2canvas is not loaded — cannot export PDF.');
+    if (pageEl) pageEl.style.display = prevDisplay;
+    return;
+  }
+
+  // ── 6. Render canvas ────────────────────────────────────────────────────
   const canvas = await html2canvas(el, {
     scale   : 2,
     useCORS : true
   });
 
-  // ── 6. Restore visibility ────────────────────────────────────────────────
+  // ── 6a. DEBUG: append canvas to body for visual inspection ───────────────
+  // Remove this block once Arabic rendering is confirmed correct in the canvas.
+  {
+    const debugCanvas = canvas;
+    debugCanvas.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;max-width:100vw;max-height:100vh;border:3px solid red;background:#fff;';
+    debugCanvas.id = '__pdfDebugCanvas';
+    document.getElementById('__pdfDebugCanvas')?.remove();
+    document.body.appendChild(debugCanvas);
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ إغلاق (debug)';
+    closeBtn.style.cssText = 'position:fixed;top:4px;right:4px;z-index:100000;background:red;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;';
+    closeBtn.id = '__pdfDebugClose';
+    document.getElementById('__pdfDebugClose')?.remove();
+    closeBtn.onclick = () => { debugCanvas.remove(); closeBtn.remove(); };
+    document.body.appendChild(closeBtn);
+  }
+
+  // ── 7. Restore visibility ────────────────────────────────────────────────
   if (pageEl) pageEl.style.display = prevDisplay;
 
-  // ── 7. Convert canvas to image ───────────────────────────────────────────
+  // ── 8. Convert canvas to image ───────────────────────────────────────────
   const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
-  // ── 8. Create PDF — image only, zero pdf.text() calls ───────────────────
+  // ── 9. Create PDF — image only, zero pdf.text() calls ───────────────────
   const { jsPDF } = window.jspdf;
   const pdf       = new jsPDF('p', 'mm', 'a4');
 
   const pageWidth  = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  // ── 9. Insert the image (first page) ────────────────────────────────────
+  // ── 10. Insert the image (first page) ───────────────────────────────────
   pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
 
-  // ── 10. Pagination — repeat image at offset for each additional page ─────
+  // ── 11. Pagination — repeat image at offset for each additional page ─────
   // imgHeight is the full image height in PDF mm units (preserves aspect ratio).
   // For content taller than one A4 page we slide the image upward by one
   // pageHeight per additional page so each page reveals the next slice.
