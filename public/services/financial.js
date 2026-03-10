@@ -468,24 +468,27 @@ function exportPDF() {
   // buildPdfReport sets el.innerHTML synchronously before we continue.
   buildPdfReport(report);
 
-  // ── 5. Verify content was written (debug) ───────────────────────────────
-  console.log('[PDF] #pdf-report innerHTML length:', el.innerHTML.length);
-  console.log('[PDF] #pdf-report content preview:', el.innerHTML.slice(0, 200));
-
-  if (!el.innerHTML.trim()) {
-    alert('buildPdfReport() produced no content — check console for errors.');
+  // ── 5. DEBUG: verify innerHTML was written ───────────────────────────────
+  const el2 = document.querySelector('#pdf-report');   // re-query per spec
+  console.log('[PDF DEBUG] innerHTML length:', el2.innerHTML.length);
+  console.log('[PDF DEBUG] content preview:', el2.innerHTML.slice(0, 300));
+  if (el2.innerHTML.length === 0) {
+    console.error('[PDF DEBUG] pdf-report is empty — buildPdfReport() wrote nothing');
+    alert('pdf-report is empty — check console for errors.');
     return;
   }
 
-  // ── 6. Make container visible for capture ───────────────────────────────
-  // The element is already display:block (position:fixed; left:-9999px).
-  // We only need to switch visibility so html2canvas can render it.
+  // ── 6. DEBUG: make the container visible on-screen for visual confirmation
+  //        Remove this block once PDF content is confirmed correct.
+  el.style.position   = 'relative';
+  el.style.left       = '0';
   el.style.visibility = 'visible';
+  el.style.border     = '2px solid red';
 
   // ── 7. Wait one animation frame so the browser reflows the new innerHTML
   //        before html2canvas measures element dimensions.
   requestAnimationFrame(() => {
-    console.log('[PDF] Captured size — W:', el.offsetWidth, 'H:', el.offsetHeight);
+    console.log('[PDF DEBUG] Captured size — W:', el.offsetWidth, 'H:', el.offsetHeight);
 
     const opt = {
       margin      : 0,
@@ -500,9 +503,12 @@ function exportPDF() {
       .from(el)
       .save()
       .finally(() => {
-        // ── 8. Hide container again ────────────────────────────────────
+        // ── 8. Restore off-screen hidden state ────────────────────────
+        el.style.position   = 'fixed';
+        el.style.left       = '-9999px';
         el.style.visibility = 'hidden';
-        console.log('[PDF] Export complete — container hidden.');
+        el.style.border     = '';
+        console.log('[PDF DEBUG] Export complete — container restored to hidden.');
       });
   });
 }
