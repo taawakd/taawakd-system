@@ -79,14 +79,22 @@ export default async function handler(req, res) {
       }
     }
 
-    // بناء messages لـ OpenAI — يدعم system كحقل منفصل أو ضمن messages
+    // بناء messages لـ OpenAI
+    // Supports two approaches:
+    //   (a) body.system (legacy) → prepended as { role:'system' }
+    //   (b) body.messages[0].role === 'system' (CFO / new style) → used as-is
+    const isCFO = body._type === 'cfo';
     const messages = [];
     if (body.system) {
+      // legacy: system passed as separate top-level field
       messages.push({ role: 'system', content: body.system });
     }
     if (body.messages && Array.isArray(body.messages)) {
       messages.push(...body.messages);
     }
+
+    // CFO calls need more tokens for detailed financial advice
+    const maxTokens = isCFO ? 1000 : 600;
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -97,7 +105,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         temperature: 0.2,
-        max_tokens: 600,
+        max_tokens: maxTokens,
         messages: messages,
       })
     });

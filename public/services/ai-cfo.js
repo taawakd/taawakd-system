@@ -38,12 +38,21 @@ async function sendCFO(quickMsg) {
 
     const systemPrompt = buildCFOSystemPrompt(ctx);
 
-    // ── debug: confirm previous reports reach the prompt ──
-    console.log('[Tawakkad] CFO ctx.cfoContext.previous:', ctx?.cfoContext?.previous);
+    // ── debug: confirm context and prompt before sending ──
+    console.log('CFO CONTEXT:', ctx);
     console.log('CFO FINAL PROMPT:', systemPrompt);
 
-    // Keep last 10 messages for context
-    const messages = CFO_HISTORY.slice(-10);
+    // System prompt as messages[0] so it is guaranteed to be the first
+    // entry in the array sent to OpenAI — no reliance on server-side
+    // body.system branching. _type:'cfo' lets the API apply CFO-specific
+    // settings (higher max_tokens, no cache).
+    const payload = {
+      _type: 'cfo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...CFO_HISTORY.slice(-10)
+      ]
+    };
 
     const resp = await fetch('/api/analyze', {
       method: 'POST',
@@ -51,12 +60,7 @@ async function sendCFO(quickMsg) {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + (window.__AUTH_TOKEN__ || '')
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: messages
-      })
+      body: JSON.stringify(payload)
     });
 
     const data = await resp.json();
