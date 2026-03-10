@@ -40,7 +40,7 @@ async function sendCFO(quickMsg) {
 
     // ── debug: confirm previous reports reach the prompt ──
     console.log('[Tawakkad] CFO ctx.cfoContext.previous:', ctx?.cfoContext?.previous);
-    console.log('[Tawakkad] CFO system prompt:', systemPrompt);
+    console.log('CFO FINAL PROMPT:', systemPrompt);
 
     // Keep last 10 messages for context
     const messages = CFO_HISTORY.slice(-10);
