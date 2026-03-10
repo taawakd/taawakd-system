@@ -3,6 +3,7 @@
 // ============================================================
 
 function renderResults(report) {
+  console.log("renderResults executed");
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey} = report;
   const createdAt = report.createdAt || report.date || null;
   const resolvedSectorKey = sectorKey || getSectorKey(bizType);
@@ -20,20 +21,26 @@ function renderResults(report) {
   ].map(k=>`<div class="kpi"><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
   // ── AI CFO shortcut button ──
-  // Use createElement + insertBefore for reliable DOM placement.
-  // Guard with getElementById so the button is only created once per
-  // page load (renderResults can be called again when opening saved reports).
+  // resultKpis is confirmed as the correct container ID (pages.html line 271).
+  // Using nextElementSibling (not nextSibling) to skip whitespace text nodes
+  // and always land on the actual div.grid-2 as the insert anchor.
+  // Wrapping in a div so margin:auto centering works reliably regardless of
+  // the .btn base class display mode (inline-flex).
   const kpisContainer = document.querySelector('#resultKpis');
+  console.log("resultKpis element:", kpisContainer);
   if (kpisContainer && !document.getElementById('askCFOBtn')) {
+    const wrap = document.createElement('div');
+    wrap.style.textAlign  = 'center';
+    wrap.style.marginTop  = '20px';
+    wrap.style.marginBottom = '4px';
+
     const btn = document.createElement('button');
-    btn.id            = 'askCFOBtn';
-    btn.className     = 'btn btn-primary';
-    btn.innerText     = 'خذ رأي الخبير المالي AI CFO';
-    btn.style.marginTop   = '20px';
-    btn.style.display     = 'block';
-    btn.style.marginLeft  = 'auto';
-    btn.style.marginRight = 'auto';
-    kpisContainer.parentNode.insertBefore(btn, kpisContainer.nextSibling);
+    btn.id        = 'askCFOBtn';
+    btn.className = 'btn btn-primary';
+    btn.innerText = 'خذ رأي الخبير المالي AI CFO';
+    btn.style.padding = '14px 36px';
+    btn.style.fontSize = '15px';
+
     btn.addEventListener('click', () => {
       const question = 'حلّل هذا التقرير وقدّم أهم 3 نقاط قوة، أهم 3 مخاطر، وأهم قرار مالي يجب اتخاذه الآن.';
       showPage('cfo');
@@ -41,6 +48,10 @@ function renderResults(report) {
         if (window.sendCFO) window.sendCFO(question);
       }, 300);
     });
+
+    wrap.appendChild(btn);
+    // nextElementSibling skips whitespace text nodes → always inserts before div.grid-2
+    kpisContainer.parentNode.insertBefore(wrap, kpisContainer.nextElementSibling);
   }
 
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
