@@ -306,6 +306,13 @@ async function exportPDF() {
     return;
   }
 
+  // Force RTL layout and Arabic font before html2canvas takes the snapshot.
+  // Without these, html2canvas may rasterise the element with whatever
+  // direction/font the compositor last used, causing þÙ-style glyph
+  // corruption in the output PDF.
+  el.style.direction  = 'rtl';
+  el.style.fontFamily = 'Cairo, Arial, sans-serif';
+
   // html2canvas captures the browser-rendered DOM:
   //   • Arabic glyph shaping handled by the browser's text engine
   //   • RTL bidirectional layout preserved exactly as on screen
