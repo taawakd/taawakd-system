@@ -383,28 +383,37 @@ function getCFOContext() {
   console.log('[Tawakkad] getCFOContext — currentReport.id:', rep.id, '| bizName:', rep.bizName);
   console.log('[Tawakkad] CFO previous reports:', previousReports);
 
-  // ── Trend: period-over-period comparison (current vs most-recent previous) ──
-  const trend = {};
-  if (previousReports.length > 0) {
-    const prev = previousReports[0];
+  // ── Trend: span from oldest of last-5 reports to latest (current) ──
+  // history[0] = most recent previous, history[last] = oldest in window
+  const history = previousReports.slice(0, 5);
+  const trend   = {};
+  if (history.length > 0) {
+    const first = history[history.length - 1]; // oldest report in the window
+    // latest values come straight from the current report's metrics
+    const lastRevenue = m.revenue;
+    const lastProfit  = m.netProfit;
+    const lastScore   = rep.scoreData?.total;
 
-    if (prev.revenue != null && m.revenue != null) {
-      trend.revenueChange = m.revenue - prev.revenue;
-      trend.revenuePct    = prev.revenue !== 0
-        ? ((m.revenue - prev.revenue) / prev.revenue) * 100
+    if (first.revenue != null && lastRevenue != null) {
+      trend.revenueChange = lastRevenue - first.revenue;
+      trend.revenuePct    = first.revenue !== 0
+        ? ((lastRevenue - first.revenue) / first.revenue) * 100
         : null;
     }
 
-    if (prev.profit != null && m.netProfit != null) {
-      trend.profitChange = m.netProfit - prev.profit;
-      trend.profitPct    = prev.profit !== 0
-        ? ((m.netProfit - prev.profit) / prev.profit) * 100
+    if (first.profit != null && lastProfit != null) {
+      trend.profitChange = lastProfit - first.profit;
+      trend.profitPct    = first.profit !== 0
+        ? ((lastProfit - first.profit) / first.profit) * 100
         : null;
     }
 
-    if (prev.score != null && rep.scoreData?.total != null) {
-      trend.healthChange = rep.scoreData.total - prev.score;
+    if (first.score != null && lastScore != null) {
+      trend.healthChange = lastScore - first.score;
     }
+
+    // +1 counts the current (latest) report itself
+    trend.reportsAnalyzed = history.length + 1;
   }
   console.log('[Tawakkad] CFO trend:', trend);
 
@@ -483,7 +492,7 @@ function buildCFOSystemPrompt(ctx) {
     ? (Number(v) >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
     : '—';
   const trendText = hasTrend
-    ? `\n══ اتجاه الأداء (مقارنة بآخر تقرير سابق) ══
+    ? `\n══ اتجاه الأداء (آخر ${trend.reportsAnalyzed} تقارير) ══
 - الإيرادات: ${fmtChg(trend.revenueChange)} ريال (${fmtPct(trend.revenuePct)})
 - الربح: ${fmtChg(trend.profitChange)} ريال (${fmtPct(trend.profitPct)})
 - مؤشر الصحة: ${trend.healthChange != null ? fmtChg(trend.healthChange) + ' نقطة' : '—'}\n`
