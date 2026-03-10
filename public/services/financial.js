@@ -297,57 +297,50 @@ function handleExcel(input) {
 // PDF EXPORT
 // ══════════════════════════════════════════
 async function exportPDF() {
-  if (!STATE.currentReport) { toast('لا يوجد تقرير لتصديره'); return; }
+  // Resolve jsPDF from the UMD bundle regardless of how it was registered
+  const { jsPDF } = window.jspdf;
 
-  // Guard: html2canvas must be loaded (added to index.html after jspdf)
-  if (typeof html2canvas === 'undefined') {
-    toast('مكتبة التصدير لم تُحمَّل بعد، يرجى تحديث الصفحة');
+  const el = document.querySelector('#page-results');
+  if (!el) {
+    alert('Report page not found.');
     return;
   }
 
-  const r   = STATE.currentReport;
-  const el  = document.querySelector('#page-results');
-  if (!el) { toast('يرجى فتح صفحة النتائج أولاً'); return; }
-
-  toast('جارٍ تجهيز ملف PDF…');
-
-  // ── Render the live DOM node via html2canvas ──────────────────────────────
-  // The browser's text engine already handles:
-  //   • Arabic glyph shaping (contextual letter forms)
-  //   • RTL bidirectional layout
-  //   • The Cairo web font loaded via Google Fonts CSS in index.html
-  // Capturing the rendered page as an image therefore gives pixel-perfect
-  // Arabic text with no jsPDF font-embedding required.
+  // html2canvas captures the browser-rendered DOM:
+  //   • Arabic glyph shaping handled by the browser's text engine
+  //   • RTL bidirectional layout preserved exactly as on screen
+  //   • No jsPDF font embedding required
   const canvas = await html2canvas(el, {
-    scale       : 2,          // 2× for crisp text on retina / HiDPI screens
-    useCORS     : true,
-    backgroundColor : '#07080a',
-    scrollX     : 0,
-    scrollY     : -window.scrollY,
-    windowWidth : el.scrollWidth,
+    scale   : 2,
+    useCORS : true
   });
 
-  // ── Build paginated PDF ───────────────────────────────────────────────────
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
-  const PW      = pdf.internal.pageSize.getWidth();   // 210 mm
-  const PH      = pdf.internal.pageSize.getHeight();  // 297 mm
-  const imgW    = PW;
-  const imgH    = (canvas.height * PW) / canvas.width;  // preserve aspect ratio
-  const imgData = canvas.toDataURL('image/jpeg', 0.92);
+  const pdf = new jsPDF('p', 'mm', 'a4');
 
-  // Slice the full-height image across as many A4 pages as needed
-  let yOffset = 0;
-  while (yOffset < imgH) {
-    if (yOffset > 0) pdf.addPage();
-    // Shift the image up by yOffset so the correct slice shows in the page viewport
-    pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
-    yOffset += PH;
+  const pageWidth  = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const imgWidth  = pageWidth;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  let position = 0;
+
+  pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+
+  if (imgHeight > pageHeight) {
+    let heightLeft = imgHeight - pageHeight;
+
+    while (heightLeft > 0) {
+      position   = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
   }
 
-  pdf.save(`tawakkad-${r.bizName}-${new Date().toISOString().slice(0, 10)}.pdf`);
-  toast('تم تحميل PDF ✓');
+  pdf.save('tawakkad-report.pdf');
 }
 
 // ══════════════════════════════════════════
