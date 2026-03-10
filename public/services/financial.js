@@ -339,9 +339,13 @@ async function exportPDF() {
   }
 
   // ── 6. Render canvas ────────────────────────────────────────────────────
+  // letterRendering: true forces html2canvas to rasterise each glyph
+  // individually rather than as a run, preventing RTL ligature shaping
+  // from being lost when the text is painted onto the canvas context.
   const canvas = await html2canvas(el, {
-    scale   : 2,
-    useCORS : true
+    scale          : 2,
+    useCORS        : true,
+    letterRendering: true
   });
 
   // ── 6a. DEBUG: append canvas to body for visual inspection ───────────────
