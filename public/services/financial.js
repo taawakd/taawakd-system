@@ -92,12 +92,14 @@ async function runAnalysis() {
     reportText = data.content?.map(i=>i.text||'').join('') || '';
   } catch(e) { reportText = ''; }
 
+  console.log('[Tawakkad] runAnalysis — window._excelReportPeriod before report build:', window._excelReportPeriod);
   const report = {
     id: Date.now(), bizName, bizType, period, metrics,
     scoreData, alerts, scenarios, reportText, products, sectorKey,
     createdAt: new Date().toISOString(),
     reportPeriod: window._excelReportPeriod || null
   };
+  console.log('[Tawakkad] report.reportPeriod:', report.reportPeriod);
   window._excelReportPeriod = null;
 
   STATE.currentReport = report;
@@ -109,17 +111,34 @@ async function runAnalysis() {
     if (token) {
       const { data: { user } } = await sb.auth.getUser();
       if (user) {
-        await sb.from('reports').insert({
+        const basePayload = {
           user_id: user.id, biz_name: report.bizName, biz_type: report.bizType,
           period: report.period, revenue: report.metrics?.revenue || 0,
           total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
           net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
-          report_json: report, report_period: report.reportPeriod || null
+          report_json: report
+        };
+        // Try with report_period column; if column doesn't exist yet, fall back without it
+        // (reportPeriod is always present inside report_json as a safe fallback)
+        let { error: insertErr } = await sb.from('reports').insert({
+          ...basePayload, report_period: report.reportPeriod || null
         });
+        if (insertErr) {
+          console.error('[Tawakkad] Supabase insert error:', insertErr.message, insertErr);
+          // If the error is a missing column, retry without report_period
+          if (insertErr.code === '42703' || (insertErr.message && insertErr.message.includes('report_period'))) {
+            console.warn('[Tawakkad] report_period column missing — run SQL migration. Retrying without column...');
+            const { error: retryErr } = await sb.from('reports').insert(basePayload);
+            if (retryErr) console.error('[Tawakkad] Supabase retry insert error:', retryErr.message, retryErr);
+            else console.log('[Tawakkad] Insert succeeded without report_period (reportPeriod stored in report_json)');
+          }
+        } else {
+          console.log('[Tawakkad] Supabase insert OK — report_period:', report.reportPeriod);
+        }
         await sb.from('profiles').update({ analyses_used: (window._profileUsed || 0) + 1 }).eq('id', user.id);
       }
     }
-  } catch(saveErr) { console.warn('Supabase save error:', saveErr); }
+  } catch(saveErr) { console.error('[Tawakkad] Supabase save exception:', saveErr); }
 
   if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
   renderResults(report);
@@ -200,12 +219,26 @@ function handleExcel(input) {
       if(hasDate&&hasSales){
         const dI=headers.findIndex(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
         const sI=headers.findIndex(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
-        const data=rows.slice(1).filter(r=>r[sI]).map(r=>({date:clean(r[dI]),sales:num(r[sI])}));
+        // parseExcelDate: handles both ISO/string dates AND Excel serial numbers (e.g. 45292)
+        const parseExcelDate = rawVal => {
+          const n = parseFloat(rawVal);
+          // Excel serial numbers are integers > 1000; convert via epoch anchor 1899-12-30
+          if (!isNaN(n) && n > 1000 && Number.isInteger(n)) {
+            return new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+          }
+          // Fallback: try direct string parse (ISO, DD/MM/YYYY formatted strings)
+          return new Date(String(rawVal||'').trim());
+        };
+        // Preserve raw cell value (rawDate) alongside cleaned string for date parsing
+        const data=rows.slice(1).filter(r=>r[sI]).map(r=>({rawDate:r[dI],date:clean(r[dI]),sales:num(r[sI])}));
         if(data.length){
           const total=data.reduce((s,r)=>s+r.sales,0);
           set('f-rev',total);
-          // Extract date range for reportPeriod
-          const validDates=data.map(r=>new Date(r.date)).filter(d=>!isNaN(d));
+          // Extract date range for reportPeriod using raw values to handle serial numbers
+          const validDates=data.map(r=>parseExcelDate(r.rawDate)).filter(d=>!isNaN(d));
+          console.log('[Tawakkad] handleExcel date+sales: rawDate samples=',
+            data.slice(0,3).map(r=>r.rawDate), '| validDates=', validDates.length,
+            validDates.length ? '| first='+validDates[0].toISOString().slice(0,10) : '');
           if(validDates.length>=2){
             const minD=new Date(Math.min(...validDates.map(d=>d.getTime())));
             const maxD=new Date(Math.max(...validDates.map(d=>d.getTime())));
@@ -213,6 +246,7 @@ function handleExcel(input) {
           } else if(validDates.length===1){
             window._excelReportPeriod=validDates[0].toLocaleDateString('ar-SA');
           }
+          console.log('[Tawakkad] window._excelReportPeriod after handleExcel:', window._excelReportPeriod);
           toast('✅ إجمالي '+data.length+' يوم: ﷼'+total.toLocaleString('en')); return;
         }
       }

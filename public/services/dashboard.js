@@ -67,7 +67,8 @@ async function loadReportsFromDB() {
       reportPeriod: r.report_period || r.report_json?.reportPeriod || null
     }));
     localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
-  } catch(e) { console.warn('loadReportsFromDB error:', e); }
+    console.log('[Tawakkad] loadReportsFromDB — reportPeriods:', STATE.savedReports.map(r=>({id:r.id,reportPeriod:r.reportPeriod})));
+  } catch(e) { console.error('[Tawakkad] loadReportsFromDB error:', e); }
 }
 
 function renderSavedReports() {
