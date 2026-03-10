@@ -354,43 +354,107 @@ function getCFOContext() {
   const rep = STATE.currentReport;
   if (!rep) return null;
   const m = rep.metrics;
+
+  // Helper: distil one report into a compact comparable summary
+  const summarize = r => {
+    if (!r) return null;
+    const rm = r.metrics || {};
+    return {
+      bizName:  r.bizName,
+      revenue:  rm.revenue,
+      profit:   rm.netProfit,
+      margin:   rm.netMargin,
+      score:    r.scoreData?.total,
+      period:   r.reportPeriod || r.period || (r.createdAt ? r.createdAt.slice(0,10) : '—')
+    };
+  };
+
   return {
+    // ── flat fields kept for context bar UI in ai-cfo.js ──
     bizName: rep.bizName, bizType: rep.bizType, period: rep.period,
     revenue: m.revenue, netProfit: m.netProfit, netMargin: m.netMargin,
     grossMargin: m.grossMargin, totalExpenses: m.totalExpenses,
     rentPct: m.rentPct, salPct: m.salPct, cogsPct: m.cogsPct, mktPct: m.mktPct,
     healthScore: rep.scoreData?.total, products: rep.products || [],
     alerts: rep.alerts?.map(a => a.msg) || [],
+
+    // ── structured multi-report context for the AI system prompt ──
+    cfoContext: {
+      latest: {
+        bizName:       rep.bizName,
+        bizType:       rep.bizType,
+        revenue:       m.revenue,
+        profit:        m.netProfit,
+        margin:        m.netMargin,
+        grossMargin:   m.grossMargin,
+        totalExpenses: m.totalExpenses,
+        rentPct:       m.rentPct,
+        salPct:        m.salPct,
+        cogsPct:       m.cogsPct,
+        mktPct:        m.mktPct,
+        score:         rep.scoreData?.total,
+        period:        rep.reportPeriod || rep.period,
+        alerts:        rep.alerts?.map(a => a.msg) || [],
+        products:      rep.products || []
+      },
+      previous: (STATE.savedReports || []).slice(1, 6).map(summarize).filter(Boolean)
+    }
   };
 }
 
 function buildCFOSystemPrompt(ctx) {
   if (!ctx) {
-    return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية. لا تتوفر بيانات مشروع حالياً. أجب على الأسئلة المالية بشكل عام ومفيد. تحدث بالعربية دائماً. كن موجزاً ومباشراً. استخدم الأرقام والأمثلة.`;
+    return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية.
+لا تتوفر بيانات مشروع حالياً. أجب على الأسئلة المالية المتعلقة بالمشاريع التجارية فقط.
+تحدث بالعربية دائماً. كن موجزاً ومباشراً.
+إذا سأل المستخدم عن موضوع لا علاقة له بالتحليل المالي أو المشاريع، رد فقط بـ: "هذا السؤال خارج نطاق تحليل المشروع."`;
   }
-  const prodsText = ctx.products.length ? ctx.products.map(p => {
-    const m = p.price > 0 ? (((p.price-p.cost)/p.price)*100).toFixed(0) : 0;
-    return `${p.name} (هامش ${m}%, كمية ${p.qty})`;
-  }).join('، ') : 'لا توجد بيانات';
 
-  return `أنت AI CFO لمشروع "${ctx.bizName}" — مستشار مالي متخصص.
-بيانات المشروع الحالية:
-- النشاط: ${ctx.bizType} | الفترة: ${ctx.period}
-- الإيرادات: ${ctx.revenue?.toLocaleString()} ريال
-- صافي الربح: ${ctx.netProfit?.toLocaleString()} ريال (${ctx.netMargin}%)
-- هامش إجمالي: ${ctx.grossMargin}%
-- المصاريف: ${ctx.totalExpenses?.toLocaleString()} ريال
-- الإيجار: ${ctx.rentPct}% | الرواتب: ${ctx.salPct}% | تكلفة البضاعة: ${ctx.cogsPct}% | التسويق: ${ctx.mktPct}%
-- مؤشر الصحة: ${ctx.healthScore}/100
+  const { cfoContext } = ctx;
+  const latest   = cfoContext.latest;
+  const previous = cfoContext.previous;
+
+  // Build product line
+  const prodsText = (latest.products || []).length
+    ? latest.products.map(p => {
+        const mg = p.price > 0 ? (((p.price - p.cost) / p.price) * 100).toFixed(0) : 0;
+        return `${p.name} (هامش ${mg}%, كمية ${p.qty})`;
+      }).join('، ')
+    : 'لا توجد بيانات منتجات';
+
+  // Build previous-reports comparison table
+  const prevText = previous.length
+    ? previous.map((r, i) =>
+        `  ${i + 1}. ${r.period || '—'}: إيرادات ${(r.revenue || 0).toLocaleString()} ر | ربح ${(r.profit || 0).toLocaleString()} ر | هامش ${r.margin ?? '—'}% | مؤشر الصحة ${r.score ?? '—'}/100`
+      ).join('\n')
+    : '  لا توجد تقارير سابقة متاحة';
+
+  return `أنت AI CFO لمشروع "${latest.bizName}" — مستشار مالي متخصص للمشاريع السعودية الصغيرة والمتوسطة.
+
+══ آخر تحليل (المرجع الأساسي) ══
+- الفترة: ${latest.period}
+- النشاط: ${latest.bizType}
+- الإيرادات: ${(latest.revenue || 0).toLocaleString()} ريال
+- صافي الربح: ${(latest.profit || 0).toLocaleString()} ريال (${latest.margin}%)
+- هامش إجمالي: ${latest.grossMargin}%
+- المصاريف الكلية: ${(latest.totalExpenses || 0).toLocaleString()} ريال
+- الإيجار: ${latest.rentPct}% | الرواتب: ${latest.salPct}% | تكلفة البضاعة: ${latest.cogsPct}% | التسويق: ${latest.mktPct}%
+- مؤشر الصحة: ${latest.score}/100
 - المنتجات: ${prodsText}
-- التنبيهات: ${ctx.alerts?.join(' | ') || 'لا توجد'}
-أنت تعرف هذه البيانات بشكل كامل. أجب على أسئلة المستخدم كمستشار مالي خبير:
-- كن مباشراً وموجزاً (3-5 جمل في الغالب)
-- استخدم أرقام المشروع الفعلية في إجاباتك
-- أعطِ توصيات قابلة للتطبيق فوراً
-- إذا كان السؤال خارج نطاق البيانات، أجب بشكل عام مفيد
-- تحدث بالعربية دائماً بأسلوب مستشار محترف وليس روبوت
-- استخدم **bold** للأرقام المهمة والنقاط الرئيسية`;
+- التنبيهات: ${latest.alerts?.join(' | ') || 'لا توجد'}
+
+══ التقارير السابقة (للمقارنة واكتشاف الاتجاهات) ══
+${prevText}
+
+══ تعليمات العمل ══
+- أنت المستشار المالي الحصري لهذا المشروع — ردودك مقيّدة بنطاق التحليل المالي لهذا المشروع فقط.
+- استخدم آخر تحليل كمرجع أساسي، وقارن مع التقارير السابقة لاكتشاف الاتجاهات (تحسن / تراجع / ثبات) عند الإجابة.
+- إذا كانت هناك تقارير سابقة، أشر إلى الاتجاه بشكل موجز مع الأرقام.
+- كن مباشراً وموجزاً (3-6 جمل في الغالب) واستخدم الأرقام الفعلية من البيانات.
+- أعطِ توصيات قابلة للتطبيق فوراً مع تأثيرها المتوقع.
+- تحدث بالعربية دائماً بأسلوب مستشار محترف، لا روبوت.
+- استخدم **bold** للأرقام المهمة والنقاط الرئيسية.
+- إذا سأل المستخدم عن أي موضوع لا علاقة له بالمشروع أو التحليل المالي، رد فقط بالجملة التالية دون أي إضافة: "هذا السؤال خارج نطاق تحليل المشروع."`;
 }
 
 // expose to window
