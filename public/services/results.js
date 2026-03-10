@@ -19,6 +19,25 @@ function renderResults(report) {
     {val:scoreData.total+'/100', label:'مؤشر الصحة', cls:scoreData.total>=65?'pos':scoreData.total>=40?'warn':'neg'},
   ].map(k=>`<div class="kpi"><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
+  // ── AI CFO shortcut button ──
+  // Remove stale button first (renderResults may be called multiple times)
+  document.getElementById('askCFOBtn')?.remove();
+  document.getElementById('resultKpis').insertAdjacentHTML('afterend', `
+    <div style="text-align:center;margin:20px 0 4px;">
+      <button id="askCFOBtn" class="btn btn-primary"
+        style="padding:14px 36px;font-size:15px;border-radius:14px;display:inline-flex;align-items:center;gap:10px;">
+        🤖 <span>خذ رأي الخبير المالي AI CFO</span>
+      </button>
+    </div>
+  `);
+  document.getElementById('askCFOBtn').addEventListener('click', () => {
+    const question = "حلّل هذا التقرير وقدّم أهم 3 نقاط قوة، أهم 3 مخاطر، وأهم قرار مالي يجب اتخاذه الآن.";
+    showPage('cfo');
+    setTimeout(() => {
+      if (window.sendCFO) window.sendCFO(question);
+    }, 300);
+  });
+
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
   document.getElementById('resScoreBreakdown').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
