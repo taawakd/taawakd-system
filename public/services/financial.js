@@ -307,11 +307,16 @@ async function exportPDF() {
   }
 
   // Force RTL layout and Arabic font before html2canvas takes the snapshot.
-  // Without these, html2canvas may rasterise the element with whatever
-  // direction/font the compositor last used, causing þÙ-style glyph
-  // corruption in the output PDF.
   el.style.direction  = 'rtl';
   el.style.fontFamily = 'Cairo, Arial, sans-serif';
+
+  // #page-results lives inside a .page container that is display:none when
+  // it is not the active page. html2canvas cannot compute fonts or layout
+  // for hidden elements, which produces the þÙ glyph corruption.
+  // Temporarily force the container to display:block, capture, then restore.
+  const page            = el.closest('.page');
+  const previousDisplay = page ? page.style.display : null;
+  if (page) page.style.display = 'block';
 
   // html2canvas captures the browser-rendered DOM:
   //   • Arabic glyph shaping handled by the browser's text engine
@@ -321,6 +326,9 @@ async function exportPDF() {
     scale   : 2,
     useCORS : true
   });
+
+  // Restore the page container to its previous visibility state
+  if (page) page.style.display = previousDisplay;
 
   const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
