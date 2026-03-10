@@ -329,8 +329,9 @@
 </div>
 
 <!-- ════ PDF EXPORT CONTAINER ════ -->
-<!-- Built dynamically by exportPDF() — never shown on screen -->
-<div id="pdf-report" style="display:none;position:absolute;top:0;right:0;z-index:-1;"></div>
+<!-- Kept off-screen with position:fixed so html2canvas gets real layout dimensions.
+     exportPDF() toggles visibility:hidden/visible; display is always block. -->
+<div id="pdf-report" style="position:fixed;top:0;left:-9999px;width:210mm;visibility:hidden;background:#fff;"></div>
 
 <!-- ════ BENCHMARK PAGE ════ -->
 <div class="page" id="page-benchmark">

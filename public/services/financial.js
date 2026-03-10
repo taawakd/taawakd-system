@@ -460,28 +460,51 @@ function exportPDF() {
     return;
   }
 
-  // ── 3. Build the dedicated PDF layout ───────────────────────────────────
-  buildPdfReport(report);
-
-  // ── 4. Show the container so html2pdf can measure it ────────────────────
+  // ── 3. Locate container (always display:block; toggled via visibility) ──
   const el = document.getElementById('pdf-report');
   if (!el) { alert('pdf-report container not found.'); return; }
-  el.style.display = 'block';
 
-  // ── 5. Export and restore ────────────────────────────────────────────────
-  const opt = {
-    margin      : 0,
-    filename    : 'tawakkad-report.pdf',
-    image       : { type: 'png', quality: 1 },
-    html2canvas : { scale: 2 },
-    jsPDF       : { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  // ── 4. Build the dedicated PDF layout ───────────────────────────────────
+  // buildPdfReport sets el.innerHTML synchronously before we continue.
+  buildPdfReport(report);
 
-  html2pdf()
-    .set(opt)
-    .from(el)
-    .save()
-    .finally(() => { el.style.display = 'none'; });
+  // ── 5. Verify content was written (debug) ───────────────────────────────
+  console.log('[PDF] #pdf-report innerHTML length:', el.innerHTML.length);
+  console.log('[PDF] #pdf-report content preview:', el.innerHTML.slice(0, 200));
+
+  if (!el.innerHTML.trim()) {
+    alert('buildPdfReport() produced no content — check console for errors.');
+    return;
+  }
+
+  // ── 6. Make container visible for capture ───────────────────────────────
+  // The element is already display:block (position:fixed; left:-9999px).
+  // We only need to switch visibility so html2canvas can render it.
+  el.style.visibility = 'visible';
+
+  // ── 7. Wait one animation frame so the browser reflows the new innerHTML
+  //        before html2canvas measures element dimensions.
+  requestAnimationFrame(() => {
+    console.log('[PDF] Captured size — W:', el.offsetWidth, 'H:', el.offsetHeight);
+
+    const opt = {
+      margin      : 0,
+      filename    : 'tawakkad-report.pdf',
+      image       : { type: 'png', quality: 1 },
+      html2canvas : { scale: 2, useCORS: true, logging: true },
+      jsPDF       : { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf()
+      .set(opt)
+      .from(el)
+      .save()
+      .finally(() => {
+        // ── 8. Hide container again ────────────────────────────────────
+        el.style.visibility = 'hidden';
+        console.log('[PDF] Export complete — container hidden.');
+      });
+  });
 }
 
 // ══════════════════════════════════════════
