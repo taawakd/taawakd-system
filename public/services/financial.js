@@ -297,220 +297,126 @@ function handleExcel(input) {
 // PDF EXPORT
 // ══════════════════════════════════════════
 
-// ── buildPdfReport ────────────────────────────────────────────────────────
-// Constructs a clean A4-optimised HTML layout inside #pdf-report from the
-// current report data. Uses white background and print-friendly colours so
-// the output looks professional on paper, not like a screenshot of the dark UI.
-function buildPdfReport(report) {
-  const el = document.getElementById('pdf-report');
+// ── exportPDF ─────────────────────────────────────────────────────────────
+// NOTE: The app uses a dark theme with CSS custom properties (var(--s1), var(--white), etc.).
+// html2canvas cannot resolve these correctly, producing a blank white PDF.
+// Fix: deep-clone the results content into a self-contained light-mode wrapper
+// with all colours set via explicit inline styles so html2canvas sees real values.
+async function exportPDF() {
+  const el = document.querySelector('#page-results');
   if (!el) return;
 
-  const {
-    bizName = 'مشروع', bizType = '', period = '',
-    createdAt, metrics = {}, scoreData = {}, alerts = [],
-    scenarios = [], reportText = ''
-  } = report;
+  // ── 1. تفعيل صفحة النتائج حتى يحسب المتصفح الـ layout كاملاً ──
+  const resultsPage = el.closest('.page');
+  const prevActive  = document.querySelector('.page.active');
+  if (prevActive)  prevActive.classList.remove('active');
+  if (resultsPage) resultsPage.classList.add('active');
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
 
-  const m          = metrics;
-  const score      = scoreData.total ?? 0;
-  const scoreClr   = score >= 75 ? '#2e7d52' : score >= 50 ? '#b36b00' : '#b52a2a';
-  const scoreLabel = score >= 80 ? 'ممتاز' : score >= 65 ? 'جيد جداً' : score >= 50 ? 'متوسط' : score >= 35 ? 'يحتاج تحسين' : 'خطر';
-  const date       = createdAt ? new Date(createdAt).toLocaleDateString('ar-SA') : '';
-
-  // ── helpers ──
-  const fmtN = n => typeof n === 'number' ? fmt(n) : '—';
-  const clr  = n => n >= 0 ? '#2e7d52' : '#b52a2a';
-
-  // ── section header ──
-  const sectionHead = title => `
-    <div style="font-size:12px;font-weight:700;color:#c8a45a;letter-spacing:0.5px;
-                border-bottom:1px solid #e8e0d0;padding-bottom:6px;margin-bottom:12px;">
-      ${title}
-    </div>`;
-
-  // ── KPI card ──
-  const kpiCard = (label, value, color) => `
-    <div style="background:#f7f5f0;border-radius:10px;padding:14px 12px;text-align:center;">
-      <div style="font-size:18px;font-weight:800;color:${color};line-height:1.2;">${value}</div>
-      <div style="font-size:10px;color:#777;margin-top:5px;">${label}</div>
-    </div>`;
-
-  // ── Score breakdown bars ──
-  const breakdown = (scoreData.breakdown || []).map(b => `
-    <div style="margin-bottom:6px;">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-bottom:3px;">
-        <span>${b.label}</span><span>${b.val}/${b.max}</span>
-      </div>
-      <div style="background:#e5e5e5;border-radius:4px;height:5px;">
-        <div style="background:#c8a45a;height:5px;border-radius:4px;width:${Math.round((b.val/b.max)*100)}%;"></div>
-      </div>
-    </div>`).join('');
-
-  // ── AI analysis lines ──
-  const aiHtml = (reportText || 'لا يوجد تحليل ذكي').split('\n')
-    .map(l => l.trim()).filter(Boolean)
-    .map(l => `<p style="margin:0 0 7px;line-height:1.7;font-size:12px;color:#333;">${l}</p>`)
-    .join('');
-
-  // ── Scenario cards (first 4) ──
-  const scHtml = (scenarios || []).slice(0, 4).map(s => {
-    const newMargin = m.revenue > 0 ? ((s.newProfit / m.revenue) * 100).toFixed(1) : 0;
-    const dSign     = s.delta >= 0 ? '+' : '';
-    return `
-      <div style="background:#f7f5f0;border-radius:10px;padding:12px;">
-        <div style="font-size:12px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">${s.title}</div>
-        <div style="font-size:10px;color:#777;margin-bottom:8px;line-height:1.5;">${s.desc}</div>
-        <div style="font-size:16px;font-weight:800;color:${s.newProfit >= 0 ? '#2e7d52' : '#b52a2a'};">
-          ${fmtN(s.newProfit)} ﷼
-        </div>
-        <div style="font-size:10px;margin-top:3px;color:${s.delta >= 0 ? '#2e7d52' : '#b52a2a'};">
-          ${dSign}${fmtN(s.delta)} ريال • هامش ${newMargin}%
-        </div>
-      </div>`;
-  }).join('');
-
-  // ── Alerts (first 5, warnings/dangers only) ──
-  const alertHtml = (alerts || []).slice(0, 5).map(a => {
-    const bg  = a.type === 'danger' ? '#fff0f0' : a.type === 'good' ? '#f0fff7' : '#fff8ee';
-    const brd = a.type === 'danger' ? '#e8a0a0' : a.type === 'good' ? '#90d4b0' : '#e8c57a';
-    return `
-      <div style="background:${bg};border:1px solid ${brd};border-radius:8px;
-                  padding:9px 12px;margin-bottom:7px;font-size:11px;
-                  display:flex;gap:8px;align-items:flex-start;">
-        <span style="flex-shrink:0;">${a.icon || '•'}</span>
-        <span style="color:#333;line-height:1.6;">${a.msg}</span>
-      </div>`;
-  }).join('');
-
-  // ── Full layout ──
-  el.innerHTML = `
-    <div style="
-      width:210mm;min-height:297mm;padding:18mm 20mm;
-      direction:rtl;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;
-      font-size:13px;background:#fff;color:#1a1a1a;box-sizing:border-box;
-    ">
-
-      <!-- HEADER -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;
-                  border-bottom:2px solid #c8a45a;padding-bottom:12px;margin-bottom:20px;">
-        <div>
-          <div style="font-size:22px;font-weight:800;color:#1a1a1a;">${bizName}</div>
-          <div style="font-size:12px;color:#888;margin-top:4px;">${bizType} • ${period}</div>
-        </div>
-        <div style="text-align:left;">
-          <div style="font-size:20px;font-weight:800;color:#c8a45a;">توكّد</div>
-          <div style="font-size:10px;color:#aaa;margin-top:2px;">${date}</div>
-        </div>
-      </div>
-
-      <!-- KPI SUMMARY -->
-      ${sectionHead('ملخص الأداء المالي')}
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-        ${kpiCard('الإيرادات', fmtN(m.revenue) + ' ﷼', '#1a1a1a')}
-        ${kpiCard('إجمالي المصاريف', fmtN(m.totalExpenses) + ' ﷼', '#b36b00')}
-        ${kpiCard('صافي الربح', fmtN(m.netProfit) + ' ﷼', clr(m.netProfit))}
-        ${kpiCard('هامش الربح', (m.netMargin ?? 0) + '%', clr(m.netProfit))}
-      </div>
-
-      <!-- HEALTH SCORE -->
-      ${sectionHead('مؤشر الصحة المالية')}
-      <div style="background:#f7f5f0;border-radius:12px;padding:16px;
-                  display:flex;gap:20px;align-items:flex-start;margin-bottom:20px;">
-        <div style="width:72px;height:72px;border-radius:50%;border:5px solid ${scoreClr};
-                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <div style="text-align:center;">
-            <div style="font-size:22px;font-weight:800;color:${scoreClr};line-height:1;">${score}</div>
-            <div style="font-size:9px;color:#aaa;">/100</div>
-          </div>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:15px;font-weight:700;color:${scoreClr};margin-bottom:10px;">${scoreLabel}</div>
-          ${breakdown}
-        </div>
-      </div>
-
-      <!-- ALERTS -->
-      ${alertHtml ? sectionHead('التنبيهات المالية') + alertHtml + '<div style="margin-bottom:20px;"></div>' : ''}
-
-      <!-- AI ANALYSIS -->
-      ${sectionHead('التحليل الذكي')}
-      <div style="margin-bottom:20px;">${aiHtml}</div>
-
-      <!-- SCENARIOS -->
-      ${sectionHead('سيناريوهات افتراضية')}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        ${scHtml}
-      </div>
-
-    </div>`;
-}
-
-// ── exportPDF ─────────────────────────────────────────────────────────────
-function exportPDF() {
-  // ── 1. Require a current report ─────────────────────────────────────────
-  const report = STATE.currentReport;
-  if (!report) {
-    alert('لا يوجد تقرير — أجرِ تحليلاً أولاً');
-    return;
-  }
-
-  // ── 2. Guard: html2pdf must be loaded ───────────────────────────────────
-  if (typeof html2pdf !== 'function') {
-    alert('html2pdf is not loaded — cannot export PDF.');
-    return;
-  }
-
-  // ── 3. Locate container (always display:block; toggled via visibility) ──
-  const el = document.getElementById('pdf-report');
-  if (!el) { alert('pdf-report container not found.'); return; }
-
-  // ── 4. Build the dedicated PDF layout ───────────────────────────────────
-  // buildPdfReport sets el.innerHTML synchronously before we continue.
-  buildPdfReport(report);
-
-  // ── 5. DEBUG: verify innerHTML was written ───────────────────────────────
-  const el2 = document.querySelector('#pdf-report');   // re-query per spec
-  console.log('[PDF DEBUG] innerHTML length:', el2.innerHTML.length);
-  console.log('[PDF DEBUG] content preview:', el2.innerHTML.slice(0, 300));
-  if (el2.innerHTML.length === 0) {
-    console.error('[PDF DEBUG] pdf-report is empty — buildPdfReport() wrote nothing');
-    alert('pdf-report is empty — check console for errors.');
-    return;
-  }
-
-  // ── 6. DEBUG: make the container visible on-screen for visual confirmation
-  //        Remove this block once PDF content is confirmed correct.
-  el.style.position   = 'relative';
-  el.style.left       = '0';
-  el.style.visibility = 'visible';
-  el.style.border     = '2px solid red';
-
-  // ── 7. Wait one animation frame so the browser reflows the new innerHTML
-  //        before html2canvas measures element dimensions.
-  requestAnimationFrame(() => {
-    console.log('[PDF DEBUG] Captured size — W:', el.offsetWidth, 'H:', el.offsetHeight);
-
-    const opt = {
-      margin      : 0,
-      filename    : 'tawakkad-report.pdf',
-      image       : { type: 'png', quality: 1 },
-      html2canvas : { scale: 2, useCORS: true, logging: true },
-      jsPDF       : { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf()
-      .set(opt)
-      .from(el)
-      .save()
-      .finally(() => {
-        // ── 8. Restore off-screen hidden state ────────────────────────
-        el.style.position   = 'fixed';
-        el.style.left       = '-9999px';
-        el.style.visibility = 'hidden';
-        el.style.border     = '';
-        console.log('[PDF DEBUG] Export complete — container restored to hidden.');
-      });
+  // ── 2. إنشاء wrapper أبيض اللون وإضافته للـ DOM أولاً ──
+  const wrapper = document.createElement('div');
+  Object.assign(wrapper.style, {
+    position:   'fixed',
+    top:        '-9999px',   // خارج نطاق الرؤية حتى لا يُزعج المستخدم
+    left:       '0',
+    width:      '794px',
+    background: '#ffffff',
+    color:      '#1a1a1a',
+    fontFamily: '"IBM Plex Sans Arabic", Arial, sans-serif',
+    direction:  'rtl',
+    padding:    '32px',
+    zIndex:     '99999',
+    boxSizing:  'border-box',
   });
+
+  // ── 3. نسخ المحتوى وإضافته للـ wrapper ثم للـ DOM ──
+  const clone = el.cloneNode(true);
+  clone.style.cssText = 'display:block !important; visibility:visible !important;';
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  // ── 4. انتظار reflow كامل ──
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
+
+  // ── 5. الآن نستدعي getComputedStyle بعد أن صار الـ clone في الـ DOM ──
+  wrapper.querySelectorAll('*').forEach(node => {
+    try {
+      const cs = window.getComputedStyle(node);
+      const bg  = cs.backgroundColor;
+      const col = cs.color;
+
+      // خلفية داكنة جداً → ابيض
+      if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+        const m = bg.match(/\d+/g);
+        if (m && (parseInt(m[0]) + parseInt(m[1]) + parseInt(m[2])) < 180) {
+          node.style.setProperty('background-color', '#ffffff', 'important');
+          node.style.setProperty('background', '#ffffff', 'important');
+        }
+      }
+
+      // نص فاتح جداً (أبيض) → أسود
+      if (col) {
+        const m = col.match(/\d+/g);
+        if (m && (parseInt(m[0]) + parseInt(m[1]) + parseInt(m[2])) > 580) {
+          node.style.setProperty('color', '#1a1a1a', 'important');
+        }
+      }
+
+      // حذف CSS variables من border-color
+      const bc = cs.borderColor;
+      if (bc && (bc.includes('var(') || (bc.match(/\d+/g) && parseInt(bc.match(/\d+/g)[0]) < 30 && bc !== 'rgb(0,0,0)'))) {
+        node.style.setProperty('border-color', '#e0e0e0', 'important');
+      }
+    } catch(e) { /* تجاهل عناصر pseudo مثل ::before */ }
+  });
+
+  // ── 6. انتظار lخيرة قبل الالتقاط ──
+  await new Promise(r => requestAnimationFrame(r));
+
+  try {
+    // ── 7. التقاط الصورة بـ html2canvas مباشرة ──
+    const canvas = await window.html2canvas(wrapper, {
+      scale:           2,
+      useCORS:         true,
+      allowTaint:      true,
+      backgroundColor: '#ffffff',
+      logging:         false,
+      width:           794,
+    });
+
+    // ── 8. تحويل الصورة إلى PDF متعدد الصفحات ──
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW   = 210;  // mm
+    const pageH   = 297;  // mm
+    const imgW    = pageW;
+    const imgH    = (canvas.height * pageW) / canvas.width;
+
+    let yOffset = 0;
+    let pageNum = 0;
+
+    while (yOffset < imgH) {
+      if (pageNum > 0) pdf.addPage();
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', 0.92),
+        'JPEG',
+        0, -yOffset,
+        imgW, imgH
+      );
+      yOffset += pageH;
+      pageNum++;
+    }
+
+    pdf.save('tawakkad-report.pdf');
+  } finally {
+    // ── 9. تنظيف واستعادة الحالة السابقة ──
+    document.body.removeChild(wrapper);
+    if (resultsPage) resultsPage.classList.remove('active');
+    if (prevActive)  prevActive.classList.add('active');
+  }
 }
 
 // ══════════════════════════════════════════
