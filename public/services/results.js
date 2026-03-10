@@ -20,23 +20,28 @@ function renderResults(report) {
   ].map(k=>`<div class="kpi"><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
   // ── AI CFO shortcut button ──
-  // Remove stale button first (renderResults may be called multiple times)
-  document.getElementById('askCFOBtn')?.remove();
-  document.getElementById('resultKpis').insertAdjacentHTML('afterend', `
-    <div style="text-align:center;margin:20px 0 4px;">
-      <button id="askCFOBtn" class="btn btn-primary"
-        style="padding:14px 36px;font-size:15px;border-radius:14px;display:inline-flex;align-items:center;gap:10px;">
-        🤖 <span>خذ رأي الخبير المالي AI CFO</span>
-      </button>
-    </div>
-  `);
-  document.getElementById('askCFOBtn').addEventListener('click', () => {
-    const question = "حلّل هذا التقرير وقدّم أهم 3 نقاط قوة، أهم 3 مخاطر، وأهم قرار مالي يجب اتخاذه الآن.";
-    showPage('cfo');
-    setTimeout(() => {
-      if (window.sendCFO) window.sendCFO(question);
-    }, 300);
-  });
+  // Use createElement + insertBefore for reliable DOM placement.
+  // Guard with getElementById so the button is only created once per
+  // page load (renderResults can be called again when opening saved reports).
+  const kpisContainer = document.querySelector('#resultKpis');
+  if (kpisContainer && !document.getElementById('askCFOBtn')) {
+    const btn = document.createElement('button');
+    btn.id            = 'askCFOBtn';
+    btn.className     = 'btn btn-primary';
+    btn.innerText     = 'خذ رأي الخبير المالي AI CFO';
+    btn.style.marginTop   = '20px';
+    btn.style.display     = 'block';
+    btn.style.marginLeft  = 'auto';
+    btn.style.marginRight = 'auto';
+    kpisContainer.parentNode.insertBefore(btn, kpisContainer.nextSibling);
+    btn.addEventListener('click', () => {
+      const question = 'حلّل هذا التقرير وقدّم أهم 3 نقاط قوة، أهم 3 مخاطر، وأهم قرار مالي يجب اتخاذه الآن.';
+      showPage('cfo');
+      setTimeout(() => {
+        if (window.sendCFO) window.sendCFO(question);
+      }, 300);
+    });
+  }
 
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
   document.getElementById('resScoreBreakdown').innerHTML = `
