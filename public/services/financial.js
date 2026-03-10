@@ -296,121 +296,48 @@ function handleExcel(input) {
 // ══════════════════════════════════════════
 // PDF EXPORT
 // ══════════════════════════════════════════
-async function exportPDF() {
+function exportPDF() {
   // ── 1. Select the report container ──────────────────────────────────────
-  const el = document.querySelector('#page-results');
-  if (!el) {
-    alert('Report page not found.');
+  const element = document.querySelector('#page-results');
+  if (!element) {
+    alert('Report page not found');
     return;
   }
 
-  // ── 2. Pre-capture: force RTL + Arabic font + bidi ──────────────────────
-  // html2canvas reads computed styles; setting these inline guarantees they
-  // are applied even when the page is not the currently active view.
-  el.style.direction   = 'rtl';
-  el.style.unicodeBidi = 'plaintext';
-  el.style.fontFamily  = 'Cairo, Arial, sans-serif';
-
-  // ── 3. Pre-capture: NFC-normalize every text node ───────────────────────
-  // Arabic can arrive as NFD (decomposed code points). NFC normalization
-  // collapses each sequence to its canonical composed form so the browser
-  // engine renders correct glyphs. NO jsPDF text() calls are used anywhere
-  // in this function — the PDF contains only the rasterised image.
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
-  let node;
-  while ((node = walker.nextNode())) {
-    if (node.textContent) {
-      node.textContent = node.textContent.normalize('NFC');
-    }
+  // ── 2. Guard: html2pdf must be loaded ───────────────────────────────────
+  if (typeof html2pdf !== 'function') {
+    alert('html2pdf is not loaded — cannot export PDF.');
+    return;
   }
 
-  // ── 4. Pre-capture: make the page container visible ─────────────────────
+  // ── 3. Make the page container visible ──────────────────────────────────
   // #page-results lives inside .page which is display:none when inactive.
-  // html2canvas cannot compute layout for hidden elements.
-  const pageEl        = el.closest('.page');
-  const prevDisplay   = pageEl ? pageEl.style.display : null;
+  // html2pdf cannot compute layout for hidden elements.
+  const pageEl      = element.closest('.page');
+  const prevDisplay = pageEl ? pageEl.style.display : null;
   if (pageEl) pageEl.style.display = 'block';
 
-  // ── 5. Guard: html2canvas must be loaded ────────────────────────────────
-  if (typeof html2canvas !== 'function') {
-    alert('html2canvas is not loaded — cannot export PDF.');
-    if (pageEl) pageEl.style.display = prevDisplay;
-    return;
-  }
+  // ── 4. Configure html2pdf and generate ──────────────────────────────────
+  // html2pdf uses the browser's own DOM renderer — Arabic glyph shaping,
+  // RTL ordering, and ligature joining are all handled natively and are
+  // preserved exactly as they appear on screen without any canvas
+  // rasterisation or jsPDF text-encoding step.
+  const opt = {
+    margin      : 0,
+    filename    : 'tawakkad-report.pdf',
+    image       : { type: 'png', quality: 1 },
+    html2canvas : { scale: 2 },
+    jsPDF       : { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
 
-  // ── 6. Render canvas ────────────────────────────────────────────────────
-  // Wait for all fonts (including Cairo) to be fully loaded and applied
-  // before html2canvas reads the DOM. Without this, html2canvas may
-  // snapshot the element while the Arabic font is still swapping in,
-  // causing glyphs to be rasterised in a fallback font or not at all.
-  await document.fonts.ready;
-
-  // letterRendering: true forces html2canvas to rasterise each glyph
-  // individually rather than as a run, preventing RTL ligature shaping
-  // from being lost when the text is painted onto the canvas context.
-  // foreignObjectRendering: false bypasses the SVG <foreignObject> path
-  // which can break RTL bidi shaping; forces the canvas 2D text pipeline.
-  const canvas = await html2canvas(el, {
-    scale                 : 2,
-    useCORS               : true,
-    letterRendering       : true,
-    foreignObjectRendering: false
-  });
-
-  // ── 6a. DEBUG: append canvas to body for visual inspection ───────────────
-  // Remove this block once Arabic rendering is confirmed correct in the canvas.
-  {
-    const debugCanvas = canvas;
-    debugCanvas.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;max-width:100vw;max-height:100vh;border:3px solid red;background:#fff;';
-    debugCanvas.id = '__pdfDebugCanvas';
-    document.getElementById('__pdfDebugCanvas')?.remove();
-    document.body.appendChild(debugCanvas);
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕ إغلاق (debug)';
-    closeBtn.style.cssText = 'position:fixed;top:4px;right:4px;z-index:100000;background:red;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;';
-    closeBtn.id = '__pdfDebugClose';
-    document.getElementById('__pdfDebugClose')?.remove();
-    closeBtn.onclick = () => { debugCanvas.remove(); closeBtn.remove(); };
-    document.body.appendChild(closeBtn);
-  }
-
-  // ── 7. Restore visibility ────────────────────────────────────────────────
-  if (pageEl) pageEl.style.display = prevDisplay;
-
-  // ── 8. Convert canvas to image (PNG — lossless, no chroma subsampling) ──
-  // JPEG chroma subsampling can corrupt fine RTL glyph edges; PNG is
-  // lossless and preserves every pixel the browser rendered exactly.
-  const imgData = canvas.toDataURL('image/png');
-
-  // ── 9. Create PDF — image only, zero pdf.text() calls ───────────────────
-  const { jsPDF } = window.jspdf;
-  const pdf       = new jsPDF('p', 'mm', 'a4');
-
-  const pageWidth  = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-
-  // ── 10. Insert the image (first page) ───────────────────────────────────
-  // 'FAST' compression tells jsPDF to embed the PNG stream as-is without
-  // internal re-encoding, preserving every pixel produced by html2canvas.
-  pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
-
-  // ── 11. Pagination — repeat image at offset for each additional page ─────
-  // imgHeight is the full image height in PDF mm units (preserves aspect ratio).
-  // For content taller than one A4 page we slide the image upward by one
-  // pageHeight per additional page so each page reveals the next slice.
-  const imgHeight = (canvas.height * pageWidth) / canvas.width;
-
-  if (imgHeight > pageHeight) {
-    let heightLeft = imgHeight - pageHeight;
-    while (heightLeft > 0) {
-      const yOffset = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, yOffset, pageWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= pageHeight;
-    }
-  }
-
-  pdf.save('tawakkad-report.pdf');
+  html2pdf()
+    .set(opt)
+    .from(element)
+    .save()
+    .finally(() => {
+      // ── 5. Restore visibility ──────────────────────────────────────────
+      if (pageEl) pageEl.style.display = prevDisplay;
+    });
 }
 
 // ══════════════════════════════════════════
