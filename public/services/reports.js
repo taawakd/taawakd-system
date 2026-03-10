@@ -291,15 +291,34 @@ function generateAlerts(data, sectorKey) {
 }
 
 function renderAlerts(alerts, containerId) {
-  if(!alerts.length){
-    document.getElementById(containerId).innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:16px;">لا توجد تنبيهات</div>';
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  if (!alerts.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--gray);font-size:13px;text-align:center;padding:16px;';
+    empty.textContent = 'لا توجد تنبيهات';    // ← textContent (was innerHTML)
+    container.appendChild(empty);
     return;
   }
-  document.getElementById(containerId).innerHTML = alerts.map(a=>`
-    <div class="alert alert-${a.type==='danger'?'danger':a.type==='good'?'good':'warn'}">
-      <span class="alert-icon">${a.icon}</span>
-      <span>${a.msg}</span>
-    </div>`).join('');
+
+  // Build each alert with DOM methods so a.msg never passes through innerHTML
+  alerts.forEach(a => {
+    const cls = a.type === 'danger' ? 'danger' : a.type === 'good' ? 'good' : 'warn';
+    const div = document.createElement('div');
+    div.className = `alert alert-${cls}`;
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'alert-icon';
+    iconSpan.textContent = a.icon;             // ← textContent (was innerHTML)
+
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = a.msg;               // ← textContent (was innerHTML)
+
+    div.appendChild(iconSpan);
+    div.appendChild(msgSpan);
+    container.appendChild(div);
+  });
 }
 
 // ══════════════════════════════════════════

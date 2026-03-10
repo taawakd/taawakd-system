@@ -13,25 +13,64 @@ function renderResults(report) {
   const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
   document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${dateStr}`;
 
-  document.getElementById('resultKpis').innerHTML = [
-    {val:fmt(revenue)+' ر', label:'الإيرادات', cls:'neu'},
-    {val:(netProfit>=0?'+':'')+fmt(netProfit)+' ر', label:'صافي الربح', cls:netProfit>=0?'pos':'neg'},
-    {val:netMargin+'%', label:'هامش الربح', cls:netMargin>15?'pos':netMargin<5?'neg':'warn'},
-    {val:scoreData.total+'/100', label:'مؤشر الصحة', cls:scoreData.total>=65?'pos':scoreData.total>=40?'warn':'neg'},
-  ].map(k=>`<div class="kpi"><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+  // resultKpis — built with DOM so Arabic labels never pass through innerHTML
+  const kpiContainer = document.getElementById('resultKpis');
+  kpiContainer.innerHTML = '';
+  [
+    {val: fmt(revenue) + ' ر',                               label: 'الإيرادات',   cls: 'neu'},
+    {val: (netProfit >= 0 ? '+' : '') + fmt(netProfit) + ' ر', label: 'صافي الربح', cls: netProfit >= 0 ? 'pos' : 'neg'},
+    {val: netMargin + '%',                                    label: 'هامش الربح',  cls: netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn'},
+    {val: scoreData.total + '/100',                           label: 'مؤشر الصحة', cls: scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg'},
+  ].forEach(k => {
+    const card   = document.createElement('div');
+    card.className = 'kpi';
+    const valEl  = document.createElement('div');
+    valEl.className = `kpi-val ${k.cls}`;
+    valEl.textContent = k.val;               // ← textContent (was innerHTML)
+    const lblEl  = document.createElement('div');
+    lblEl.className = 'kpi-label';
+    lblEl.textContent = k.label;             // ← textContent (was innerHTML)
+    card.appendChild(valEl);
+    card.appendChild(lblEl);
+    kpiContainer.appendChild(card);
+  });
 
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
-  document.getElementById('resScoreBreakdown').innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
-      ${(scoreData.breakdown||[]).map(b=>`
-        <div class="progress-wrap">
-          <div class="progress-head">
-            <span style="font-size:12px;color:var(--gray2);">${b.label}</span>
-            <span style="font-size:12px;color:var(--gold);">${b.val}/${b.max}</span>
-          </div>
-          <div class="progress-track"><div class="progress-fill" style="width:${(b.val/b.max)*100}%;background:${b.color};"></div></div>
-        </div>`).join('')}
-    </div>`;
+  // resScoreBreakdown — DOM only so b.label never passes through innerHTML
+  const bdEl = document.getElementById('resScoreBreakdown');
+  bdEl.innerHTML = '';
+  const bdWrap = document.createElement('div');
+  bdWrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:16px;';
+  (scoreData.breakdown || []).forEach(b => {
+    const pwrap = document.createElement('div');
+    pwrap.className = 'progress-wrap';
+
+    const phead = document.createElement('div');
+    phead.className = 'progress-head';
+
+    const lblSpan = document.createElement('span');
+    lblSpan.style.cssText = 'font-size:12px;color:var(--gray2);';
+    lblSpan.textContent = b.label;          // ← textContent (was innerHTML)
+
+    const valSpan = document.createElement('span');
+    valSpan.style.cssText = 'font-size:12px;color:var(--gold);';
+    valSpan.textContent = `${b.val}/${b.max}`;
+
+    phead.appendChild(lblSpan);
+    phead.appendChild(valSpan);
+
+    const ptrack = document.createElement('div');
+    ptrack.className = 'progress-track';
+    const pfill  = document.createElement('div');
+    pfill.className = 'progress-fill';
+    pfill.style.cssText = `width:${(b.val / b.max) * 100}%;background:${b.color};`;
+    ptrack.appendChild(pfill);
+
+    pwrap.appendChild(phead);
+    pwrap.appendChild(ptrack);
+    bdWrap.appendChild(pwrap);
+  });
+  bdEl.appendChild(bdWrap);
 
   const bench = BENCHMARKS[resolvedSectorKey];
   const bMetrics = { netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
