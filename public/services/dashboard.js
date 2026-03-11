@@ -108,6 +108,11 @@ async function loadReportsFromDB() {
     console.log('[Tawakkad] loadReportsFromDB — loaded', STATE.savedReports.length,
       'reports | currentReport:', STATE.currentReport?.bizName,
       '| grossMargin from report_json:', STATE.savedReports[0]?.metrics?.grossMargin);
+
+    // إعادة رسم الكاردات بعد تحديث STATE.savedReports بـ UUIDs من Supabase
+    // (ضروري لأن الكاردات قد بُنيت بـ IDs قديمة من localStorage)
+    if (document.getElementById('savedReportsGrid')) renderSavedReports();
+
   } catch(e) { console.error('[Tawakkad] loadReportsFromDB error:', e); }
 }
 

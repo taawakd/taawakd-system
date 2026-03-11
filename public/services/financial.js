@@ -165,8 +165,9 @@ async function runAnalysis() {
 
 
 function openSavedReport(id) {
-  const rep = STATE.savedReports.find(r=>r.id===id);
-  if(!rep) return;
+  // مقارنة مرنة تدعم الـ UUIDs من Supabase والأرقام الزمنية القديمة من localStorage
+  const rep = STATE.savedReports.find(r => String(r.id) === String(id));
+  if(!rep) { toast('⚠️ لم يتم العثور على التقرير، حاول مرة أخرى'); return; }
   STATE.currentReport = rep;
   renderResults(rep);
   showPage('results');
