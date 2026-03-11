@@ -146,7 +146,7 @@ async function runAnalysis() {
         } else {
           console.log('[Tawakkad] Supabase insert OK — report_period:', report.reportPeriod);
         }
-        await sb.from('profiles').update({ analyses_used: (window._profileUsed || 0) + 1 }).eq('id', user.id);
+        // ملاحظة: زيادة analyses_used تتم من الـ API مباشرة — لا نكررها هنا
       }
     }
   } catch(saveErr) { console.error('[Tawakkad] Supabase save exception:', saveErr); }

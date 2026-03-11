@@ -68,13 +68,20 @@ export default async function handler(req, res) {
             net_profit: r.netProfit, net_margin: r.netMargin,
             health_score: r.healthScore, report_json: r
           });
+        }
+
+        // زيادة عداد التحليلات حتى عند cache hit (فقط non-CFO)
+        const isCFO_cache = body._type === 'cfo';
+        if (!isCFO_cache) {
           await supabase.from('profiles')
             .update({ analyses_used: (profile?.analyses_used || 0) + 1 }).eq('id', user.id);
         }
 
         return res.status(200).json({
           content: [{ type: 'text', text: cached.result_text }],
-          from_cache: true
+          from_cache: true,
+          analyses_used: (profile?.analyses_used || 0) + 1,
+          analyses_limit: profile?.analyses_limit || 2
         });
       }
     }
@@ -135,6 +142,10 @@ export default async function handler(req, res) {
         net_profit: r.netProfit, net_margin: r.netMargin,
         health_score: r.healthScore, report_json: r
       });
+    }
+
+    // زيادة عداد التحليلات (فقط للتحليلات العادية — ليس CFO)
+    if (!isCFO) {
       await supabase.from('profiles')
         .update({ analyses_used: (profile?.analyses_used || 0) + 1 }).eq('id', user.id);
     }
@@ -142,7 +153,9 @@ export default async function handler(req, res) {
     // الرد بنفس شكل Anthropic للتوافق مع الـ frontend
     return res.status(200).json({
       content: [{ type: 'text', text: resultText }],
-      from_cache: false
+      from_cache: false,
+      analyses_used: (profile?.analyses_used || 0) + 1,
+      analyses_limit: profile?.analyses_limit || 2
     });
 
   } catch (e) {
