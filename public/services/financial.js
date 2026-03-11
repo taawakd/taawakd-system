@@ -184,112 +184,235 @@ function deleteSavedReport(id) {
 // ══════════════════════════════════════════
 // EXCEL IMPORT
 // ══════════════════════════════════════════
+// خريطة الحقول الشاملة — تشمل كل أنواع التقارير العربية والإنجليزية
+const _FIELD_MAP = [
+  { field:'f-name', text:true, keys:['اسم المشروع','اسم مشروع','اسم النشاط','اسم الشركة','اسم المتجر','اسم المطعم','اسم الكافيه','اسم الصالون','اسم العيادة','المشروع','الشركة','النشاط التجاري','business name','company name'] },
+  { field:'f-type', text:true, keys:['نوع النشاط','نوع المشروع','نوع الشركة','القطاع','النشاط','sector','industry','type'] },
+  { field:'f-rev',  keys:['الإيرادات','إيرادات','إجمالي المبيعات','إجمالي الإيرادات','مجموع المبيعات','إجمالي مبيعات','صافي المبيعات','المبيعات الصافية','المبيعات','مبيعات','الدخل','دخل','revenue','sales','total sales','net sales','gross sales','إجمالي قيمة الربح','قيمة الربح'] },
+  { field:'f-cogs', keys:['تكلفة البضاعة المباعة','تكلفة البضائع المباعة','تكلفة المبيعات','تكلفة البضاعة','تكلفة البضائع','تكلفة المنتجات','تكلفة المواد','تكلفة الخامات','تكلفة الإنتاج','إجمالي تكلفة البضاعة','cogs','cost of goods','cost of sales','cost of products'] },
+  { field:'f-sal',  keys:['رواتب الموظفين','رواتب وأجور','الرواتب والأجور','الرواتب','رواتب','أجور الموظفين','أجور','مرتبات','salaries','wages','payroll','staff cost'] },
+  { field:'f-rent', keys:['الإيجار','إيجار المحل','إيجار المقر','إيجار المستودع','إيجار','اجار','rent','lease'] },
+  { field:'f-utilities', keys:['الكهرباء والماء','الكهرباء والمياه','كهرباء وماء','كهرباء ومياه','المرافق','كهرباء','ماء','مياه','utilities','electricity','water','electric'] },
+  { field:'f-mkt',  keys:['التسويق والإعلان','مصاريف التسويق','الإعلان والتسويق','التسويق','إعلانات','دعاية وإعلان','دعاية','marketing','advertising','ads','promotion'] },
+  { field:'f-other',keys:['مصروفات أخرى','مصاريف أخرى','مصروفات متنوعة','مصاريف عمومية','أخرى','متنوع','مصروفات إدارية','تشغيل','other expenses','general expenses','overhead','miscellaneous','other'] },
+];
+
+// استخراج الفترة من اسم الملف (مثال: "01 Feb 2026-28 Feb 2026")
+function _extractPeriodFromFilename(filename) {
+  const months = {'jan':'يناير','feb':'فبراير','mar':'مارس','apr':'أبريل','may':'مايو','jun':'يونيو',
+    'jul':'يوليو','aug':'أغسطس','sep':'سبتمبر','oct':'أكتوبر','nov':'نوفمبر','dec':'ديسمبر'};
+  const m = filename.toLowerCase().match(/(\d{1,2})\s*([a-z]{3})\s*(\d{4})[^\d]+(\d{1,2})\s*([a-z]{3})\s*(\d{4})/);
+  if (m) {
+    const from = `${m[1]} ${months[m[2]]||m[2]} ${m[3]}`;
+    const to   = `${m[4]} ${months[m[5]]||m[5]} ${m[6]}`;
+    return `${from} ← ${to}`;
+  }
+  const m2 = filename.match(/([a-zA-Z]{3,})\s*(\d{4})/i);
+  if (m2) { const mn=m2[1].slice(0,3).toLowerCase(); return `${months[mn]||m2[1]} ${m2[2]}`; }
+  return null;
+}
+
 function handleExcel(input) {
   const file = input.files[0];
   if (!file) return;
+
+  // حاول استخراج الفترة من اسم الملف
+  const periodFromName = _extractPeriodFromFilename(file.name);
+  if (periodFromName && !window._excelReportPeriod) window._excelReportPeriod = periodFromName;
+
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, {type:'binary'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      const wb   = XLSX.read(e.target.result, { type:'binary' });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
       if (!rows.length) { toast('الملف فارغ'); return; }
 
-      const clean = s => String(s||'').trim().replace(/\s+/g,' ');
-      const num = v => { const n=parseFloat(String(v).replace(/[,،\s]/g,'')); return isNaN(n)?0:n; };
-      const set = (id,v) => { const el=document.getElementById(id); if(el){el.value=v; el.dispatchEvent(new Event('input'));} };
+      const clean  = s  => String(s||'').trim().replace(/\s+/g,' ');
+      const num    = v  => { const n=parseFloat(String(v).replace(/[,،\s]/g,'')); return isNaN(n)?0:n; };
+      const isNum  = v  => !isNaN(parseFloat(String(v).replace(/[,،]/g,'')));
+      const setFld = (id,v) => { const el=document.getElementById(id); if(el){el.value=v;el.dispatchEvent(new Event('input'));} };
 
-      const headers = rows[0].map(h => clean(h).toLowerCase());
-      const hasProduct = headers.some(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف'));
-      const hasQty = headers.some(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد'));
-      const hasRev = headers.some(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue'));
+      // ── مطابقة حقل مع خريطة الحقول ──────────────────────────────────────
+      function matchField(label) {
+        const lc = label.replace(/\s+/g,'').toLowerCase();
+        for (const {field,keys,text} of _FIELD_MAP) {
+          if (keys.some(k => {
+            const kc = k.replace(/\s+/g,'').toLowerCase();
+            return lc.includes(kc) || kc.includes(lc);
+          })) return {field,text:!!text};
+        }
+        return null;
+      }
 
-      if (hasProduct && (hasQty||hasRev)) {
-        const nI=headers.findIndex(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف'));
-        const qI=headers.findIndex(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد'));
-        const rI=headers.findIndex(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue'));
-        const cI=headers.findIndex(h=>h.includes('تكلفة')||h.includes('cost'));
-        const products=rows.slice(1).filter(r=>clean(r[nI])).map(r=>({
+      // ── دالة فحص / تعيين التواريخ ─────────────────────────────────────────
+      const parseExcelDate = raw => {
+        const n = parseFloat(raw);
+        if (!isNaN(n) && n > 1000 && Number.isInteger(n))
+          return new Date(Date.UTC(1899,11,30) + n*86400000);
+        return new Date(String(raw||'').trim());
+      };
+
+      let matched = 0;
+
+      // ══════════════════════════════════════════════════════════════════════
+      // الاستراتيجية 1: جدول منتجات (أعمدة: اسم المنتج، كمية، إيراد، تكلفة)
+      // ══════════════════════════════════════════════════════════════════════
+      const h0 = rows[0].map(h => clean(h).toLowerCase());
+      const hasProduct = h0.some(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف')||h.includes('سلعة')||h.includes('خدمة'));
+      const hasQty     = h0.some(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد')||h.includes('quantity'));
+      const hasRevH    = h0.some(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue')||h.includes('سعر'));
+
+      if (hasProduct && (hasQty || hasRevH)) {
+        const nI = h0.findIndex(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف')||h.includes('سلعة')||h.includes('خدمة'));
+        const qI = h0.findIndex(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد')||h.includes('quantity'));
+        const rI = h0.findIndex(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue')||h.includes('سعر'));
+        const cI = h0.findIndex(h=>h.includes('تكلفة')||h.includes('cost'));
+        const products = rows.slice(1).filter(r=>clean(r[nI])).map(r=>({
           name:clean(r[nI]), qty:qI>=0?num(r[qI]):0, revenue:rI>=0?num(r[rI]):0, cost:cI>=0?num(r[cI]):0
         })).filter(p=>p.qty>0||p.revenue>0);
-        if(products.length){showProductTable(products);toast('✅ تم قراءة '+products.length+' منتج');return;}
+        if (products.length) { showProductTable(products); toast('✅ تم قراءة '+products.length+' منتج/خدمة'); return; }
       }
 
-      const hasDate=headers.some(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
-      const hasSales=headers.some(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
-      if(hasDate&&hasSales){
-        const dI=headers.findIndex(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم'));
-        const sI=headers.findIndex(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
-        // parseExcelDate: handles both ISO/string dates AND Excel serial numbers (e.g. 45292)
-        const parseExcelDate = rawVal => {
-          const n = parseFloat(rawVal);
-          // Excel serial numbers are integers > 1000; convert via epoch anchor 1899-12-30
-          if (!isNaN(n) && n > 1000 && Number.isInteger(n)) {
-            return new Date(Date.UTC(1899, 11, 30) + n * 86400000);
-          }
-          // Fallback: try direct string parse (ISO, DD/MM/YYYY formatted strings)
-          return new Date(String(rawVal||'').trim());
-        };
-        // Preserve raw cell value (rawDate) alongside cleaned string for date parsing
-        const data=rows.slice(1).filter(r=>r[sI]).map(r=>({rawDate:r[dI],date:clean(r[dI]),sales:num(r[sI])}));
-        if(data.length){
-          const total=data.reduce((s,r)=>s+r.sales,0);
-          set('f-rev',total);
-          // Extract date range for reportPeriod using raw values to handle serial numbers
-          const validDates=data.map(r=>parseExcelDate(r.rawDate)).filter(d=>!isNaN(d));
-          console.log('[Tawakkad] handleExcel date+sales: rawDate samples=',
-            data.slice(0,3).map(r=>r.rawDate), '| validDates=', validDates.length,
-            validDates.length ? '| first='+validDates[0].toISOString().slice(0,10) : '');
-          if(validDates.length>=2){
+      // ══════════════════════════════════════════════════════════════════════
+      // الاستراتيجية 2: جدول تاريخ + مبيعات يومية
+      // ══════════════════════════════════════════════════════════════════════
+      const hasDate  = h0.some(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم')||h.includes('day'));
+      const hasSalesH= h0.some(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
+      if (hasDate && hasSalesH) {
+        const dI = h0.findIndex(h=>h.includes('تاريخ')||h.includes('date')||h.includes('يوم')||h.includes('day'));
+        const sI = h0.findIndex(h=>h.includes('مبيعات')||h.includes('إيراد')||h.includes('ايراد')||h.includes('sales'));
+        const data = rows.slice(1).filter(r=>r[sI]).map(r=>({rawDate:r[dI],sales:num(r[sI])}));
+        if (data.length) {
+          const total = data.reduce((s,r)=>s+r.sales,0);
+          setFld('f-rev', total);
+          const validDates = data.map(r=>parseExcelDate(r.rawDate)).filter(d=>!isNaN(d.getTime()));
+          if (validDates.length >= 2) {
             const minD=new Date(Math.min(...validDates.map(d=>d.getTime())));
             const maxD=new Date(Math.max(...validDates.map(d=>d.getTime())));
-            window._excelReportPeriod=minD.toLocaleDateString('ar-SA')+' ← '+maxD.toLocaleDateString('ar-SA');
-          } else if(validDates.length===1){
-            window._excelReportPeriod=validDates[0].toLocaleDateString('ar-SA');
+            window._excelReportPeriod = minD.toLocaleDateString('ar-SA')+' ← '+maxD.toLocaleDateString('ar-SA');
+          } else if (validDates.length===1) {
+            window._excelReportPeriod = validDates[0].toLocaleDateString('ar-SA');
           }
-          console.log('[Tawakkad] window._excelReportPeriod after handleExcel:', window._excelReportPeriod);
-          toast('✅ إجمالي '+data.length+' يوم: '+SAR+total.toLocaleString('en')); return;
+          toast('✅ إجمالي '+data.length+' يوم: '+total.toLocaleString('ar-SA')+' ر.س');
+          return;
         }
       }
 
-      const pairs=[];
-      rows.forEach(row=>{const k=clean(row[0]),v=row[1];if(k&&v!==''&&v!==undefined)pairs.push([k,v]);});
-      const fieldMap=[
-        {field:'f-name', keys:['اسم المشروع','اسم مشروع','اسم النشاط','المشروع','اسم الكافيه','اسم المطعم','اسم المتجر']},
-        {field:'f-type', keys:['نوع النشاط','نوع المشروع','القطاع','النشاط','نوع']},
-        {field:'f-rev', keys:['الإيرادات','إيرادات','المبيعات','مبيعات','إجمالي المبيعات','إجمالي الإيرادات','الدخل','revenue','sales']},
-        {field:'f-cogs', keys:['تكلفة المواد','تكلفة البضاعة','تكلفة المنتجات','تكلفة الخامات','cogs','تكلفة المبيعات','تكلفة البضائع']},
-        {field:'f-sal', keys:['رواتب الموظفين','الرواتب','رواتب','أجور','salaries','wages']},
-        {field:'f-rent', keys:['الإيجار','إيجار','rent','اجار']},
-        {field:'f-utilities',keys:['الكهرباء والماء','الكهرباء والمياه','كهرباء وماء','كهرباء','utilities']},
-        {field:'f-mkt', keys:['التسويق','تسويق','إعلانات','دعاية وإعلان','marketing']},
-        {field:'f-other', keys:['مصروفات أخرى','مصاريف أخرى','أخرى','متنوع','other']},
-      ];
-      let matched=0;
-      pairs.forEach(([k,v])=>{
-        const kC=k.replace(/\s+/g,'');
-        for(const {field,keys} of fieldMap){
-          if(keys.some(key=>kC.includes(key.replace(/\s+/g,''))||key.replace(/\s+/g,'').includes(kC))){
-            if(field==='f-name'||field==='f-type') set(field,String(v).trim());
-            else set(field,num(v));
-            matched++; break;
+      // ══════════════════════════════════════════════════════════════════════
+      // الاستراتيجية 3: تنسيق عرضي (Wide) — الرؤوس في صف 0، البيانات في صف 1
+      // (مثال: ملخص المبيعات — كل حقل في عمود مستقل)
+      // ══════════════════════════════════════════════════════════════════════
+      const row1IsData = rows.length >= 2 && rows[0].some(h=>clean(h).length>2) &&
+                         rows[1].some(v=>isNum(v));
+      const wideMatchCount = rows[0].filter(h => matchField(clean(h))).length;
+
+      if (row1IsData && wideMatchCount >= 1) {
+        // بناء أزواج (اسم الحقل، القيمة) من الأعمدة
+        rows[0].forEach((header, i) => {
+          const label = clean(header);
+          if (!label) return;
+          // اجمع كل صفوف البيانات (قد يكون أكثر من صف إذا كانت فترات متعددة)
+          const vals = rows.slice(1).map(r=>r[i]).filter(v=>v!==''&&v!==undefined);
+          if (!vals.length) return;
+          const val = vals.reduce((s,v)=>s+num(v),0); // جمع كل القيم
+
+          const m = matchField(label);
+          if (m) {
+            if (m.text) setFld(m.field, String(vals[0]).trim());
+            else if (val > 0 || num(vals[0]) !== 0) { setFld(m.field, val); matched++; }
           }
+          // تحقق من الفترة الزمنية
+          const lc = label.toLowerCase().replace(/\s+/g,'');
+          if (lc.includes('فترة')||lc.includes('period')||lc.includes('شهر')||lc.includes('month')) {
+            if (!window._excelReportPeriod) window._excelReportPeriod = String(vals[0]).trim();
+          }
+        });
+
+        // إذا COGS = 0 لكن في الملف "تكلفة البضاعة" صفر — ابحث عن الربح لاستنتاجها
+        const revEl = document.getElementById('f-rev');
+        const cogsEl= document.getElementById('f-cogs');
+        if (revEl && cogsEl && num(revEl.value)>0 && num(cogsEl.value)===0) {
+          // حاول إيجاد "الربح" وحساب التكلفة منه
+          rows[0].forEach((header,i)=>{
+            const label=clean(header).toLowerCase().replace(/\s+/g,'');
+            const isProfit=label.includes('ربح')||label.includes('profit');
+            if(isProfit && rows[1] && rows[1][i]){
+              const profit=num(rows[1][i]);
+              const rev=num(revEl.value);
+              if(profit>0 && rev>=profit){ setFld('f-cogs', rev-profit); }
+            }
+          });
         }
-        if(k.includes('الفترة')||k.includes('فترة')){ const el=document.getElementById('f-period'); if(el){el.value=String(v).trim();el.dispatchEvent(new Event('change'));if(typeof togglePeriod==='function')togglePeriod();} }
-        if(k.includes('الشهر')||k.includes('شهر')){ const el=document.getElementById('f-month');if(el)set('f-month',String(v).trim()); }
-        // Scan for date-range indicators to build reportPeriod
-        const kL=k.toLowerCase().replace(/\s+/g,'');
-        if(kL==='period'||kL==='الفترة'||kL==='فترة'){if(!window._excelReportPeriod)window._excelReportPeriod=String(v).trim();}
-        if(kL.includes('from')||kL.includes('startdate')||kL.includes('start')||k.includes('من')){window._excelPStart=String(v).trim();}
-        if(kL.includes('to')||kL.includes('enddate')||kL.includes('end')||k.includes('إلى')||k.includes('الى')){window._excelPEnd=String(v).trim();}
-      });
-      if(!window._excelReportPeriod && window._excelPStart && window._excelPEnd){
-        window._excelReportPeriod=window._excelPStart+' ← '+window._excelPEnd;
+
+        if (matched > 0) {
+          if (typeof liveCalc==='function') liveCalc();
+          toast('✅ تم قراءة '+matched+' حقل (تنسيق عرضي)');
+          return;
+        }
       }
+
+      // ══════════════════════════════════════════════════════════════════════
+      // الاستراتيجية 4: جدول متعدد الصفوف — كل صف = فئة مع قيمة (شامل صفوف مدمجة)
+      // (مثال: تقرير قائمة الدخل بأعمدة متعددة)
+      // ══════════════════════════════════════════════════════════════════════
+      const multiColHeaders = rows[0].filter(h=>clean(h).length>2);
+      if (multiColHeaders.length >= 3 && rows.length >= 3) {
+        // ابحث عن عمود الأسماء وعمود الأرقام
+        let labelCol=-1, valCol=-1;
+        for(let c=0;c<rows[0].length;c++){
+          const hasTextRows=rows.slice(1).filter(r=>clean(r[c]).length>2&&!isNum(r[c])).length;
+          if(hasTextRows >= 2){labelCol=c;break;}
+        }
+        for(let c=rows[0].length-1;c>=0;c--){
+          const hasNumRows=rows.slice(1).filter(r=>isNum(r[c])&&num(r[c])>0).length;
+          if(hasNumRows >= 2){valCol=c;break;}
+        }
+        if(labelCol>=0 && valCol>=0 && labelCol!==valCol){
+          rows.slice(1).forEach(row=>{
+            const lbl=clean(row[labelCol]);
+            const v=row[valCol];
+            if(!lbl || !isNum(v)) return;
+            const m=matchField(lbl);
+            if(m){
+              if(m.text) setFld(m.field,lbl);
+              else { setFld(m.field,num(v)); matched++; }
+            }
+          });
+          if(matched>0){if(typeof liveCalc==='function')liveCalc();toast('✅ تم قراءة '+matched+' حقل (جدول متعدد)');return;}
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════════════
+      // الاستراتيجية 5: أزواج عمودية (col A = الاسم، col B = القيمة) — الأصلي
+      // ══════════════════════════════════════════════════════════════════════
+      const pairs = [];
+      rows.forEach(row=>{
+        const k=clean(row[0]), v=row[1];
+        if(k && v!=='' && v!==undefined) pairs.push([k,v]);
+      });
+      pairs.forEach(([k,v])=>{
+        const m=matchField(k);
+        if(m){
+          if(m.text) setFld(m.field,String(v).trim());
+          else { setFld(m.field,num(v)); matched++; }
+        }
+        // فترة زمنية
+        const kL=k.toLowerCase().replace(/\s+/g,'');
+        if(kL.includes('فترة')||kL.includes('period')||kL==='شهر'||kL==='month'){
+          if(!window._excelReportPeriod) window._excelReportPeriod=String(v).trim();
+        }
+        if(kL.includes('from')||kL.includes('start')||kL.includes('من')){window._excelPStart=String(v).trim();}
+        if(kL.includes('to')||kL.includes('end')||kL.includes('إلى')||kL.includes('الى')){window._excelPEnd=String(v).trim();}
+      });
+      if(!window._excelReportPeriod && window._excelPStart && window._excelPEnd)
+        window._excelReportPeriod=window._excelPStart+' ← '+window._excelPEnd;
       delete window._excelPStart; delete window._excelPEnd;
+
       if(matched>0){if(typeof liveCalc==='function')liveCalc();toast('✅ تم قراءة '+matched+' حقل من الملف');}
-      else toast('⚠️ تنسيق الملف غير معروف — استخدم عمودين: البند والمبلغ');
-    } catch(err){console.error('handleExcel:',err);toast('❌ خطأ: '+err.message);}
+      else toast('⚠️ تم قراءة الملف لكن لم يُطابق أي حقل مالي — تأكد من وجود أعمدة مثل: المبيعات، التكلفة، الرواتب');
+
+    } catch(err){console.error('handleExcel:',err);toast('❌ خطأ في قراءة الملف: '+err.message);}
   };
   reader.readAsBinaryString(file);
 }
