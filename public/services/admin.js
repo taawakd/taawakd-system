@@ -382,7 +382,7 @@ async function renderAdminPlans() {
         ${p.price_monthly > 0 ? '<span style="font-size:12px;font-weight:400;color:var(--text-muted)">/شهر</span>' : ''}
       </div>
       <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
-        ${p.analyses_limit === -1 ? 'تحليلات غير محدودة' : p.analyses_limit + (p.id === 'free' ? ' تحليل للأبد' : ' تحليل/شهر')}
+        ${p.analyses_limit === -1 ? 'تحليلات غير محدودة' : p.analyses_limit + (p.id === 'free' ? ' تحليل' : ' تحليل/شهر')}
       </div>
       <button class="btn-secondary" style="width:100%" onclick="openPlanModal('${p.id}')">✏️ تعديل</button>
     </div>
