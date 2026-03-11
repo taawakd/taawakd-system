@@ -711,6 +711,7 @@
     <button class="admin-tab-btn"        id="atab-reports"   onclick="switchAdminTab('reports')">📄 التقارير</button>
     <button class="admin-tab-btn"        id="atab-usage"     onclick="switchAdminTab('usage')">📈 الاستخدام</button>
     <button class="admin-tab-btn"        id="atab-plans"     onclick="switchAdminTab('plans')">💎 الخطط</button>
+    <button class="admin-tab-btn"        id="atab-logs"      onclick="switchAdminTab('logs')">🗂 Logs</button>
   </div>
 
   <!-- ── Overview ─────────────────────────────────────────── -->
@@ -781,6 +782,30 @@
       <p style="color:var(--text-muted)">جارٍ التحميل…</p>
     </div>
   </div>
+
+  <!-- ── Logs ───────────────────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-logs">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 12px">
+      <button class="btn-sm log-filter-btn active" id="lf-all"      onclick="renderAdminLogs(1,'all')">🗂 الكل</button>
+      <button class="btn-sm log-filter-btn"        id="lf-api_call" onclick="renderAdminLogs(1,'api_call')">🔌 API Calls</button>
+      <button class="btn-sm log-filter-btn"        id="lf-ai_usage" onclick="renderAdminLogs(1,'ai_usage')">🤖 AI Usage</button>
+      <button class="btn-sm log-filter-btn"        id="lf-error"    onclick="renderAdminLogs(1,'error')">❌ Errors</button>
+      <button class="btn-sm log-filter-btn"        id="lf-payment"  onclick="renderAdminLogs(1,'payment')">💳 Payments</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>النوع</th><th>الإجراء</th><th>التفاصيل</th><th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody id="admin-logs-tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="admin-logs-pag" style="margin-top:12px"></div>
+  </div>
 </div><!-- end page-admin -->
 
 <!-- ── Assign Plan Modal ──────────────────────────────────── -->
@@ -797,6 +822,13 @@
       <button class="btn-secondary" onclick="closePlanModal()">إلغاء</button>
       <button class="btn-primary" onclick="savePlan()">💾 حفظ</button>
     </div>
+  </div>
+</div>
+
+<!-- ── User Profile Modal ─────────────────────────────────── -->
+<div class="plan-modal-overlay" id="user-profile-overlay" style="display:none" onclick="if(event.target===this)closeUserProfile()">
+  <div class="plan-modal-box" style="max-width:520px" id="user-profile-content">
+    <p style="color:var(--text-muted);text-align:center;padding:40px">جارٍ التحميل…</p>
   </div>
 </div>
 

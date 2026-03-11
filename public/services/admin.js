@@ -40,6 +40,7 @@ window.switchAdminTab = function(tab) {
   if (tab === 'reports')   renderAdminReports(1);
   if (tab === 'usage')     renderAdminUsage();
   if (tab === 'plans')     renderAdminPlans();
+  if (tab === 'logs')      renderAdminLogs(1, 'all');
 };
 
 // ── Init ───────────────────────────────────────────────────────────────────
@@ -58,22 +59,43 @@ async function renderAdminOverview() {
   const data = await adminFetch('getStats');
   if (!data) return;
 
+  const fmt = n => (n || 0).toLocaleString('ar-SA');
+
   el.innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-value">${(data.totalUsers || 0).toLocaleString('ar-SA')}</div>
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-value">${fmt(data.totalUsers)}</div>
       <div class="kpi-label">إجمالي المستخدمين</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-value">${(data.totalReports || 0).toLocaleString('ar-SA')}</div>
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-value">${fmt(data.activeUsers)}</div>
+      <div class="kpi-label">مستخدمون نشطون</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🆕</div>
+      <div class="kpi-value">${fmt(data.todayUsers)}</div>
+      <div class="kpi-label">مستخدمون جدد اليوم</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">📄</div>
+      <div class="kpi-value">${fmt(data.totalReports)}</div>
       <div class="kpi-label">إجمالي التقارير</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-value">${(data.todayReports || 0).toLocaleString('ar-SA')}</div>
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-value">${fmt(data.todayReports)}</div>
       <div class="kpi-label">تقارير اليوم</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-value">${(data.aiUsage || 0).toLocaleString('ar-SA')}</div>
-      <div class="kpi-label">تحليلات AI</div>
+      <div class="kpi-icon">💎</div>
+      <div class="kpi-value">${fmt(data.paidSubs)}</div>
+      <div class="kpi-label">اشتراكات مدفوعة</div>
+    </div>
+    <div class="kpi-card kpi-gold">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-value">${fmt(data.monthlyRevenue)} ${SAR}</div>
+      <div class="kpi-label">الإيراد الشهري</div>
     </div>
   `;
 }
@@ -116,6 +138,7 @@ async function renderAdminUsers(page = 1) {
       <td style="font-size:11px;color:var(--text-muted)">${fmtDate(u.created_at)}</td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+          <button class="btn-sm" onclick="openUserProfile('${u.id}')">👤 الحساب</button>
           <button class="btn-sm" onclick="openAssignPlan('${u.id}','${u.plan}','${u.email}')" title="تغيير الخطة">📋 خطة</button>
           <button class="btn-sm" onclick="adminViewUserReports('${u.id}','${u.email}')" title="عرض تقاريره">📄</button>
           ${u.is_admin ? '' : `
@@ -161,6 +184,89 @@ window.confirmDeleteUser = async function(userId, email) {
   if (!confirm(`حذف حساب "${email}" نهائياً؟ سيُحذف معه كل تقاريره.`)) return;
   const data = await adminFetch('deleteUser', { userId });
   if (data) { toast('🗑 تم حذف الحساب'); renderAdminUsers(_adminUserPage); }
+};
+
+window.openUserProfile = async function(userId) {
+  const overlay = document.getElementById('user-profile-overlay');
+  const content = document.getElementById('user-profile-content');
+  if (!overlay || !content) return;
+  overlay.style.display = 'flex';
+  content.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px">جارٍ التحميل…</p>';
+
+  const data = await adminFetch('getUserProfile', { userId });
+  if (!data) { overlay.style.display = 'none'; return; }
+
+  const { profile = {}, plan = {}, reports = [], reportsCount = 0 } = data;
+  const isSuspended = profile.is_suspended;
+
+  content.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div>
+        <div style="font-size:20px;font-weight:700">${profile.full_name || 'بدون اسم'}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">${profile.email || ''}</div>
+      </div>
+      <button onclick="closeUserProfile()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1">✕</button>
+    </div>
+
+    <!-- الخطة والاستخدام -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div class="kpi-card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الخطة</div>
+        <div style="font-weight:700">${plan?.name_ar || profile.plan || 'مجاني'}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${plan?.price_monthly > 0 ? plan.price_monthly + ' ' + SAR + '/شهر' : 'مجاني'}</div>
+      </div>
+      <div class="kpi-card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الاستخدام</div>
+        <div style="font-weight:700">${profile.analyses_used || 0} / ${profile.analyses_limit === -1 ? '∞' : (profile.analyses_limit || 2)}</div>
+        <div style="height:4px;background:var(--border);border-radius:2px;margin-top:6px">
+          <div style="height:4px;background:var(--gold);border-radius:2px;width:${profile.analyses_limit > 0 ? Math.min(100,Math.round((profile.analyses_used||0)/(profile.analyses_limit||2)*100)) : 0}%"></div>
+        </div>
+      </div>
+      <div class="kpi-card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">التقارير</div>
+        <div style="font-weight:700">${reportsCount}</div>
+      </div>
+      <div class="kpi-card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">تاريخ التسجيل</div>
+        <div style="font-weight:600;font-size:13px">${fmtDate(profile.auth_created_at)}</div>
+      </div>
+    </div>
+
+    <!-- آخر التقارير -->
+    ${reports.length ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:10px">آخر التقارير</div>
+      ${reports.map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:13px;font-weight:600">${r.biz_name || 'بدون اسم'}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${r.biz_type || ''} · ${fmtDate(r.created_at)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${r.health_score ? `<span style="font-size:12px;color:var(--gold)">${r.health_score}%</span>` : ''}
+            <button class="btn-sm" onclick="closeUserProfile();adminViewReport('${r.id}')">👁</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- إجراءات -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)">
+      <button class="btn-sm" onclick="openAssignPlan('${userId}','${profile.plan || 'free'}','${profile.email || ''}');closeUserProfile()">📋 تغيير الخطة</button>
+      ${profile.is_admin ? '' : `
+        <button class="btn-sm ${isSuspended ? 'btn-gold' : 'btn-danger-sm'}"
+          onclick="toggleSuspend('${userId}',${!isSuspended},'${profile.email || ''}');closeUserProfile()">
+          ${isSuspended ? '✅ تفعيل الحساب' : '⏸ إيقاف الحساب'}
+        </button>
+        <button class="btn-sm btn-danger-sm" onclick="confirmDeleteUser('${userId}','${profile.email || ''}');closeUserProfile()">🗑 حذف الحساب</button>
+      `}
+    </div>
+  `;
+};
+
+window.closeUserProfile = function() {
+  const overlay = document.getElementById('user-profile-overlay');
+  if (overlay) overlay.style.display = 'none';
 };
 
 window.adminViewUserReports = function(userId, email) {
@@ -459,3 +565,57 @@ window.savePlan = async function() {
   const data = await adminFetch('savePlan', planData);
   if (data) { toast('✅ تم حفظ الخطة'); closePlanModal(); renderAdminPlans(); }
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. LOGS
+// ═══════════════════════════════════════════════════════════════════════════
+let _adminLogsPage = 1;
+let _adminLogsType = 'all';
+
+async function renderAdminLogs(page = 1, type = _adminLogsType) {
+  _adminLogsPage = page;
+  _adminLogsType = type;
+
+  const tbody = document.getElementById('admin-logs-tbody');
+  const pag   = document.getElementById('admin-logs-pag');
+  if (!tbody) return;
+
+  // تحديث أزرار الفلتر
+  document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById('lf-' + type);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>`;
+
+  const data = await adminFetch('getLogs', { type, page });
+  if (!data) return;
+
+  const { logs = [], total = 0 } = data;
+
+  if (!logs.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">لا توجد سجلات</td></tr>`;
+    if (pag) pag.innerHTML = '';
+    return;
+  }
+
+  const typeLabel = { api_call: '🔌 API', ai_usage: '🤖 AI', error: '❌ خطأ', payment: '💳 دفع' };
+  const typeBadge = { api_call: 'gray', ai_usage: 'green', error: 'red', payment: 'gold' };
+
+  tbody.innerHTML = logs.map(l => {
+    const details = l.details ? JSON.stringify(l.details).substring(0, 80) : '—';
+    return `
+      <tr>
+        <td style="font-size:11px;color:var(--text-muted)">${l.id?.substring(0,8)}…</td>
+        <td>${badge(typeLabel[l.type] || l.type, typeBadge[l.type] || 'gray')}</td>
+        <td style="font-size:12px">${l.action || '—'}</td>
+        <td style="font-size:11px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${details}</td>
+        <td style="font-size:11px;color:var(--text-muted)">${fmtDate(l.created_at)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const pages = Math.ceil(total / 50);
+  if (pag) pag.innerHTML = buildPagination(page, pages, `renderAdminLogs`);
+}
+
+window.renderAdminLogs = renderAdminLogs;

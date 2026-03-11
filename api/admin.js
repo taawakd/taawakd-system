@@ -30,20 +30,33 @@ export default async function handler(req, res) {
 
       // ── Overview Stats ──────────────────────────────────────
       case 'getStats': {
+        const today = new Date().toISOString().split('T')[0];
         const [
           { count: totalUsers },
           { count: totalReports },
           { count: todayReports },
-          { count: aiUsage }
+          { count: activeUsers },
+          { count: paidSubs }
         ] = await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('reports').select('*', { count: 'exact', head: true }),
-          supabase.from('reports').select('*', { count: 'exact', head: true })
-            .gte('created_at', new Date().toISOString().split('T')[0]),
-          supabase.from('profiles').select('*', { count: 'exact', head: true })
-            .neq('analyses_used', 0)
+          supabase.from('reports').select('*', { count: 'exact', head: true }).gte('created_at', today),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).gt('analyses_used', 0),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).not('plan', 'in', '("free")')
         ]);
-        return res.json({ totalUsers, totalReports, todayReports, aiUsage });
+
+        // مستخدمون جدد اليوم
+        const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        const todayUsers = (authData?.users || []).filter(u => (u.created_at || '').startsWith(today)).length;
+
+        // الإيراد الشهري
+        const { data: paidProfiles } = await supabase.from('profiles').select('plan').not('plan', 'in', '("free")');
+        const { data: plans } = await supabase.from('plans').select('id, price_monthly');
+        const planPriceMap = {};
+        (plans || []).forEach(p => { planPriceMap[p.id] = p.price_monthly || 0; });
+        const monthlyRevenue = (paidProfiles || []).reduce((s, p) => s + (planPriceMap[p.plan] || 0), 0);
+
+        return res.json({ totalUsers, totalReports, todayReports, activeUsers, todayUsers, paidSubs, monthlyRevenue });
       }
 
       // ── Users List ──────────────────────────────────────────
@@ -226,6 +239,53 @@ export default async function handler(req, res) {
         const { data: plans } = await supabase
           .from('plans').select('*').order('price_monthly', { ascending: true });
         return res.json({ plans: plans || [] });
+      }
+
+      // ── User Profile ────────────────────────────────────────
+      case 'getUserProfile': {
+        const { userId } = payload;
+        if (!userId) return res.status(400).json({ error: 'userId مطلوب' });
+
+        const [{ data: profile }, { data: authUser }] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).single(),
+          supabase.auth.admin.getUserById(userId)
+        ]);
+
+        const { data: reports, count: reportsCount } = await supabase
+          .from('reports')
+          .select('id, biz_name, biz_type, created_at, health_score', { count: 'exact' })
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // جلب سعر الخطة الحالية
+        const { data: planData } = await supabase.from('plans').select('name_ar, price_monthly').eq('id', profile?.plan || 'free').single();
+
+        return res.json({
+          profile: { ...profile, email: authUser?.user?.email, auth_created_at: authUser?.user?.created_at },
+          plan: planData,
+          reports: reports || [],
+          reportsCount: reportsCount || 0
+        });
+      }
+
+      // ── Logs ────────────────────────────────────────────────
+      case 'getLogs': {
+        const { type = 'all', page = 1 } = payload;
+        const limit = 50;
+        const offset = (page - 1) * limit;
+
+        let query = supabase
+          .from('admin_logs')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (type !== 'all') query = query.eq('type', type);
+
+        const { data: logs, count, error: logsErr } = await query;
+        if (logsErr) return res.status(500).json({ error: logsErr.message });
+        return res.json({ logs: logs || [], total: count || 0, page });
       }
 
       case 'savePlan': {
