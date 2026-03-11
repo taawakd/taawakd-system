@@ -248,11 +248,11 @@ async function renderAdminReports(page = 1) {
     <tr>
       <td style="font-size:12px;color:var(--text-muted)">${r.id.substring(0,8)}…</td>
       <td>
-        <div style="font-weight:600;font-size:13px">${r.title || 'بدون عنوان'}</div>
+        <div style="font-weight:600;font-size:13px">${r.biz_name || 'بدون اسم'}</div>
         <div style="font-size:11px;color:var(--text-muted)">${r.biz_type || ''}</div>
       </td>
       <td style="font-size:12px">${r.user_email}</td>
-      <td style="text-align:center">${r.ai_used ? badge('نعم','green') : badge('لا','gray')}</td>
+      <td style="text-align:center;font-size:12px">${r.health_score ? r.health_score + '%' : '—'}</td>
       <td style="font-size:11px;color:var(--text-muted)">${fmtDate(r.created_at)}</td>
       <td style="text-align:center">
         <button class="btn-sm" onclick="adminViewReport('${r.id}')">👁 عرض</button>
@@ -310,16 +310,12 @@ async function renderAdminUsage() {
   const data = await adminFetch('getUsage');
   if (!data) return;
 
-  const { labels = [], reports = [], ai = [], totalAI = 0, totalReports = 0 } = data;
+  const { labels = [], reports = [], totalReports = 0 } = data;
 
   kpiEl.innerHTML = `
     <div class="kpi-card">
       <div class="kpi-value">${totalReports.toLocaleString('ar-SA')}</div>
       <div class="kpi-label">إجمالي التقارير</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-value">${totalAI.toLocaleString('ar-SA')}</div>
-      <div class="kpi-label">تحليلات AI</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-value">${reports.reduce((a,b)=>a+b,0).toLocaleString('ar-SA')}</div>
@@ -340,16 +336,8 @@ async function renderAdminUsage() {
         {
           label: 'تقارير',
           data: reports,
-          backgroundColor: 'rgba(var(--gold-rgb,180,130,50), 0.5)',
-          borderColor: 'var(--gold, #b48232)',
-          borderWidth: 1,
-          borderRadius: 4
-        },
-        {
-          label: 'AI',
-          data: ai,
-          backgroundColor: 'rgba(100,160,255,0.4)',
-          borderColor: '#64a0ff',
+          backgroundColor: 'rgba(180,130,50,0.5)',
+          borderColor: '#b48232',
           borderWidth: 1,
           borderRadius: 4
         }
@@ -394,7 +382,7 @@ async function renderAdminPlans() {
         ${p.price_monthly > 0 ? '<span style="font-size:12px;font-weight:400;color:var(--text-muted)">/شهر</span>' : ''}
       </div>
       <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
-        ${p.analyses_limit === -1 ? 'تحليلات غير محدودة' : p.analyses_limit + ' تحليل/شهر'}
+        ${p.analyses_limit === -1 ? 'تحليلات غير محدودة' : p.analyses_limit + (p.id === 'free' ? ' تحليل للأبد' : ' تحليل/شهر')}
       </div>
       <button class="btn-secondary" style="width:100%" onclick="openPlanModal('${p.id}')">✏️ تعديل</button>
     </div>

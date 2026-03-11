@@ -40,8 +40,8 @@ export default async function handler(req, res) {
           supabase.from('reports').select('*', { count: 'exact', head: true }),
           supabase.from('reports').select('*', { count: 'exact', head: true })
             .gte('created_at', new Date().toISOString().split('T')[0]),
-          supabase.from('reports').select('*', { count: 'exact', head: true })
-            .eq('ai_used', true)
+          supabase.from('profiles').select('*', { count: 'exact', head: true })
+            .neq('analyses_used', 0)
         ]);
         return res.json({ totalUsers, totalReports, todayReports, aiUsage });
       }
@@ -153,7 +153,7 @@ export default async function handler(req, res) {
 
         let query = supabase
           .from('reports')
-          .select('id, user_id, title, biz_type, created_at, ai_used', { count: 'exact' })
+          .select('id, user_id, biz_name, biz_type, created_at, health_score', { count: 'exact' })
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
 
@@ -196,7 +196,7 @@ export default async function handler(req, res) {
 
         const { data: rows } = await supabase
           .from('reports')
-          .select('created_at, ai_used')
+          .select('created_at')
           .gte('created_at', sinceStr)
           .order('created_at', { ascending: true });
 
@@ -205,26 +205,20 @@ export default async function handler(req, res) {
         for (let i = 0; i < 30; i++) {
           const d = new Date(since);
           d.setDate(since.getDate() + i);
-          dayMap[d.toISOString().split('T')[0]] = { reports: 0, ai: 0 };
+          dayMap[d.toISOString().split('T')[0]] = { reports: 0 };
         }
         (rows || []).forEach(r => {
           const day = r.created_at.split('T')[0];
-          if (dayMap[day]) {
-            dayMap[day].reports++;
-            if (r.ai_used) dayMap[day].ai++;
-          }
+          if (dayMap[day]) dayMap[day].reports++;
         });
 
         const labels = Object.keys(dayMap);
         const reports = labels.map(d => dayMap[d].reports);
-        const ai = labels.map(d => dayMap[d].ai);
 
-        const { count: totalAI } = await supabase
-          .from('reports').select('*', { count: 'exact', head: true }).eq('ai_used', true);
         const { count: totalReports } = await supabase
           .from('reports').select('*', { count: 'exact', head: true });
 
-        return res.json({ labels, reports, ai, totalAI, totalReports });
+        return res.json({ labels, reports, totalReports });
       }
 
       // ── Plans ───────────────────────────────────────────────
