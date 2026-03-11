@@ -8,10 +8,14 @@ function liveCalc() {
 // ✅ getN / fmt / pct تأتي من helpers.js
 
   const rev  = getN('f-rev');
-  const exp  = getN('f-cogs')+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
+  const cogs = getN('f-cogs');
+  const exp  = cogs+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
   const profit = rev - exp;
   const margin = pct(profit, rev);
-  const be = exp;
+  // نقطة التعادل = التكاليف الثابتة ÷ نسبة هامش المساهمة
+  const fixedCostsLive = getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
+  const contribRatioLive = rev > 0 ? (rev - cogs) / rev : 1;
+  const be = contribRatioLive > 0 ? Math.round(fixedCostsLive / contribRatioLive) : 0;
 
   const setEl = (id, text, color) => {
     const el = document.getElementById(id);

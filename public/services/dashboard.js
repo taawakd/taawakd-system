@@ -28,7 +28,7 @@ function updateDashboard() {
     'alertsContainer'
   );
 
-  const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.other||0);
+  const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.other||0)+(m.utilities||0);
   renderBreakeven(m.revenue, m.cogs||0, fixedCosts, 'breakevenContainer', m.netProfit);
 
   const forecast3m = m.netProfit * 3;
