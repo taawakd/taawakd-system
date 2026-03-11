@@ -304,6 +304,119 @@ export default async function handler(req, res) {
         return res.json({ ok: true });
       }
 
+      // ── Dashboard Analytics ─────────────────────────────────
+      case 'getDashboardData': {
+        const today = new Date().toISOString().split('T')[0];
+        const since30 = new Date();
+        since30.setDate(since30.getDate() - 29);
+        const since30Str = since30.toISOString().split('T')[0];
+
+        // 1. Basic counts
+        const [
+          { count: totalUsers },
+          { count: totalReports },
+          { count: todayReports },
+          { count: activeUsers },
+          { count: paidSubs }
+        ] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('reports').select('*', { count: 'exact', head: true }),
+          supabase.from('reports').select('*', { count: 'exact', head: true }).gte('created_at', today),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).gt('analyses_used', 0),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).not('plan', 'in', '("free")')
+        ]);
+
+        // 2. Auth users
+        const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        const allUsers = authData?.users || [];
+        const todayUsers = allUsers.filter(u => (u.created_at || '').startsWith(today)).length;
+
+        // 3. Monthly revenue
+        const { data: paidProfiles } = await supabase.from('profiles').select('plan').not('plan', 'in', '("free")');
+        const { data: plans } = await supabase.from('plans').select('id, price_monthly');
+        const planPriceMap = {};
+        (plans || []).forEach(p => { planPriceMap[p.id] = p.price_monthly || 0; });
+        const monthlyRevenue = (paidProfiles || []).reduce((s, p) => s + (planPriceMap[p.plan] || 0), 0);
+
+        // 4. Plan distribution
+        const { data: planProfiles } = await supabase.from('profiles').select('plan');
+        const planDist = { free: 0, pro: 0, enterprise: 0 };
+        (planProfiles || []).forEach(p => {
+          if (p.plan === 'pro') planDist.pro++;
+          else if (p.plan === 'enterprise') planDist.enterprise++;
+          else planDist.free++;
+        });
+
+        // 5. Reports last 30 days — daily trend + heatmap
+        const { data: recentReports } = await supabase
+          .from('reports').select('created_at, biz_name')
+          .gte('created_at', since30Str).order('created_at', { ascending: false });
+
+        const dayMap = {};
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(since30); d.setDate(since30.getDate() + i);
+          dayMap[d.toISOString().split('T')[0]] = 0;
+        }
+        const heatmap = [0, 0, 0, 0, 0, 0, 0];
+        (recentReports || []).forEach(r => {
+          const ds = r.created_at.split('T')[0];
+          if (dayMap[ds] !== undefined) dayMap[ds]++;
+          heatmap[new Date(r.created_at).getDay()]++;
+        });
+        const dailyReports = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
+
+        // 6. User growth — cumulative signups
+        const userDayMap = {};
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(since30); d.setDate(since30.getDate() + i);
+          userDayMap[d.toISOString().split('T')[0]] = 0;
+        }
+        allUsers.forEach(u => {
+          const ds = (u.created_at || '').split('T')[0];
+          if (userDayMap[ds] !== undefined) userDayMap[ds]++;
+        });
+        const newIn30 = Object.values(userDayMap).reduce((s, c) => s + c, 0);
+        let cumulative = (totalUsers || 0) - newIn30;
+        const userGrowth = Object.entries(userDayMap).map(([date, count]) => {
+          cumulative += count; return { date, count: cumulative };
+        });
+
+        // 7. Retention rate
+        const { data: allUserReports } = await supabase.from('reports').select('user_id');
+        const userReportMap = {};
+        (allUserReports || []).forEach(r => { userReportMap[r.user_id] = (userReportMap[r.user_id] || 0) + 1; });
+        const usersWithReports = Object.keys(userReportMap).length;
+        const returningUsers = Object.values(userReportMap).filter(c => c >= 2).length;
+        const retentionRate = usersWithReports > 0 ? Math.round(returningUsers / usersWithReports * 100) : 0;
+
+        // 8. Activity feed
+        const recentSignups = allUsers
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5)
+          .map(u => ({ type: 'signup', label: u.email || 'مستخدم', time: u.created_at }));
+        const recentReportAct = (recentReports || []).slice(0, 5)
+          .map(r => ({ type: 'report', label: r.biz_name || 'مشروع بدون اسم', time: r.created_at }));
+        const activity = [...recentSignups, ...recentReportAct]
+          .sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
+
+        // 9. Funnel
+        const funnel = { signups: totalUsers || 0, active: activeUsers || 0, paid: paidSubs || 0 };
+
+        // 10. Smart alerts
+        const alerts = [];
+        if (todayUsers >= 3) alerts.push({ icon: '🟢', text: `${todayUsers} مستخدم جديد اليوم` });
+        if (todayReports === 0) alerts.push({ icon: '🟡', text: 'لا توجد تقارير اليوم' });
+        else if (todayReports >= 5) alerts.push({ icon: '🔥', text: `نشاط مرتفع: ${todayReports} تقارير اليوم` });
+        if (paidSubs > 0) alerts.push({ icon: '💰', text: `${paidSubs} اشتراك مدفوع نشط` });
+        if (retentionRate >= 50) alerts.push({ icon: '🎯', text: `معدل احتفاظ ممتاز: ${retentionRate}%` });
+        if (alerts.length === 0) alerts.push({ icon: '✅', text: 'المنصة تعمل بشكل طبيعي' });
+        if (todayUsers === 0) alerts.push({ icon: '🔵', text: 'لا تسجيلات جديدة اليوم' });
+
+        return res.json({
+          stats: { totalUsers, totalReports, todayReports, activeUsers, todayUsers, paidSubs, monthlyRevenue },
+          userGrowth, dailyReports, planDist, activity, retentionRate, heatmap, funnel, alerts
+        });
+      }
+
       default:
         return res.status(400).json({ error: `إجراء غير معروف: ${action}` });
     }

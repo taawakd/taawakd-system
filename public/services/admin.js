@@ -52,52 +52,192 @@ window.initAdminDashboard = function() {
 // 1. OVERVIEW
 // ═══════════════════════════════════════════════════════════════════════════
 async function renderAdminOverview() {
-  const el = document.getElementById('admin-overview-kpis');
-  if (!el) return;
-  el.innerHTML = '<p style="color:var(--text-muted)">جارٍ التحميل…</p>';
+  const container = document.getElementById('admin-overview-content');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--text-muted);padding:40px;text-align:center">جارٍ تحميل البيانات…</p>';
 
-  const data = await adminFetch('getStats');
+  const data = await adminFetch('getDashboardData');
   if (!data) return;
 
+  const { stats, userGrowth, dailyReports, planDist, activity, retentionRate, heatmap, funnel, alerts } = data;
   const fmt = n => (n || 0).toLocaleString('ar-SA');
+  const DAYS_AR = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const heatMax = Math.max(...heatmap, 1);
 
-  el.innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-icon">👥</div>
-      <div class="kpi-value">${fmt(data.totalUsers)}</div>
-      <div class="kpi-label">إجمالي المستخدمين</div>
+  container.innerHTML = `
+    <!-- ══ KPI Grid ══ -->
+    <div class="adm-kpi-grid">
+      <div class="adm-kpi-card">
+        <div class="adm-kpi-label">👥 المستخدمون</div>
+        <div class="adm-kpi-value">${fmt(stats.totalUsers)}</div>
+        <div class="adm-kpi-sub">+${fmt(stats.todayUsers)} اليوم</div>
+      </div>
+      <div class="adm-kpi-card">
+        <div class="adm-kpi-label">✅ المستخدمون النشطون</div>
+        <div class="adm-kpi-value">${fmt(stats.activeUsers)}</div>
+        <div class="adm-kpi-sub">استخدموا التحليل</div>
+      </div>
+      <div class="adm-kpi-card">
+        <div class="adm-kpi-label">📄 التقارير</div>
+        <div class="adm-kpi-value">${fmt(stats.totalReports)}</div>
+        <div class="adm-kpi-sub">+${fmt(stats.todayReports)} اليوم</div>
+      </div>
+      <div class="adm-kpi-card">
+        <div class="adm-kpi-label">💎 الاشتراكات المدفوعة</div>
+        <div class="adm-kpi-value">${fmt(stats.paidSubs)}</div>
+        <div class="adm-kpi-sub">من ${fmt(stats.totalUsers)} مستخدم</div>
+      </div>
+      <div class="adm-kpi-card adm-kpi-gold">
+        <div class="adm-kpi-label">💰 الإيراد الشهري</div>
+        <div class="adm-kpi-value">${fmt(stats.monthlyRevenue)} ${SAR}</div>
+        <div class="adm-kpi-sub">MRR</div>
+      </div>
+      <div class="adm-kpi-card adm-kpi-accent">
+        <div class="adm-kpi-label">🔁 معدل الاحتفاظ</div>
+        <div class="adm-kpi-value">${retentionRate}%</div>
+        <div class="adm-kpi-sub">Retention Rate</div>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-icon">✅</div>
-      <div class="kpi-value">${fmt(data.activeUsers)}</div>
-      <div class="kpi-label">مستخدمون نشطون</div>
+
+    <!-- ══ Charts Row ══ -->
+    <div class="adm-charts-row">
+      <div class="adm-chart-card">
+        <div class="adm-chart-title">📈 نمو المستخدمين (آخر 30 يوم)</div>
+        <canvas id="adm-chart-users" height="150"></canvas>
+      </div>
+      <div class="adm-chart-card">
+        <div class="adm-chart-title">📊 التقارير اليومية (آخر 30 يوم)</div>
+        <canvas id="adm-chart-reports" height="150"></canvas>
+      </div>
+      <div class="adm-chart-card adm-chart-donut">
+        <div class="adm-chart-title">🥧 توزيع الخطط</div>
+        <canvas id="adm-chart-plans" height="150"></canvas>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-icon">🆕</div>
-      <div class="kpi-value">${fmt(data.todayUsers)}</div>
-      <div class="kpi-label">مستخدمون جدد اليوم</div>
+
+    <!-- ══ Middle Row: Activity + Heatmap + Alerts ══ -->
+    <div class="adm-mid-row">
+
+      <!-- Activity Feed -->
+      <div class="adm-panel">
+        <div class="adm-panel-title">⚡ آخر النشاطات</div>
+        <div class="adm-activity-list">
+          ${activity.length ? activity.map(a => `
+            <div class="adm-activity-item">
+              <div class="adm-activity-icon">${a.type === 'signup' ? '👤' : '📄'}</div>
+              <div>
+                <div style="font-size:12px;font-weight:500">${a.type === 'signup' ? 'مستخدم جديد: ' + a.label : 'تقرير: ' + a.label}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${fmtDate(a.time)}</div>
+              </div>
+            </div>
+          `).join('') : '<p style="color:var(--text-muted);font-size:13px">لا توجد نشاطات بعد</p>'}
+        </div>
+      </div>
+
+      <!-- Heatmap + Alerts stack -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Heatmap -->
+        <div class="adm-panel" style="margin-bottom:0">
+          <div class="adm-panel-title">🗓 خريطة الاستخدام (آخر 30 يوم)</div>
+          <div class="adm-heatmap">
+            ${DAYS_AR.map((day, i) => `
+              <div class="adm-heatmap-row">
+                <div class="adm-heatmap-day">${day}</div>
+                <div class="adm-heatmap-bar-bg">
+                  <div class="adm-heatmap-bar" style="width:${Math.round(heatmap[i] / heatMax * 100)}%"></div>
+                </div>
+                <div class="adm-heatmap-count">${heatmap[i]}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Smart Alerts -->
+        <div class="adm-panel" style="margin-bottom:0">
+          <div class="adm-panel-title">🔔 تنبيهات النظام</div>
+          ${alerts.map(a => `<div class="adm-alert-item">${a.icon} ${a.text}</div>`).join('')}
+        </div>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-icon">📄</div>
-      <div class="kpi-value">${fmt(data.totalReports)}</div>
-      <div class="kpi-label">إجمالي التقارير</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon">📅</div>
-      <div class="kpi-value">${fmt(data.todayReports)}</div>
-      <div class="kpi-label">تقارير اليوم</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon">💎</div>
-      <div class="kpi-value">${fmt(data.paidSubs)}</div>
-      <div class="kpi-label">اشتراكات مدفوعة</div>
-    </div>
-    <div class="kpi-card kpi-gold">
-      <div class="kpi-icon">💰</div>
-      <div class="kpi-value">${fmt(data.monthlyRevenue)} ${SAR}</div>
-      <div class="kpi-label">الإيراد الشهري</div>
+
+    <!-- ══ Bottom Row: Funnel ══ -->
+    <div class="adm-panel">
+      <div class="adm-panel-title">🔽 Conversion Funnel — هل المنصة تنمو؟</div>
+      <div class="adm-funnel">
+        ${[
+          { label: 'المسجلون', val: funnel.signups, color: 'var(--gold)', pct: 100 },
+          { label: 'استخدموا التحليل (Active)', val: funnel.active, color: '#4caf82',
+            pct: funnel.signups ? Math.round(funnel.active / funnel.signups * 100) : 0 },
+          { label: 'اشتركوا مدفوعاً (Paid)', val: funnel.paid, color: '#7c5cbf',
+            pct: funnel.signups ? Math.round(funnel.paid / funnel.signups * 100) : 0 }
+        ].map(s => `
+          <div class="adm-funnel-step">
+            <div class="adm-funnel-info">
+              <span class="adm-funnel-label">${s.label}</span>
+              <span class="adm-funnel-num">${fmt(s.val)}</span>
+              <span class="adm-funnel-pct" style="color:${s.color}">${s.pct}%</span>
+            </div>
+            <div class="adm-funnel-bar-bg">
+              <div class="adm-funnel-bar" style="width:${s.pct}%;background:${s.color}"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
     </div>
   `;
+
+  // رسم الـ Charts بعد إدراج الـ DOM
+  requestAnimationFrame(() => _renderAdminDashCharts(userGrowth, dailyReports, planDist));
+}
+
+function _renderAdminDashCharts(userGrowth, dailyReports, planDist) {
+  const gridColor = 'rgba(255,255,255,0.05)';
+  const tickColor = '#6b7280';
+  const baseScales = {
+    x: { ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 7 }, grid: { color: gridColor } },
+    y: { ticks: { color: tickColor, font: { size: 10 } }, grid: { color: gridColor }, beginAtZero: true }
+  };
+
+  // نمو المستخدمين
+  const ugEl = document.getElementById('adm-chart-users');
+  if (ugEl) new Chart(ugEl, {
+    type: 'line',
+    data: {
+      labels: userGrowth.map(d => d.date.slice(5)),
+      datasets: [{ data: userGrowth.map(d => d.count), borderColor: '#c9a84c',
+        backgroundColor: 'rgba(201,168,76,0.12)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: baseScales, responsive: true }
+  });
+
+  // التقارير اليومية
+  const drEl = document.getElementById('adm-chart-reports');
+  if (drEl) new Chart(drEl, {
+    type: 'bar',
+    data: {
+      labels: dailyReports.map(d => d.date.slice(5)),
+      datasets: [{ data: dailyReports.map(d => d.count),
+        backgroundColor: 'rgba(76,175,130,0.65)', borderRadius: 3, borderSkipped: false }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: baseScales, responsive: true }
+  });
+
+  // توزيع الخطط
+  const plEl = document.getElementById('adm-chart-plans');
+  if (plEl) new Chart(plEl, {
+    type: 'doughnut',
+    data: {
+      labels: ['مجاني', 'احترافي', 'مؤسسي'],
+      datasets: [{ data: [planDist.free, planDist.pro, planDist.enterprise],
+        backgroundColor: ['rgba(107,114,128,0.7)', 'rgba(76,175,130,0.8)', 'rgba(201,168,76,0.9)'],
+        borderWidth: 0 }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { size: 11 }, padding: 10, boxWidth: 12 } } },
+      responsive: true, cutout: '60%'
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
