@@ -93,8 +93,8 @@ export default async function handler(req, res) {
       messages.push(...body.messages);
     }
 
-    // CFO calls need more tokens for detailed financial advice
-    const maxTokens = isCFO ? 1000 : 600;
+    // CFO calls: concise answers, same limit as regular analysis
+    const maxTokens = isCFO ? 600 : 600;
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

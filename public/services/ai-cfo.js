@@ -5,6 +5,15 @@ async function sendCFO(quickMsg) {
   const msg = quickMsg || input.value.trim();
   if (!msg) return;
 
+  // ── فحص الخطة: AI CFO للخطط المدفوعة فقط ──────────────────────────────
+  if ((window.__USER_PLAN__ || 'free') === 'free') {
+    input.value = '';
+    appendCFOMessage('ai',
+      '🔒 **AI CFO متاح للخطط المدفوعة فقط.**\n\n' +
+      'قم بترقية حسابك إلى الخطة الاحترافية للوصول إلى المستشار المالي الذكي والحصول على توصيات مخصصة لمشروعك.');
+    return;
+  }
+
   input.value = '';
   input.style.height = 'auto';
 

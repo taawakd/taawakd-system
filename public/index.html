@@ -533,17 +533,19 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   const greetEl = document.getElementById('userName');
   if (greetEl) greetEl.textContent = name;
 
-  // فحص صلاحية الأدمن
+  // فحص الصلاحيات والخطة
   try {
-    const { data: adminProfile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
-    if (adminProfile?.is_admin) {
+    const { data: userProfile } = await sb.from('profiles').select('is_admin, plan').eq('id', session.user.id).single();
+    // حفظ الخطة عالمياً (يستخدمها AI CFO وغيره)
+    window.__USER_PLAN__ = userProfile?.plan || 'free';
+    if (userProfile?.is_admin) {
       window.__IS_ADMIN__ = true;
       const navAdmin = document.getElementById('nav-admin');
       const navAdminSec = document.getElementById('nav-admin-section');
       if (navAdmin) navAdmin.style.display = '';
       if (navAdminSec) navAdminSec.style.display = '';
     }
-  } catch(e) { /* لا توجد أذونات أدمن */ }
+  } catch(e) { window.__USER_PLAN__ = 'free'; }
 })();
 </script>
 
