@@ -523,21 +523,15 @@ window.adminViewReport = async function(reportId) {
   if (!data || !data.report) return;
 
   const r = data.report;
-  // التقارير تُحفظ كاملة في عمود report_json
   const report = r.report_json || r.report_data || {};
   if (!report || !report.bizName) {
     toast('⚠️ بيانات التقرير غير مكتملة');
     return;
   }
 
-  if (typeof renderResults === 'function') {
-    window.STATE = window.STATE || {};
-    STATE.currentReport = report;
-    renderResults(report);
-    showPage('results');
-  } else {
-    toast('⚠️ تعذّر فتح التقرير');
-  }
+  // احفظ بيانات التقرير ثم افتح تاب جديد يعرضه
+  localStorage.setItem('tw_admin_preview', JSON.stringify(report));
+  window.open(window.location.origin + '/', '_blank');
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

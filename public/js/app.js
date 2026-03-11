@@ -27,6 +27,23 @@ async function initApp() {
       if (navAdmin) navAdmin.style.display = '';
       if (navAdminSec) navAdminSec.style.display = '';
     }
+
+    // عرض تقرير المستخدم في تاب جديد (مفتوح من لوحة الإدارة)
+    const adminPreview = localStorage.getItem('tw_admin_preview');
+    if (adminPreview) {
+      localStorage.removeItem('tw_admin_preview');
+      try {
+        const report = JSON.parse(adminPreview);
+        setTimeout(() => {
+          if (typeof renderResults === 'function' && report?.bizName) {
+            window.STATE = window.STATE || {};
+            STATE.currentReport = report;
+            renderResults(report);
+            if (typeof showPage === 'function') showPage('results');
+          }
+        }, 300);
+      } catch(e) { /* تجاهل */ }
+    }
   } catch (err) {
     console.error('initApp error:', err);
   }
