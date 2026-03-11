@@ -382,17 +382,16 @@ window.adminViewReport = async function(reportId) {
   const data = await adminFetch('getReport', { reportId });
   if (!data || !data.report) return;
 
-  // تحويل بيانات DB إلى format يقبله renderResults
   const r = data.report;
-  const report = {
-    id: r.id,
-    title: r.title,
-    data: r.report_data || r.data || {},
-    ai_analysis: r.ai_analysis || null,
-    created_at: r.created_at
-  };
+  // التقارير تُحفظ كاملة في عمود report_json
+  const report = r.report_json || r.report_data || {};
+  if (!report || !report.bizName) {
+    toast('⚠️ بيانات التقرير غير مكتملة');
+    return;
+  }
 
   if (typeof renderResults === 'function') {
+    window.STATE = window.STATE || {};
     STATE.currentReport = report;
     renderResults(report);
     showPage('results');
