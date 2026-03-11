@@ -1,13 +1,13 @@
 {
   "redirects": [
     { "source": "/landing",   "destination": "/landing.html",   "permanent": false },
-    { "source": "/marketing", "destination": "/landing.html", "permanent": false }
+    { "source": "/marketing", "destination": "/landing.html",   "permanent": false },
+    { "source": "/auth",      "destination": "/auth.html",      "permanent": false }
   ],
   "rewrites": [
     { "source": "/api/config.js", "destination": "/api/config.js" },
     { "source": "/api/analyze",   "destination": "/api/analyze.js" },
     { "source": "/api/admin",     "destination": "/api/admin.js" },
-    { "source": "/auth",          "destination": "/public/auth.html" },
     { "source": "/",              "destination": "/public/index.html" },
     { "source": "/(.*)",          "destination": "/public/$1" }
   ]
