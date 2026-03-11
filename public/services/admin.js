@@ -409,6 +409,21 @@ window.closeUserProfile = function() {
   if (overlay) overlay.style.display = 'none';
 };
 
+window.showLimitModal = function(used, limit) {
+  const overlay = document.getElementById('limit-reached-overlay');
+  const msg     = document.getElementById('limit-reached-msg');
+  if (!overlay) return;
+  if (msg) msg.textContent =
+    `لقد استخدمت ${used} من أصل ${limit} تحليلات المتاحة في الخطة المجانية. ` +
+    `قم بترقية حسابك للحصول على تحليلات غير محدودة ووصول كامل لجميع الميزات.`;
+  overlay.style.display = 'flex';
+};
+
+window.closeLimitModal = function() {
+  const overlay = document.getElementById('limit-reached-overlay');
+  if (overlay) overlay.style.display = 'none';
+};
+
 window.adminViewUserReports = function(userId, email) {
   // انتقل لتبويب التقارير وفلتر بالمستخدم
   window._adminReportsUserFilter = userId;

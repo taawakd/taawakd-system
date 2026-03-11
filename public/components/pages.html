@@ -825,6 +825,23 @@
   </div>
 </div>
 
+<!-- ── Limit Reached Modal ────────────────────────────────── -->
+<div class="plan-modal-overlay" id="limit-reached-overlay" style="display:none" onclick="if(event.target===this)closeLimitModal()">
+  <div class="plan-modal-box" style="max-width:400px;text-align:center">
+    <div style="font-size:52px;margin-bottom:12px">🔒</div>
+    <h2 style="margin:0 0 8px;font-size:20px;color:var(--text)">وصلت إلى الحد المجاني</h2>
+    <p id="limit-reached-msg" style="color:var(--text-muted);margin:0 0 24px;line-height:1.7;font-size:14px"></p>
+    <div style="background:var(--bg2,var(--bg));border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">الخطة الاحترافية تشمل</div>
+      <div style="font-size:13px;color:var(--text);line-height:2">✅ تحليلات غير محدودة<br>✅ AI CFO المستشار الذكي<br>✅ مقارنة التقارير والاتجاهات</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn-secondary" onclick="closeLimitModal()">لاحقاً</button>
+      <button class="btn-primary" onclick="closeLimitModal();showPage('pricing')" style="background:var(--gold);color:#000;font-weight:700">⚡ ترقية الحساب</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── User Profile Modal ─────────────────────────────────── -->
 <div class="plan-modal-overlay" id="user-profile-overlay" style="display:none" onclick="if(event.target===this)closeUserProfile()">
   <div class="plan-modal-box" style="max-width:520px" id="user-profile-content">

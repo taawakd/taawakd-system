@@ -89,6 +89,17 @@ async function runAnalysis() {
       body:JSON.stringify({ model:"gpt-4o-mini", max_tokens:1000, messages:[{role:"user",content:prompt}] })
     });
     const data = await resp.json();
+
+    // فحص حد الخطة المجانية
+    if (data.limit_reached) {
+      if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
+      if(document.getElementById('analyzeBtnText')) document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';
+      if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'none';
+      btn.disabled = false;
+      if (typeof window.showLimitModal === 'function') window.showLimitModal(data.used, data.limit);
+      return;
+    }
+
     reportText = data.content?.map(i=>i.text||'').join('') || '';
   } catch(e) { reportText = ''; }
 
