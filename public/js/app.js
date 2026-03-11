@@ -19,6 +19,14 @@ async function initApp() {
       renderSavedReports();
     }
     if (typeof showPage === 'function') showPage('dashboard');
+
+    // إظهار زر الإدارة بعد تحميل الـ sidebar (الـ IIFE في head يسبق تحميل المكونات)
+    if (window.__IS_ADMIN__) {
+      const navAdmin = document.getElementById('nav-admin');
+      const navAdminSec = document.getElementById('nav-admin-section');
+      if (navAdmin) navAdmin.style.display = '';
+      if (navAdminSec) navAdminSec.style.display = '';
+    }
   } catch (err) {
     console.error('initApp error:', err);
   }
