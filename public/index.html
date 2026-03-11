@@ -370,6 +370,35 @@ textarea.input{resize:vertical;min-height:80px;}
 .da-step{display:flex;gap:10px;font-size:13px;color:var(--gray2);align-items:flex-start;}
 .da-num{width:22px;height:22px;background:var(--gold-d);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold);flex-shrink:0;}
 .decision-impact{display:inline-flex;align-items:center;gap:6px;background:var(--green-d);border:1px solid rgba(76,175,130,0.25);color:var(--green);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-top:10px;}
+/* ── Admin Dashboard ── */
+.admin-tabs{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;}
+.admin-tab-btn{background:var(--card);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s;}
+.admin-tab-btn:hover{border-color:var(--gold);color:var(--gold);}
+.admin-tab-btn.active{background:var(--gold-d);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.admin-section{margin-top:4px;}
+.admin-section.hidden{display:none;}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;}
+.admin-table th{padding:10px 12px;background:var(--card);border-bottom:2px solid var(--border);color:var(--text-muted);font-weight:600;text-align:right;}
+.admin-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.admin-table tr:hover td{background:rgba(255,255,255,0.02);}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge.gold{background:var(--gold-d);color:var(--gold);}
+.badge.green{background:rgba(76,175,130,0.15);color:var(--green);}
+.badge.red{background:rgba(220,80,80,0.15);color:#e57373;}
+.badge.gray{background:rgba(150,150,150,0.12);color:var(--text-muted);}
+.btn-sm{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold);}
+.btn-gold{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+.btn-danger-sm{border-color:rgba(220,80,80,0.3);color:#e57373;}
+.btn-danger-sm:hover{background:rgba(220,80,80,0.1);}
+.admin-pag{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color .2s;}
+.plan-card:hover{border-color:var(--gold);}
+.plan-card.plan-inactive{opacity:0.5;}
+.plan-card.plan-add{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;cursor:pointer;border-style:dashed;}
+.plan-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.plan-modal-box{background:var(--card2,var(--card));border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;}
 </style>
 <script>
 // Supabase config — injected by server or set here as fallback
@@ -463,6 +492,18 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     || 'مستخدم';
   const greetEl = document.getElementById('userName');
   if (greetEl) greetEl.textContent = name;
+
+  // فحص صلاحية الأدمن
+  try {
+    const { data: adminProfile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (adminProfile?.is_admin) {
+      window.__IS_ADMIN__ = true;
+      const navAdmin = document.getElementById('nav-admin');
+      const navAdminSec = document.getElementById('nav-admin-section');
+      if (navAdmin) navAdmin.style.display = '';
+      if (navAdminSec) navAdminSec.style.display = '';
+    }
+  } catch(e) { /* لا توجد أذونات أدمن */ }
 })();
 </script>
 
@@ -484,6 +525,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 <script src="services/reports.js"></script>
 <script src="services/ai-cfo.js"></script>
 <script src="services/financial.js"></script>
+<script src="services/admin.js"></script>
 
 <!-- Tools -->
 <script src="tools/index.js"></script>

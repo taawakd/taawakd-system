@@ -697,6 +697,109 @@
   </div>
 
 
+
+<!-- ════ ADMIN DASHBOARD PAGE ════ -->
+<div class="page" id="page-admin">
+  <div class="page-header">
+    <h1 class="page-title">⚙️ لوحة الإدارة</h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="admin-tabs">
+    <button class="admin-tab-btn active" id="atab-overview"  onclick="switchAdminTab('overview')">📊 نظرة عامة</button>
+    <button class="admin-tab-btn"        id="atab-users"     onclick="switchAdminTab('users')">👥 المستخدمون</button>
+    <button class="admin-tab-btn"        id="atab-reports"   onclick="switchAdminTab('reports')">📄 التقارير</button>
+    <button class="admin-tab-btn"        id="atab-usage"     onclick="switchAdminTab('usage')">📈 الاستخدام</button>
+    <button class="admin-tab-btn"        id="atab-plans"     onclick="switchAdminTab('plans')">💎 الخطط</button>
+  </div>
+
+  <!-- ── Overview ─────────────────────────────────────────── -->
+  <div class="admin-section" id="asec-overview">
+    <div class="kpi-row" id="admin-overview-kpis" style="margin-top:20px">
+      <p style="color:var(--text-muted)">جارٍ التحميل…</p>
+    </div>
+  </div>
+
+  <!-- ── Users ─────────────────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-users">
+    <div style="display:flex;gap:10px;align-items:center;margin:20px 0 12px;flex-wrap:wrap">
+      <input id="admin-user-search" class="input" style="max-width:280px"
+             placeholder="بحث بالبريد أو الاسم…"
+             oninput="clearTimeout(_adminUserSearchTimer);_adminUserSearchTimer=setTimeout(()=>{_adminUserSearch=this.value;renderAdminUsers(1);},400)">
+      <span style="font-size:12px;color:var(--text-muted)" id="admin-users-count"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>المستخدم</th><th>الخطة</th><th>التقارير</th><th>التحليلات</th><th>الحالة</th><th>تاريخ التسجيل</th><th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="admin-users-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="admin-users-pag" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ── Reports ────────────────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-reports">
+    <div style="display:flex;gap:10px;align-items:center;margin:20px 0 12px;flex-wrap:wrap">
+      <span style="font-size:13px;color:var(--gold)" id="admin-reports-filter-label"></span>
+      <button class="btn-secondary" onclick="adminClearUserFilter()" id="admin-reports-clear-filter"
+              style="font-size:12px;padding:4px 10px">✕ إلغاء الفلتر</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>العنوان</th><th>المستخدم</th><th>AI</th><th>التاريخ</th><th>عرض</th>
+          </tr>
+        </thead>
+        <tbody id="admin-reports-tbody">
+          <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="admin-reports-pag" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ── Usage ──────────────────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-usage">
+    <div class="kpi-row" id="admin-usage-kpis" style="margin-top:20px">
+      <p style="color:var(--text-muted)">جارٍ التحميل…</p>
+    </div>
+    <div style="margin-top:24px;height:280px;position:relative">
+      <canvas id="admin-usage-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Plans ──────────────────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-plans">
+    <div id="admin-plans-grid" class="plans-grid" style="margin-top:20px">
+      <p style="color:var(--text-muted)">جارٍ التحميل…</p>
+    </div>
+  </div>
+</div><!-- end page-admin -->
+
+<!-- ── Assign Plan Modal ──────────────────────────────────── -->
+<div class="plan-modal-overlay" id="admin-assign-plan-overlay" style="display:none" onclick="if(event.target===this)closeAssignPlan()">
+  <div class="plan-modal-box" id="admin-assign-plan-content"></div>
+</div>
+
+<!-- ── Edit Plan Modal ────────────────────────────────────── -->
+<div class="plan-modal-overlay" id="plan-modal-overlay" style="display:none" onclick="if(event.target===this)closePlanModal()">
+  <div class="plan-modal-box">
+    <h3 style="margin:0 0 16px">✏️ تعديل الخطة</h3>
+    <div id="plan-modal-form"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+      <button class="btn-secondary" onclick="closePlanModal()">إلغاء</button>
+      <button class="btn-primary" onclick="savePlan()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- end main-area -->
 </div><!-- end app -->
 
