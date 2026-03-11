@@ -411,7 +411,7 @@ window.openPlanModal = async function(planId) {
   const form = document.getElementById('plan-modal-form');
   if (!overlay || !form) return;
 
-  let plan = { id: '', name: '', name_ar: '', analyses_limit: 10, price_monthly: 0, is_active: true };
+  let plan = { id: '', name: '', name_ar: '', analyses_limit: 2, price_monthly: 0, is_active: true };
 
   if (planId) {
     const data = await adminFetch('getPlans');
@@ -459,7 +459,7 @@ window.savePlan = async function() {
     id:              document.getElementById('pm-id')?.value?.trim(),
     name:            document.getElementById('pm-name')?.value?.trim(),
     name_ar:         document.getElementById('pm-name-ar')?.value?.trim(),
-    analyses_limit:  parseInt(document.getElementById('pm-limit')?.value || '10'),
+    analyses_limit:  parseInt(document.getElementById('pm-limit')?.value || '2'),
     price_monthly:   parseFloat(document.getElementById('pm-price')?.value || '0'),
     is_active:       document.getElementById('pm-active')?.checked
   };

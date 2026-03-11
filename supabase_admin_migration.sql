@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS plans (
 
 -- 3. إدراج الخطط الافتراضية
 INSERT INTO plans (id, name, name_ar, analyses_limit, price_monthly, is_active, created_at) VALUES
-  ('free',       'Free',       'مجاني',    10,   0,   true, NOW()),
+  ('free',       'Free',       'مجاني',    2,    0,   true, NOW()),
   ('pro',        'Pro',        'احترافي',  100,  49,  true, NOW()),
   ('enterprise', 'Enterprise', 'مؤسسي',    -1,   299, true, NOW())
 ON CONFLICT (id) DO NOTHING;

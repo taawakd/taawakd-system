@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
   if (profile?.plan === 'free' && profile?.analyses_used >= profile?.analyses_limit) {
     return res.status(403).json({
-      error: 'وصلت لحد 3 تحليلات شهرياً',
+      error: 'وصلت لحد 2 تحليلات، يرجى الترقية للاستمرار',
       limit_reached: true,
       used: profile.analyses_used,
       limit: profile.analyses_limit

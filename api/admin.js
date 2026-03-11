@@ -87,7 +87,7 @@ export default async function handler(req, res) {
           full_name: profileMap[u.id]?.full_name || '',
           plan: profileMap[u.id]?.plan || 'free',
           analyses_used: profileMap[u.id]?.analyses_used || 0,
-          analyses_limit: profileMap[u.id]?.analyses_limit || 10,
+          analyses_limit: profileMap[u.id]?.analyses_limit || 2,
           is_admin: profileMap[u.id]?.is_admin || false,
           is_suspended: profileMap[u.id]?.is_suspended || false,
           reports_count: countMap[u.id] || 0,
@@ -240,7 +240,7 @@ export default async function handler(req, res) {
 
         const planData = {
           id, name, name_ar,
-          analyses_limit: parseInt(analyses_limit) || 10,
+          analyses_limit: parseInt(analyses_limit) || 2,
           price_monthly: parseFloat(price_monthly) || 0,
           is_active: !!is_active
         };
