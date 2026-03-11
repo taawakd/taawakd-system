@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>توكّد — اعرف الوضع الحقيقي لمشروعك</title>
+  <meta name="description" content="توكّد يحلل أرقام مشروعك ويكشف الربحية، نقاط الضعف، والقرارات الصحيحة للنمو. يقين قبل الاستثمار.">
+  <meta property="og:title" content="توكّد — تحليل مالي واضح لمشروعك">
+  <meta property="og:description" content="لا تخمّن… اعرف الوضع الحقيقي لمشروعك">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #07070a;
+      --bg2:     #0e0e14;
+      --card:    #13131a;
+      --card2:   #1a1a24;
+      --border:  rgba(255,255,255,0.07);
+      --gold:    #c9a84c;
+      --gold2:   #e8c76a;
+      --gold-d:  rgba(201,168,76,0.12);
+      --text:    #efefef;
+      --muted:   #888;
+      --green:   #4caf82;
+      --red:     #e05555;
+      --blue:    #5b8ef0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Shared ── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 100px 0; }
+    .section-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--gold-d); border: 1px solid rgba(201,168,76,0.25);
+      color: var(--gold2); border-radius: 100px; padding: 6px 16px;
+      font-size: 13px; font-weight: 600; margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+      line-height: 1.3; color: #fff;
+    }
+    .section-title span {
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .section-sub {
+      font-size: 17px; color: var(--muted); margin-top: 14px;
+      max-width: 560px;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      color: #000; border: none; border-radius: 12px;
+      padding: 14px 28px; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-decoration: none; font-family: inherit;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.35); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 28px; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-decoration: none; font-family: inherit;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Background orbs ── */
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(100px);
+      pointer-events: none; animation: float 8s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-30px); }
+    }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      background: rgba(7,7,10,0.8);
+      border-bottom: 1px solid var(--border);
+      transition: background .3s;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 68px;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: #000;
+    }
+    .nav-logo-text { font-size: 20px; font-weight: 700; color: #fff; }
+    .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 14px;
+      font-weight: 500; transition: color .2s;
+    }
+    .nav-links a:hover { color: #fff; }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .nav-login {
+      color: var(--muted); text-decoration: none; font-size: 14px;
+      font-weight: 500; padding: 8px 16px; border-radius: 8px;
+      border: 1px solid var(--border); transition: all .2s;
+    }
+    .nav-login:hover { border-color: var(--gold); color: var(--gold); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      color: #000; text-decoration: none; font-size: 14px;
+      font-weight: 700; padding: 9px 20px; border-radius: 9px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,168,76,0.3); }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+    }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center; padding-top: 80px;
+      overflow: hidden;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 60px; align-items: center;
+    }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-mockup-wrap { display: none; }
+    }
+    .hero-content { position: relative; z-index: 2; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--gold-d); border: 1px solid rgba(201,168,76,0.2);
+      color: var(--gold2); border-radius: 100px; padding: 5px 14px;
+      font-size: 13px; font-weight: 600; margin-bottom: 28px;
+    }
+    .hero-tag::before { content: '⚡'; }
+    .hero-h1 {
+      font-size: clamp(34px, 5vw, 58px); font-weight: 800;
+      line-height: 1.2; color: #fff; margin-bottom: 22px;
+    }
+    .hero-h1 .gradient-text {
+      background: linear-gradient(135deg, var(--gold2) 0%, var(--gold) 50%, #ff9a3c 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-size: 200% auto; animation: textShine 4s linear infinite;
+    }
+    @keyframes textShine {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+    .hero-desc {
+      font-size: 18px; color: var(--muted); line-height: 1.8;
+      margin-bottom: 36px; max-width: 500px;
+    }
+    .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 48px; }
+    .hero-trust {
+      display: flex; align-items: center; gap: 20px;
+      padding-top: 24px; border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted);
+    }
+    .trust-item .t-icon { font-size: 16px; }
+
+    /* ── Dashboard Mockup ── */
+    .hero-mockup-wrap {
+      position: relative; z-index: 2;
+      animation: floatMock 6s ease-in-out infinite;
+    }
+    @keyframes floatMock {
+      0%,100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-16px) rotate(0.5deg); }
+    }
+    .mockup-glow {
+      position: absolute; inset: -40px;
+      background: radial-gradient(ellipse at center, rgba(201,168,76,0.15), transparent 70%);
+      pointer-events: none;
+    }
+    .mock-shell {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .mock-bar {
+      background: rgba(255,255,255,0.04); padding: 10px 16px;
+      display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-title {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      margin-right: auto; margin-left: auto; letter-spacing: 1px;
+    }
+    .mock-body { display: flex; height: 340px; }
+    .mock-sidebar {
+      width: 60px; background: rgba(0,0,0,0.3);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      align-items: center; padding: 14px 0; gap: 16px;
+    }
+    .mock-sb-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: rgba(255,255,255,0.04); display: flex;
+      align-items: center; justify-content: center; font-size: 14px;
+    }
+    .mock-sb-icon.active { background: var(--gold-d); }
+    .mock-content { flex: 1; padding: 16px; overflow: hidden; }
+    .mock-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+    .mock-kpi {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 10px 8px;
+    }
+    .mock-kpi-val { font-size: 18px; font-weight: 700; color: #fff; }
+    .mock-kpi-val.gold { color: var(--gold2); }
+    .mock-kpi-val.green { color: var(--green); }
+    .mock-kpi-val.blue { color: var(--blue); }
+    .mock-kpi-label { font-size: 9px; color: var(--muted); margin-top: 2px; }
+    .mock-kpi-delta { font-size: 9px; color: var(--green); }
+    .mock-chart-wrap {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    }
+    .mock-chart-title { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+    .mock-bars { display: flex; align-items: flex-end; gap: 5px; height: 60px; }
+    .mock-bar-item { flex: 1; border-radius: 4px 4px 0 0; transition: height .5s; }
+    .mock-score-row { display: flex; gap: 8px; }
+    .mock-score {
+      flex: 1; background: var(--card2); border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 10px; padding: 10px; display: flex;
+      align-items: center; gap: 10px;
+    }
+    .mock-score-ring {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: conic-gradient(var(--gold) 295deg, rgba(255,255,255,0.06) 0);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .mock-score-inner {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--card2); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; color: var(--gold);
+    }
+    .mock-score-info { font-size: 10px; }
+    .mock-score-num { font-size: 16px; font-weight: 700; color: #fff; }
+    .mock-score-lbl { color: var(--muted); font-size: 9px; }
+
+    /* ── TRUST BAR ── */
+    .trust-bar {
+      background: var(--card); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); padding: 28px 0;
+    }
+    .trust-bar-inner {
+      display: flex; align-items: center; justify-content: center;
+      gap: 48px; flex-wrap: wrap;
+    }
+    .tbar-item { text-align: center; }
+    .tbar-num {
+      font-size: 28px; font-weight: 800;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .tbar-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .tbar-sep { width: 1px; height: 40px; background: var(--border); }
+
+    /* ── PROBLEM ── */
+    #problem { padding: 100px 0; }
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+    }
+    @media (max-width: 768px) { .problem-grid { grid-template-columns: 1fr; } }
+    .problem-card {
+      border-radius: 20px; padding: 36px; border: 1px solid var(--border);
+    }
+    .problem-card.before {
+      background: rgba(224,85,85,0.06);
+      border-color: rgba(224,85,85,0.2);
+    }
+    .problem-card.after {
+      background: rgba(76,175,130,0.06);
+      border-color: rgba(76,175,130,0.2);
+    }
+    .problem-card-title {
+      font-size: 18px; font-weight: 700; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .problem-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .problem-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 14px; color: var(--muted); line-height: 1.6;
+    }
+    .problem-list li .ic { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+
+    /* ── HOW IT WORKS ── */
+    .steps-row {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 24px;
+      margin-top: 60px; position: relative;
+    }
+    @media (max-width: 768px) { .steps-row { grid-template-columns: 1fr; } }
+    .steps-row::before {
+      content: ''; position: absolute;
+      top: 40px; right: 18%; left: 18%;
+      height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    @media (max-width: 768px) { .steps-row::before { display: none; } }
+    .step-card {
+      text-align: center; padding: 36px 28px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; position: relative;
+      transition: border-color .3s, transform .3s;
+    }
+    .step-card:hover { border-color: var(--gold); transform: translateY(-6px); }
+    .step-num {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; color: #000;
+      margin: 0 auto 20px; position: relative; z-index: 1;
+      box-shadow: 0 8px 30px rgba(201,168,76,0.35);
+    }
+    .step-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #fff; }
+    .step-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 20px;
+      margin-top: 56px;
+    }
+    @media (max-width: 960px) { .features-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+    .feat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px;
+      transition: border-color .3s, transform .3s;
+    }
+    .feat-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-4px); }
+    .feat-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: var(--gold-d); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 18px;
+      border: 1px solid rgba(201,168,76,0.15);
+    }
+    .feat-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .feat-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ── REPORT EXAMPLE ── */
+    #report { background: var(--bg2); }
+    .report-inner {
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px;
+      align-items: center;
+    }
+    @media (max-width: 900px) { .report-inner { grid-template-columns: 1fr; } }
+    .report-preview {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    }
+    .report-header {
+      background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .report-header-title { font-size: 16px; font-weight: 700; }
+    .report-score-badge {
+      background: var(--gold-d); border: 1px solid var(--gold);
+      color: var(--gold2); border-radius: 20px; padding: 4px 14px;
+      font-size: 13px; font-weight: 700;
+    }
+    .report-body { padding: 20px 24px; }
+    .report-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+    .report-kpi {
+      background: var(--card2); border-radius: 10px; padding: 12px;
+      border: 1px solid var(--border);
+    }
+    .report-kpi-val { font-size: 17px; font-weight: 700; }
+    .report-kpi-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .report-section { margin-bottom: 14px; }
+    .report-section-title { font-size: 12px; font-weight: 600; color: var(--gold2); margin-bottom: 8px; }
+    .report-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .report-bar-label { font-size: 11px; color: var(--muted); width: 80px; text-align: right; flex-shrink: 0; }
+    .report-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; }
+    .report-bar-fill { height: 6px; border-radius: 3px; }
+    .report-bar-val { font-size: 11px; color: var(--muted); width: 40px; }
+    .report-bullets { display: flex; flex-direction: column; gap: 6px; }
+    .report-bullet { display: flex; gap: 8px; font-size: 12px; color: var(--muted); align-items: flex-start; }
+    .report-bullet::before { content: '•'; color: var(--gold); flex-shrink: 0; }
+    .report-points { display: flex; flex-direction: column; gap: 14px; }
+    .report-point { display: flex; gap: 14px; align-items: flex-start; }
+    .rp-num {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: var(--gold-d); display: flex; align-items: center;
+      justify-content: center; font-size: 13px; font-weight: 800; color: var(--gold2);
+      margin-top: 2px;
+    }
+    .rp-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .rp-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── PRICING ── */
+    #pricing { background: var(--bg); }
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 24px; margin-top: 56px; align-items: stretch;
+    }
+    @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; } }
+    .pricing-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 22px; padding: 36px; display: flex;
+      flex-direction: column; gap: 0; position: relative;
+      transition: transform .3s, border-color .3s;
+    }
+    .pricing-card:hover { transform: translateY(-6px); }
+    .pricing-card.featured {
+      border-color: var(--gold);
+      background: linear-gradient(145deg, rgba(201,168,76,0.08), var(--card));
+    }
+    .featured-badge {
+      position: absolute; top: -14px; right: 50%; transform: translateX(50%);
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      color: #000; font-size: 12px; font-weight: 800;
+      padding: 4px 18px; border-radius: 100px;
+    }
+    .plan-name { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .plan-desc { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .plan-price {
+      font-size: 40px; font-weight: 800; color: #fff;
+      margin-bottom: 4px; line-height: 1;
+    }
+    .plan-price span { font-size: 16px; color: var(--muted); font-weight: 400; }
+    .plan-price.free-price {
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .plan-period { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .plan-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+    .plan-features { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+    .plan-features li {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; color: var(--muted);
+    }
+    .plan-features li .check { color: var(--green); font-size: 15px; flex-shrink: 0; }
+    .plan-features li .cross { color: rgba(255,255,255,0.15); font-size: 15px; flex-shrink: 0; }
+    .plan-features li.active { color: var(--text); }
+    .plan-cta {
+      display: block; text-align: center;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text); border-radius: 12px; padding: 13px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      text-decoration: none; font-family: inherit;
+      transition: all .2s;
+    }
+    .plan-cta:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+    .plan-cta.featured-cta {
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      color: #000; border-color: transparent;
+    }
+    .plan-cta.featured-cta:hover { box-shadow: 0 8px 30px rgba(201,168,76,0.35); }
+
+    /* ── CTA ── */
+    #cta {
+      background: var(--bg2); position: relative; overflow: hidden;
+      padding: 120px 0; text-align: center;
+    }
+    .cta-title { font-size: clamp(32px, 5vw, 52px); font-weight: 800; color: #fff; margin-bottom: 16px; }
+    .cta-sub { font-size: 18px; color: var(--muted); margin-bottom: 40px; }
+    .cta-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg); border-top: 1px solid var(--border);
+      padding: 48px 0 32px;
+    }
+    .footer-inner {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 32px; flex-wrap: wrap;
+    }
+    .footer-brand { max-width: 280px; }
+    .footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .footer-logo-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; color: #000;
+    }
+    .footer-logo-name { font-size: 18px; font-weight: 700; }
+    .footer-tagline { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .footer-links-col h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 14px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .footer-links-col a { display: block; color: var(--muted); text-decoration: none; font-size: 14px; margin-bottom: 8px; transition: color .2s; }
+    .footer-links-col a:hover { color: #fff; }
+    .footer-bottom {
+      margin-top: 40px; padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--muted); flex-wrap: wrap; gap: 10px;
+    }
+    .footer-bottom a { color: var(--gold); text-decoration: none; }
+
+    /* ── Scroll reveal ── */
+    .reveal { opacity: 0; transform: translateY(32px); transition: opacity .7s, transform .7s; }
+    .reveal.visible { opacity: 1; transform: none; }
+    .reveal-delay-1 { transition-delay: .1s; }
+    .reveal-delay-2 { transition-delay: .2s; }
+    .reveal-delay-3 { transition-delay: .3s; }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="/landing" class="nav-logo">
+      <div class="nav-logo-icon">ت</div>
+      <span class="nav-logo-text">توكّد</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">كيف يعمل</a></li>
+      <li><a href="#features">المميزات</a></li>
+      <li><a href="#pricing">الخطط</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/auth" class="nav-login">تسجيل الدخول</a>
+      <a href="/auth" class="nav-cta">ابدأ مجاناً</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ HERO ════════════════════════════════════════════════════════════ -->
+<section id="hero" class="section">
+  <!-- Background orbs -->
+  <div class="orb" style="width:500px;height:500px;background:rgba(201,168,76,0.06);top:-100px;right:-150px;animation-duration:10s;"></div>
+  <div class="orb" style="width:400px;height:400px;background:rgba(91,142,240,0.04);bottom:-80px;left:-100px;animation-duration:13s;animation-delay:-4s;"></div>
+
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Content -->
+      <div class="hero-content">
+        <div class="hero-tag">تحليل مالي واضح خلال دقائق</div>
+        <h1 class="hero-h1">
+          لا تخمّن…<br>
+          اعرف <span class="gradient-text">الوضع الحقيقي</span><br>
+          لمشروعك
+        </h1>
+        <p class="hero-desc">
+          توكّد يحلل أرقام مشروعك ويكشف الربحية، نقاط الضعف، والقرارات الصحيحة للنمو — ويعلمك مشروعك وين رايح.
+        </p>
+        <div class="hero-btns">
+          <a href="/auth" class="btn-primary">ابدأ التحليل الآن ←</a>
+          <a href="#report" class="btn-secondary">شاهد مثال التقرير</a>
+        </div>
+        <div class="hero-trust">
+          <div class="trust-item"><span class="t-icon">✅</span> مجاني للبدء</div>
+          <div class="trust-item"><span class="t-icon">🔒</span> بياناتك آمنة</div>
+          <div class="trust-item"><span class="t-icon">⚡</span> نتائج فورية</div>
+        </div>
+      </div>
+
+      <!-- Mockup -->
+      <div class="hero-mockup-wrap">
+        <div class="mockup-glow"></div>
+        <div class="mock-shell">
+          <div class="mock-bar">
+            <div class="mock-dot" style="background:#e05555"></div>
+            <div class="mock-dot" style="background:#e0a044"></div>
+            <div class="mock-dot" style="background:#4caf82"></div>
+            <div class="mock-title">لوحة التحكم — توكّد</div>
+          </div>
+          <div class="mock-body">
+            <div class="mock-sidebar">
+              <div class="mock-sb-icon active" title="لوحة التحكم">📊</div>
+              <div class="mock-sb-icon" title="تحليل">🔍</div>
+              <div class="mock-sb-icon" title="التقارير">📁</div>
+              <div class="mock-sb-icon" title="التوقعات">🔮</div>
+              <div class="mock-sb-icon" title="AI CFO">🤖</div>
+            </div>
+            <div class="mock-content">
+              <div class="mock-kpis">
+                <div class="mock-kpi">
+                  <div class="mock-kpi-val gold">82</div>
+                  <div class="mock-kpi-label">صحة المشروع</div>
+                  <div class="mock-kpi-delta">↑ ممتاز</div>
+                </div>
+                <div class="mock-kpi">
+                  <div class="mock-kpi-val green">75K</div>
+                  <div class="mock-kpi-label">الإيراد</div>
+                  <div class="mock-kpi-delta">+12%</div>
+                </div>
+                <div class="mock-kpi">
+                  <div class="mock-kpi-val blue">44%</div>
+                  <div class="mock-kpi-label">هامش الربح</div>
+                  <div class="mock-kpi-delta">↑ جيد</div>
+                </div>
+              </div>
+              <div class="mock-chart-wrap">
+                <div class="mock-chart-title">الأداء المالي — آخر 6 أشهر</div>
+                <div class="mock-bars">
+                  <div class="mock-bar-item" style="height:55%;background:rgba(201,168,76,0.3)"></div>
+                  <div class="mock-bar-item" style="height:70%;background:rgba(201,168,76,0.4)"></div>
+                  <div class="mock-bar-item" style="height:45%;background:rgba(201,168,76,0.3)"></div>
+                  <div class="mock-bar-item" style="height:85%;background:rgba(201,168,76,0.5)"></div>
+                  <div class="mock-bar-item" style="height:75%;background:rgba(201,168,76,0.4)"></div>
+                  <div class="mock-bar-item" style="height:100%;background:linear-gradient(to top,var(--gold),var(--gold2))"></div>
+                </div>
+              </div>
+              <div class="mock-score-row">
+                <div class="mock-score">
+                  <div class="mock-score-ring">
+                    <div class="mock-score-inner">82</div>
+                  </div>
+                  <div class="mock-score-info">
+                    <div class="mock-score-num">ممتاز</div>
+                    <div class="mock-score-lbl">مؤشر صحة المشروع</div>
+                  </div>
+                </div>
+                <div class="mock-score" style="border-color:rgba(76,175,130,0.3)">
+                  <div style="font-size:22px;margin-left:4px">📈</div>
+                  <div class="mock-score-info">
+                    <div class="mock-score-num" style="color:var(--green)">نمو</div>
+                    <div class="mock-score-lbl">التوقع الذكي</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TRUST BAR ════════════════════════════════════════════════════════ -->
+<div class="trust-bar">
+  <div class="container">
+    <div class="trust-bar-inner">
+      <div class="tbar-item">
+        <div class="tbar-num">500+</div>
+        <div class="tbar-label">مشروع تم تحليله</div>
+      </div>
+      <div class="tbar-sep"></div>
+      <div class="tbar-item">
+        <div class="tbar-num">3 دقائق</div>
+        <div class="tbar-label">متوسط وقت التحليل</div>
+      </div>
+      <div class="tbar-sep"></div>
+      <div class="tbar-item">
+        <div class="tbar-num">98%</div>
+        <div class="tbar-label">رضا المستخدمين</div>
+      </div>
+      <div class="tbar-sep"></div>
+      <div class="tbar-item">
+        <div class="tbar-num">12+</div>
+        <div class="tbar-label">مؤشر مالي واضح</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROBLEM ══════════════════════════════════════════════════════════ -->
+<section id="problem" class="section">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:56px">
+      <div class="section-badge">🎯 المشكلة والحل</div>
+      <h2 class="section-title reveal">هل تعرف <span>وين رايح مشروعك؟</span></h2>
+      <p class="section-sub reveal reveal-delay-1" style="margin:14px auto 0">
+        معظم أصحاب المشاريع يشتغلون بدون وضوح مالي — توكّد يغير ذلك.
+      </p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card before reveal">
+        <div class="problem-card-title">
+          <span style="font-size:22px">❌</span>
+          <span style="color:#e05555">بدون توكّد</span>
+        </div>
+        <ul class="problem-list">
+          <li><span class="ic">😰</span> لا تعرف هل مشروعك رابح أو خاسر فعلياً</li>
+          <li><span class="ic">🤷</span> قرارات مبنية على تخمين وحدس</li>
+          <li><span class="ic">💸</span> مصاريف مخفية تلتهم أرباحك بدون ما تنتبه</li>
+          <li><span class="ic">📉</span> ما عندك توقعات للمستقبل القريب</li>
+          <li><span class="ic">😟</span> تحليل مالي يكلف غالي من محاسب خارجي</li>
+        </ul>
+      </div>
+      <div class="problem-card after reveal reveal-delay-1">
+        <div class="problem-card-title">
+          <span style="font-size:22px">✅</span>
+          <span style="color:#4caf82">مع توكّد</span>
+        </div>
+        <ul class="problem-list">
+          <li><span class="ic">📊</span> تقرير مالي واضح في دقائق بدون تعقيد</li>
+          <li><span class="ic">🎯</span> قرارات مبنية على أرقام وبيانات دقيقة</li>
+          <li><span class="ic">💡</span> تكشف نقاط الضعف وفرص التحسين فوراً</li>
+          <li><span class="ic">🔮</span> توقعات ذكية للإيرادات والتدفق النقدي</li>
+          <li><span class="ic">🚀</span> تحليل احترافي بتكلفة صفر</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ════════════════════════════════════════════════════ -->
+<section id="how" style="background:var(--bg2);padding:100px 0">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="section-badge">⚙️ كيف يعمل</div>
+      <h2 class="section-title reveal">ثلاث خطوات <span>لتقرير احترافي</span></h2>
+      <p class="section-sub reveal reveal-delay-1" style="margin:14px auto 0">
+        لا حاجة لخبرة محاسبية — فقط أدخل أرقامك واترك توكّد يتولى الباقي
+      </p>
+    </div>
+    <div class="steps-row">
+      <div class="step-card reveal">
+        <div class="step-num">1</div>
+        <div class="step-title">أدخل بيانات مشروعك</div>
+        <p class="step-desc">أدخل الإيرادات، المصاريف، وتكاليف التشغيل — النظام مصمم ليكون سهل وسريع.</p>
+      </div>
+      <div class="step-card reveal reveal-delay-1">
+        <div class="step-num">2</div>
+        <div class="step-title">يحللها الذكاء الاصطناعي</div>
+        <p class="step-desc">يقوم النظام بتحليل الأرقام، حساب المؤشرات، ومقارنتها بمعايير السوق السعودي.</p>
+      </div>
+      <div class="step-card reveal reveal-delay-2">
+        <div class="step-num">3</div>
+        <div class="step-title">تحصل على تقريرك الآن</div>
+        <p class="step-desc">تقرير مالي شامل: الربحية، نقاط الضعف، مؤشر الصحة، والتوصيات — فوري وواضح.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FEATURES ════════════════════════════════════════════════════════ -->
+<section id="features" class="section">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="section-badge">✨ المميزات</div>
+      <h2 class="section-title reveal">كل ما تحتاجه <span>في مكان واحد</span></h2>
+      <p class="section-sub reveal reveal-delay-1" style="margin:14px auto 0">
+        أدوات مالية متكاملة صُممت خصيصاً للمشاريع السعودية
+      </p>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">تحليل مالي فوري</div>
+        <p class="feat-desc">تحليل شامل للإيرادات والمصاريف والأرباح مع مقارنة بمعايير القطاع في السوق السعودي.</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-icon">❤️</div>
+        <div class="feat-title">مؤشر صحة المشروع</div>
+        <p class="feat-desc">درجة واضحة من 100 تقيّم أداء مشروعك في 5 محاور: الربحية، السيولة، الكفاءة، النمو، والمخاطر.</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">🔮</div>
+        <div class="feat-title">توقعات ذكية</div>
+        <p class="feat-desc">توقعات الإيرادات والتدفق النقدي للأشهر القادمة بناءً على بياناتك الحالية وأنماط السوق.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🤖</div>
+        <div class="feat-title">AI CFO — مستشارك المالي</div>
+        <p class="feat-desc">مستشار مالي ذكي يجيب على أسئلتك، يقترح استراتيجيات، ويحلل وضعك بدقة — متاح دائماً.</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-icon">📈</div>
+        <div class="feat-title">مقارنة بالسوق</div>
+        <p class="feat-desc">قارن أداء مشروعك بمتوسطات قطاعك في المملكة — اعرف أين تقف بين منافسيك.</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">💧</div>
+        <div class="feat-title">تحليل التدفق النقدي</div>
+        <p class="feat-desc">توقع متى ستواجه ضغطاً في السيولة قبل أن يحدث — تخطيط مالي استباقي وذكي.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ REPORT EXAMPLE ══════════════════════════════════════════════════ -->
+<section id="report" class="section" style="background:var(--bg2)">
+  <div class="container">
+    <div class="report-inner">
+      <!-- Preview -->
+      <div class="reveal">
+        <div class="report-preview">
+          <div class="report-header">
+            <div>
+              <div class="report-header-title">تقرير مشروع: مطعم الواحة</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px">مارس 2025 · إيرادات شهرية</div>
+            </div>
+            <div class="report-score-badge">صحة: 82/100</div>
+          </div>
+          <div class="report-body">
+            <div class="report-kpis">
+              <div class="report-kpi">
+                <div class="report-kpi-val" style="color:var(--green)">75,000</div>
+                <div class="report-kpi-lbl">إيراد شهري (ر.س)</div>
+              </div>
+              <div class="report-kpi">
+                <div class="report-kpi-val" style="color:var(--gold2)">44%</div>
+                <div class="report-kpi-lbl">هامش الربح</div>
+              </div>
+              <div class="report-kpi">
+                <div class="report-kpi-val" style="color:var(--blue)">33,000</div>
+                <div class="report-kpi-lbl">صافي الربح (ر.س)</div>
+              </div>
+            </div>
+            <div class="report-section">
+              <div class="report-section-title">توزيع المصاريف</div>
+              <div class="report-bar-row">
+                <div class="report-bar-label">تكاليف البضاعة</div>
+                <div class="report-bar-track"><div class="report-bar-fill" style="width:30%;background:var(--gold)"></div></div>
+                <div class="report-bar-val">30%</div>
+              </div>
+              <div class="report-bar-row">
+                <div class="report-bar-label">الإيجار</div>
+                <div class="report-bar-track"><div class="report-bar-fill" style="width:15%;background:var(--blue)"></div></div>
+                <div class="report-bar-val">15%</div>
+              </div>
+              <div class="report-bar-row">
+                <div class="report-bar-label">الرواتب</div>
+                <div class="report-bar-track"><div class="report-bar-fill" style="width:11%;background:var(--green)"></div></div>
+                <div class="report-bar-val">11%</div>
+              </div>
+            </div>
+            <div class="report-section">
+              <div class="report-section-title">توصيات الذكاء الاصطناعي</div>
+              <div class="report-bullets">
+                <div class="report-bullet">هامش الربح أعلى من متوسط القطاع بـ 8% — استمر في هذا المستوى</div>
+                <div class="report-bullet">تكاليف البضاعة تشكل نسبة صحية — فرصة لتحسين التفاوض مع الموردين</div>
+                <div class="report-bullet">التدفق النقدي مستقر — يُنصح بخطة توسع تدريجية خلال 6 أشهر</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Points -->
+      <div>
+        <div class="section-badge">📄 مثال التقرير</div>
+        <h2 class="section-title reveal" style="margin-bottom:16px">
+          تقرير مالي <span>احترافي</span><br>في دقائق
+        </h2>
+        <p class="section-sub reveal reveal-delay-1" style="margin-bottom:40px">
+          كل تحليل يُنتج تقريراً شاملاً يشمل المؤشرات المالية، توصيات الذكاء الاصطناعي، وخطة عمل واضحة.
+        </p>
+        <div class="report-points">
+          <div class="report-point reveal">
+            <div class="rp-num">01</div>
+            <div>
+              <div class="rp-title">مؤشرات مالية دقيقة</div>
+              <p class="rp-desc">الربحية، هامش الربح، نقطة التعادل، العائد على الاستثمار — كلها واضحة ومشروحة.</p>
+            </div>
+          </div>
+          <div class="report-point reveal reveal-delay-1">
+            <div class="rp-num">02</div>
+            <div>
+              <div class="rp-title">توصيات مخصصة بالذكاء الاصطناعي</div>
+              <p class="rp-desc">توصيات عملية مبنية على بياناتك ومقارنة بمعايير قطاعك — لا توصيات عامة.</p>
+            </div>
+          </div>
+          <div class="report-point reveal reveal-delay-2">
+            <div class="rp-num">03</div>
+            <div>
+              <div class="rp-title">خطة عمل قابلة للتطبيق</div>
+              <p class="rp-desc">خطوات واضحة ومرتبة حسب الأولوية لتحسين أداء مشروعك فوراً.</p>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:36px">
+          <a href="/auth" class="btn-primary">جرب التحليل مجاناً ←</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PRICING ═════════════════════════════════════════════════════════ -->
+<section id="pricing" class="section">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="section-badge">💎 الخطط والأسعار</div>
+      <h2 class="section-title reveal">ابدأ <span>مجاناً</span> — وسّع عندما تجهز</h2>
+      <p class="section-sub reveal reveal-delay-1" style="margin:14px auto 0">
+        لا بطاقة ائتمانية مطلوبة للبدء
+      </p>
+    </div>
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="pricing-card reveal">
+        <div class="plan-name">مجاني</div>
+        <div class="plan-desc">لاستكشاف المنصة وتجربة التحليل</div>
+        <div class="plan-price free-price">0</div>
+        <div class="plan-period">تجربة مجانية</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> 2 تحليل مالي كامل</li>
+          <li class="active"><span class="check">✓</span> مؤشر صحة المشروع</li>
+          <li class="active"><span class="check">✓</span> التقرير الأساسي</li>
+          <li><span class="cross">✕</span> <span>AI CFO المستشار</span></li>
+          <li><span class="cross">✕</span> <span>توقعات ذكية</span></li>
+          <li><span class="cross">✕</span> <span>مقارنة القطاع</span></li>
+        </ul>
+        <a href="/auth" class="plan-cta">ابدأ مجاناً</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card featured reveal reveal-delay-1">
+        <div class="featured-badge">الأكثر طلباً</div>
+        <div class="plan-name" style="color:var(--gold2)">احترافي</div>
+        <div class="plan-desc">للمشاريع النشطة التي تريد وضوحاً مالياً كاملاً</div>
+        <div class="plan-price">49 <span>ر.س</span></div>
+        <div class="plan-period">شهرياً · يُجدد تلقائياً</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> 100 تحليل / شهر</li>
+          <li class="active"><span class="check">✓</span> مؤشر صحة المشروع</li>
+          <li class="active"><span class="check">✓</span> تقارير متقدمة وكاملة</li>
+          <li class="active"><span class="check">✓</span> AI CFO المستشار الذكي</li>
+          <li class="active"><span class="check">✓</span> توقعات ذكية للإيرادات</li>
+          <li class="active"><span class="check">✓</span> مقارنة بمعايير القطاع</li>
+        </ul>
+        <a href="/auth" class="plan-cta featured-cta">ابدأ الخطة الاحترافية</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="pricing-card reveal reveal-delay-2">
+        <div class="plan-name">مؤسسي</div>
+        <div class="plan-desc">للشركات والمكاتب المالية والمستشارين</div>
+        <div class="plan-price">299 <span>ر.س</span></div>
+        <div class="plan-period">شهرياً · يُجدد تلقائياً</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> تحليلات غير محدودة</li>
+          <li class="active"><span class="check">✓</span> كل مميزات الخطة الاحترافية</li>
+          <li class="active"><span class="check">✓</span> إدارة متعددة المشاريع</li>
+          <li class="active"><span class="check">✓</span> تقارير PDF احترافية</li>
+          <li class="active"><span class="check">✓</span> دعم أولوية على مدار الساعة</li>
+          <li class="active"><span class="check">✓</span> تكامل مع الأنظمة المحاسبية</li>
+        </ul>
+        <a href="/auth" class="plan-cta">تواصل معنا</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══════════════════════════════════════════════════════════════ -->
+<section id="cta">
+  <div class="orb" style="width:600px;height:600px;background:rgba(201,168,76,0.07);top:50%;left:50%;transform:translate(-50%,-50%);animation-duration:12s;"></div>
+  <div class="container" style="position:relative;z-index:2">
+    <h2 class="cta-title reveal">ابدأ تحليل مشروعك <span class="gradient-text">الآن</span></h2>
+    <p class="cta-sub reveal reveal-delay-1">يقين قبل الاستثمار — انضم لمئات المشاريع التي تعرف وين رايحة</p>
+    <div class="cta-btns">
+      <a href="/auth" class="btn-primary" style="font-size:17px;padding:16px 36px">ابدأ مجاناً ←</a>
+      <a href="#how" class="btn-secondary" style="font-size:17px;padding:16px 36px">تعرّف أكثر</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <div class="footer-logo-icon">ت</div>
+          <span class="footer-logo-name">توكّد</span>
+        </div>
+        <p class="footer-tagline">
+          منصة تحليل مالي ذكية للمشاريع السعودية.<br>
+          يقين قبل الاستثمار.
+        </p>
+      </div>
+      <div class="footer-links-col">
+        <h4>المنتج</h4>
+        <a href="#features">المميزات</a>
+        <a href="#how">كيف يعمل</a>
+        <a href="#pricing">الخطط</a>
+      </div>
+      <div class="footer-links-col">
+        <h4>الحساب</h4>
+        <a href="/auth">تسجيل الدخول</a>
+        <a href="/auth">إنشاء حساب</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 توكّد · جميع الحقوق محفوظة</span>
+      <span>صُنع بـ ❤️ في المملكة العربية السعودية</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Navbar scroll effect
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  nav.style.background = window.scrollY > 40
+    ? 'rgba(7,7,10,0.96)'
+    : 'rgba(7,7,10,0.8)';
+}, { passive: true });
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+
+// Counter animation for trust bar
+function animateCount(el, target, suffix = '') {
+  let start = 0;
+  const duration = 1500;
+  const step = timestamp => {
+    if (!start) start = timestamp;
+    const progress = Math.min((timestamp - start) / duration, 1);
+    const val = Math.floor(progress * target);
+    el.textContent = val + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = target + suffix;
+  };
+  requestAnimationFrame(step);
+}
+const trustObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const nums = e.target.querySelectorAll('.tbar-num');
+      nums[0] && animateCount(nums[0], 500, '+');
+      trustObs.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+const trustBar = document.querySelector('.trust-bar-inner');
+if (trustBar) trustObs.observe(trustBar.closest('.trust-bar'));
+</script>
+</body>
+</html>
