@@ -232,6 +232,26 @@ function _extractPeriodFromFilename(filename) {
   return null;
 }
 
+// يُعبئ حقول المنتجات في نموذج التقرير من بيانات مُحلَّلة
+function showProductTable(products) {
+  const c = document.getElementById('prodsContainer');
+  if (!c) return;
+  // امسح الصفوف الحالية
+  c.innerHTML = '';
+  products.forEach(p => {
+    if (typeof addProdRow === 'function') addProdRow();
+    const allRows = c.querySelectorAll('.prod-row');
+    const row = allRows[allRows.length - 1];
+    if (!row) return;
+    const ins = row.querySelectorAll('input');
+    if (ins[0]) ins[0].value = p.name;
+    if (ins[1] && p.price > 0) { ins[1].value = p.price; ins[1].dispatchEvent(new Event('input')); }
+    if (ins[2] && p.cost  > 0)   ins[2].value = p.cost;
+    if (ins[3] && p.qty   > 0)   ins[3].value = p.qty;
+    if (ins[1] && typeof calcRowMargin === 'function') calcRowMargin(ins[1]);
+  });
+}
+
 function handleExcel(input) {
   const file = input.files[0];
   if (!file) return;
@@ -276,21 +296,28 @@ function handleExcel(input) {
       let matched = 0;
 
       // ══════════════════════════════════════════════════════════════════════
-      // الاستراتيجية 1: جدول منتجات (أعمدة: اسم المنتج، كمية، إيراد، تكلفة)
+      // الاستراتيجية 1: جدول منتجات (أعمدة: اسم المنتج، كمية، سعر، تكلفة)
       // ══════════════════════════════════════════════════════════════════════
       const h0 = rows[0].map(h => clean(h).toLowerCase());
       const hasProduct = h0.some(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف')||h.includes('سلعة')||h.includes('خدمة'));
       const hasQty     = h0.some(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد')||h.includes('quantity'));
-      const hasRevH    = h0.some(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue')||h.includes('سعر'));
+      const hasRevH    = h0.some(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue')||h.includes('سعر')||h.includes('retail')||h.includes('price'));
 
       if (hasProduct && (hasQty || hasRevH)) {
-        const nI = h0.findIndex(h=>h.includes('منتج')||h.includes('product')||h.includes('صنف')||h.includes('سلعة')||h.includes('خدمة'));
+        const nI = h0.findIndex(h=>h.includes('product name')||h.includes('منتج')||h.includes('product')||h.includes('صنف')||h.includes('سلعة')||h.includes('خدمة'));
         const qI = h0.findIndex(h=>h.includes('كمية')||h.includes('qty')||h.includes('عدد')||h.includes('quantity'));
-        const rI = h0.findIndex(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue')||h.includes('سعر'));
-        const cI = h0.findIndex(h=>h.includes('تكلفة')||h.includes('cost'));
+        // يفضّل "retail price" على "buy price" لاستخدامه سعر البيع
+        let rI = h0.findIndex(h=>h.includes('retail')||h.includes('سعر بيع')||h.includes('سعر البيع'));
+        if (rI<0) rI = h0.findIndex(h=>h.includes('إيراد')||h.includes('ايراد')||h.includes('مبيعات')||h.includes('revenue')||h.includes('سعر'));
+        if (rI<0) rI = h0.findIndex(h=>h.includes('price')&&!h.includes('buy')&&!h.includes('wholesale'));
+        if (rI<0) rI = h0.findIndex(h=>h.includes('price'));
+        // يفضّل "buy price" للتكلفة
+        let cI = h0.findIndex(h=>h.includes('buy price')||h.includes('تكلفة')||h.includes('سعر الشراء'));
+        if (cI<0) cI = h0.findIndex(h=>h.includes('cost'));
         const products = rows.slice(1).filter(r=>clean(r[nI])).map(r=>({
-          name:clean(r[nI]), qty:qI>=0?num(r[qI]):0, revenue:rI>=0?num(r[rI]):0, cost:cI>=0?num(r[cI]):0
-        })).filter(p=>p.qty>0||p.revenue>0);
+          name:clean(r[nI]), qty:qI>=0?num(r[qI]):0, price:rI>=0?num(r[rI]):0, cost:cI>=0?num(r[cI]):0,
+          revenue: (qI>=0?num(r[qI]):0) * (rI>=0?num(r[rI]):0)
+        })).filter(p=>p.qty>0||p.price>0);
         if (products.length) { showProductTable(products); toast('✅ تم قراءة '+products.length+' منتج/خدمة'); return; }
       }
 

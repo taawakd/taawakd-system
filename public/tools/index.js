@@ -473,22 +473,57 @@ function importBPProducts(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const wb   = XLSX.read(e.target.result, {type:'binary'});
-    const ws   = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(ws, {header:1});
-    const headers = (data[0]||[]).map(h => String(h||'').trim());
-    const nameIdx  = headers.findIndex(h => h.includes('اسم') || h.includes('منتج') || h.includes('name'));
-    const costIdx  = headers.findIndex(h => h.includes('تكلفة') || h.includes('cost') || h.includes('Cost'));
-    const priceIdx = headers.findIndex(h => h.includes('سعر') || h.includes('price') || h.includes('Price') || h.includes('بيع'));
-    let added = 0;
-    data.slice(1).forEach(row => {
-      const name  = String(row[nameIdx]||'').trim();
-      const cost  = parseFloat(row[costIdx])  || 0;
-      const price = parseFloat(row[priceIdx]) || 0;
-      if (name && price > 0) { BP_PRODUCTS.push({name, cost, price}); added++; }
-    });
-    renderBPProducts();
-    toast('✅ تم استيراد ' + added + ' منتج');
+    try {
+      const wb   = XLSX.read(e.target.result, {type:'binary'});
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if (!data.length) { toast('❌ الملف فارغ'); input.value=''; return; }
+
+      // lowercase for case-insensitive matching (يحل مشكلة "Product Name" vs "name")
+      const headers = (data[0]||[]).map(h => String(h||'').trim().toLowerCase());
+
+      // اسم المنتج
+      const nameIdx = headers.findIndex(h =>
+        h.includes('product name') || h.includes('اسم') || h.includes('منتج') ||
+        h.includes('صنف') || h.includes('item name') || h === 'name' || h.includes('product')
+      );
+
+      // سعر البيع — يفضّل "retail" على "buy" لتجنب قراءة سعر الشراء عوضاً عن البيع
+      let priceIdx = headers.findIndex(h => h.includes('retail') || h.includes('sell price') ||
+        h.includes('سعر بيع') || h.includes('سعر البيع'));
+      if (priceIdx < 0) priceIdx = headers.findIndex(h =>
+        h.includes('price') && !h.includes('buy') && !h.includes('wholesale') && !h.includes('جملة'));
+      if (priceIdx < 0) priceIdx = headers.findIndex(h => h.includes('سعر') || h.includes('price'));
+
+      // سعر التكلفة — يفضّل "buy price" ثم "cost"
+      let costIdx = headers.findIndex(h =>
+        h.includes('buy price') || h.includes('تكلفة') || h.includes('سعر الشراء'));
+      if (costIdx < 0) costIdx = headers.findIndex(h => h === 'cost' || h.includes('cost'));
+
+      if (nameIdx < 0)  { toast('❌ لم يُعثر على عمود اسم المنتج في الملف'); input.value=''; return; }
+      if (priceIdx < 0) { toast('❌ لم يُعثر على عمود السعر في الملف');       input.value=''; return; }
+
+      const parseN = v => { const n = parseFloat(String(v||'').replace(/[,،\s]/g,'')); return isNaN(n) ? 0 : n; };
+
+      let added = 0;
+      data.slice(1).forEach(row => {
+        const name  = String(row[nameIdx]||'').trim();
+        const cost  = costIdx >= 0 ? parseN(row[costIdx])  : 0;
+        const price = parseN(row[priceIdx]);
+        if (name && price > 0) { BP_PRODUCTS.push({name, cost, price}); added++; }
+      });
+
+      if (added === 0) {
+        toast('⚠️ لم يتم إضافة أي منتج — تأكد أن الملف يحتوي أعمدة اسم وسعر');
+        input.value=''; return;
+      }
+      renderBPProducts();
+      input.value = '';
+      toast('✅ تم استيراد ' + added + ' منتج');
+    } catch(err) {
+      toast('❌ خطأ في قراءة الملف: ' + err.message);
+      input.value = '';
+    }
   };
   reader.readAsBinaryString(file);
 }
