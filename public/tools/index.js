@@ -415,12 +415,19 @@ var BP_PRODUCTS = window.BP_PRODUCTS;          // alias for local use in this sc
 
 function calcBPFixed() {
   const ids = ['bp-rent','bp-salaries','bp-utilities','bp-subscriptions','bp-fixed-other'];
-  const total = ids.reduce((s,id) => s + (parseFloat(document.getElementById(id)?.value)||0), 0);
+  // parseNum يتعامل مع الفواصل (5,000 → 5000) بدلاً من parseFloat الذي يقرأ 5 فقط
+  const total = ids.reduce((s,id) => s + parseNum(document.getElementById(id)?.value||''), 0);
   const el = document.getElementById('bp-fixed-total');
   if (el) el.innerHTML = SAR + ' ' + total.toLocaleString('en');
 }
-document.querySelectorAll('#bp-rent,#bp-salaries,#bp-utilities,#bp-subscriptions,#bp-fixed-other')
-  .forEach(el => el?.addEventListener('input', calcBPFixed));
+window.calcBPFixed = calcBPFixed;
+
+// event delegation — يعمل حتى بعد حقن pages.html في DOM (SPA)
+// querySelectorAll المباشر كان يُنفَّذ قبل وجود العناصر فلا يجد شيئاً
+const _bpFixedIds = new Set(['bp-rent','bp-salaries','bp-utilities','bp-subscriptions','bp-fixed-other']);
+document.addEventListener('input', e => {
+  if (_bpFixedIds.has(e.target?.id)) calcBPFixed();
+});
 
 function renderBPProducts() {
   const el = document.getElementById('bp-products-table');
@@ -432,8 +439,8 @@ function renderBPProducts() {
   el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
     '<thead><tr style="background:#1a1a1a;color:#aaa">' +
     '<th style="padding:6px 8px;text-align:right;border-bottom:1px solid #222">المنتج</th>' +
-    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">التكلفة ${SAR}</th>' +
-    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">السعر ${SAR}</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">التكلفة (' + SAR + ')</th>' +
+    '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">السعر (' + SAR + ')</th>' +
     '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #222">الهامش %</th>' +
     '<th style="padding:6px 8px;border-bottom:1px solid #222"></th>' +
     '</tr></thead><tbody>' +

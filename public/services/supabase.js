@@ -12,7 +12,13 @@ async function loadBusinessProfile() {
     if (error || !data) return;
     window._businessProfile = data;
     window.BP_PRODUCTS = data.products || [];
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    // set + تشغيل input event لتفعيل تنسيق الأرقام وتحديث الإجماليات
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = (val !== null && val !== undefined) ? val : '';
+      el.dispatchEvent(new Event('input'));
+    };
     set('bp-name', data.biz_name);
     set('bp-type', data.biz_type);
     set('bp-rent', data.fixed_rent);
@@ -36,19 +42,21 @@ async function saveBusinessProfile() {
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { toast('يجب تسجيل الدخول أولاً'); return; }
+    // parseNum يتعامل مع الأرقام المنسّقة بفواصل ("5,000" → 5000) بخلاف parseFloat ("5,000" → 5)
+    const g = id => parseNum(document.getElementById(id)?.value || '');
     const profile = {
       user_id: user.id,
-      biz_name: document.getElementById('bp-name')?.value || '',
-      biz_type: document.getElementById('bp-type')?.value || '',
-      fixed_rent: parseFloat(document.getElementById('bp-rent')?.value) || 0,
-      fixed_salaries: parseFloat(document.getElementById('bp-salaries')?.value) || 0,
-      fixed_utilities: parseFloat(document.getElementById('bp-utilities')?.value) || 0,
-      fixed_subscriptions: parseFloat(document.getElementById('bp-subscriptions')?.value) || 0,
-      fixed_other: parseFloat(document.getElementById('bp-fixed-other')?.value) || 0,
-      var_cogs_pct: parseFloat(document.getElementById('bp-cogs')?.value) || 0,
-      var_delivery_pct: parseFloat(document.getElementById('bp-delivery')?.value) || 0,
-      var_marketing_pct: parseFloat(document.getElementById('bp-marketing')?.value) || 0,
-      var_other_pct: parseFloat(document.getElementById('bp-var-other')?.value) || 0,
+      biz_name: document.getElementById('bp-name')?.value?.trim() || '',
+      biz_type: document.getElementById('bp-type')?.value?.trim() || '',
+      fixed_rent:          g('bp-rent'),
+      fixed_salaries:      g('bp-salaries'),
+      fixed_utilities:     g('bp-utilities'),
+      fixed_subscriptions: g('bp-subscriptions'),
+      fixed_other:         g('bp-fixed-other'),
+      var_cogs_pct:        g('bp-cogs'),
+      var_delivery_pct:    g('bp-delivery'),
+      var_marketing_pct:   g('bp-marketing'),
+      var_other_pct:       g('bp-var-other'),
       products: window.BP_PRODUCTS || [],
     };
     const { error } = await sb.from('business_profile')
