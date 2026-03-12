@@ -1,8 +1,4 @@
 {
-  "redirects": [
-    { "source": "/landing",   "destination": "/landing.html",   "permanent": false },
-    { "source": "/marketing", "destination": "/landing.html",   "permanent": false }
-  ],
   "rewrites": [
 
     { "source": "/api/config.js", "destination": "/api/config.js" },
@@ -26,18 +22,19 @@
       "destination": "/public/index.html"
     },
     {
-      "source": "/auth",
-      "has": [{ "type": "host", "value": "app\\.towkd\\.com" }],
-      "destination": "/public/auth.html"
-    },
-    {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "app\\.towkd\\.com" }],
       "destination": "/public/$1"
     },
 
-    { "source": "/",      "destination": "/public/landing.html" },
-    { "source": "/(.*)",  "destination": "/public/$1" }
+    { "source": "/auth",          "destination": "/public/auth.html" },
+    { "source": "/auth.html",     "destination": "/public/auth.html" },
+    { "source": "/login",         "destination": "/public/auth.html" },
+    { "source": "/signup",        "destination": "/public/auth.html" },
+    { "source": "/register",      "destination": "/public/auth.html" },
+
+    { "source": "/",              "destination": "/public/landing.html" },
+    { "source": "/(.*)",          "destination": "/public/$1" }
 
   ]
 }
