@@ -546,7 +546,7 @@ window.adminViewReport = async function(reportId) {
 
   // احفظ بيانات التقرير ثم افتح تاب جديد يعرضه
   localStorage.setItem('tw_admin_preview', JSON.stringify(report));
-  window.open(window.location.origin + '/', '_blank');
+  window.open('https://app.towkd.com', '_blank');
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

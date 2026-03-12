@@ -93,7 +93,7 @@ const SUPABASE_ANON = window.__SUPABASE_ANON__ || '';
 let sb;
 try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON); } catch(e){}
 
-(async()=>{ if(!sb)return; const{data:{session}}=await sb.auth.getSession(); if(session) window.location.href='/index.html'; })();
+(async()=>{ if(!sb)return; const{data:{session}}=await sb.auth.getSession(); if(session) window.location.href='https://app.towkd.com'; })();
 
 function switchTab(tab){
   ['login','register'].forEach(t=>{
@@ -105,7 +105,7 @@ function switchTab(tab){
   hideMsg();
 }
 function showReset(){ document.getElementById('loginForm').style.display='none'; document.getElementById('resetForm').style.display='block'; }
-async function signInGoogle(){ if(!sb)return showErr('Supabase غير مهيّأ'); const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+'/index.html'}}); if(error)showErr(error.message); }
+async function signInGoogle(){ if(!sb)return showErr('Supabase غير مهيّأ'); const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://app.towkd.com'}}); if(error)showErr(error.message); }
 async function signIn(){
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
@@ -114,7 +114,7 @@ async function signIn(){
   const{error}=await sb.auth.signInWithPassword({email,password:pass});
   setLoad('login',false);
   if(error){ const m=error.message.includes('Invalid')?'البريد أو كلمة المرور غير صحيحة':error.message.includes('confirmed')?'تحقق من بريدك أولاً':error.message; return showErr(m); }
-  window.location.href='/index.html';
+  window.location.href='https://app.towkd.com';
 }
 async function signUp(){
   const name=document.getElementById('reg-name').value.trim();
@@ -131,7 +131,7 @@ async function signUp(){
 async function sendReset(){
   const email=document.getElementById('reset-email').value.trim();
   if(!email)return showErr('أدخل بريدك');
-  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/auth.html'});
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://app.towkd.com/auth'});
   if(error)return showErr(error.message);
   document.getElementById('resetForm').style.display='none';
   document.getElementById('authSuccess').textContent='✓ تم إرسال رابط الاستعادة';

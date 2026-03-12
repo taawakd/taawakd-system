@@ -5,10 +5,80 @@
     { "source": "/auth",      "destination": "/auth.html",      "permanent": false }
   ],
   "rewrites": [
+
     { "source": "/api/config.js", "destination": "/api/config.js" },
     { "source": "/api/analyze",   "destination": "/api/analyze.js" },
     { "source": "/api/admin",     "destination": "/api/admin.js" },
-    { "source": "/",              "destination": "/public/index.html" },
-    { "source": "/(.*)",          "destination": "/public/$1" }
+
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "admin\\.towkd\\.com" }],
+      "destination": "/public/admin/index.html"
+    },
+    {
+      "source": "/admin(.*)",
+      "has": [{ "type": "host", "value": "admin\\.towkd\\.com" }],
+      "destination": "/public/admin/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "admin\\.towkd\\.com" }],
+      "destination": "/public/admin/$1"
+    },
+
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "towkd\\.com" }],
+      "destination": "/public/landing.html"
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www\\.towkd\\.com" }],
+      "destination": "/public/landing.html"
+    },
+    {
+      "source": "/login",
+      "has": [{ "type": "host", "value": "towkd\\.com" }],
+      "destination": "/public/auth.html"
+    },
+    {
+      "source": "/signup",
+      "has": [{ "type": "host", "value": "towkd\\.com" }],
+      "destination": "/public/auth.html"
+    },
+    {
+      "source": "/pricing",
+      "has": [{ "type": "host", "value": "towkd\\.com" }],
+      "destination": "/public/landing.html"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "towkd\\.com" }],
+      "destination": "/public/$1"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www\\.towkd\\.com" }],
+      "destination": "/public/$1"
+    },
+
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "app\\.towkd\\.com" }],
+      "destination": "/public/index.html"
+    },
+    {
+      "source": "/auth",
+      "has": [{ "type": "host", "value": "app\\.towkd\\.com" }],
+      "destination": "/public/auth.html"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "app\\.towkd\\.com" }],
+      "destination": "/public/$1"
+    },
+
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/(.*)", "destination": "/public/$1" }
   ]
 }

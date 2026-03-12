@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توكّد — لوحة الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#07080a;--s1:#0f1014;--s2:#16171c;--s3:#1e1f26;
+  --border:rgba(255,255,255,0.06);--card:rgba(255,255,255,0.04);
+  --gold:#c8a45a;--gold2:#e8c97a;--gold-d:rgba(200,164,90,0.12);--gold-b:rgba(200,164,90,0.22);
+  --white:#edeae2;--gray:#7a7670;--gray2:#a8a49c;
+  --red:#d95f5f;--red-d:rgba(217,95,95,0.12);
+  --green:#4caf82;--green-d:rgba(76,175,130,0.12);
+  --blue:#5b8fcc;--blue-d:rgba(91,143,204,0.12);
+  --warn:#d4893a;--warn-d:rgba(212,137,58,0.12);
+  --text:var(--white);--text-muted:var(--gray2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(--white);min-height:100vh;direction:rtl;}
+
+/* ── Layout ── */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:100;}
+.main-area{margin-right:230px;flex:1;min-height:100vh;padding:28px 32px;}
+
+/* ── Sidebar ── */
+.sb-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
+.sb-logo-mark{display:flex;align-items:center;gap:10px;}
+.sb-icon{width:34px;height:34px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#000;flex-shrink:0;}
+.sb-name{font-size:17px;font-weight:700;color:var(--white);}
+.sb-name span{color:var(--gold);}
+.sb-tagline{font-size:11px;color:var(--gray);margin-top:3px;}
+.admin-badge{display:inline-block;background:rgba(200,164,90,0.18);color:var(--gold);border:1px solid var(--gold-b);border-radius:6px;padding:2px 10px;font-size:11px;font-weight:700;margin-top:8px;}
+
+.sb-nav{padding:14px 10px;flex:1;overflow-y:auto;}
+.sb-section{font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1.5px;padding:4px 8px 8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;margin-bottom:2px;font-size:13px;color:var(--gray2);border:1px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,0.04);color:var(--white);}
+.nav-item.active{background:var(--gold-d);color:var(--gold);border-color:var(--gold-b);}
+.nav-icon{font-size:15px;width:20px;text-align:center;}
+
+.sb-bottom{padding:14px 12px;border-top:1px solid var(--border);}
+.sb-user{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);}
+.sb-avatar{width:32px;height:32px;background:var(--gold-d);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold);flex-shrink:0;}
+.sb-user-name{font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-logout{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--gray2);margin-top:8px;transition:all .2s;border:1px solid transparent;}
+.sb-logout:hover{background:rgba(217,95,95,0.08);color:var(--red);border-color:rgba(217,95,95,0.2);}
+
+/* ── Page ── */
+.page-header{margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.page-title{font-size:22px;font-weight:700;color:var(--white);}
+
+/* ── Admin Tabs ── */
+.admin-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.admin-tab-btn{background:var(--card);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s;}
+.admin-tab-btn:hover{border-color:var(--gold);color:var(--gold);}
+.admin-tab-btn.active{background:var(--gold-d);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.admin-section{margin-top:4px;}
+.admin-section.hidden{display:none;}
+
+/* ── Tables ── */
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;}
+.admin-table th{padding:10px 12px;background:var(--card);border-bottom:2px solid var(--border);color:var(--text-muted);font-weight:600;text-align:right;}
+.admin-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.admin-table tr:hover td{background:rgba(255,255,255,0.02);}
+
+/* ── Badges & Buttons ── */
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge.gold{background:var(--gold-d);color:var(--gold);}
+.badge.green{background:rgba(76,175,130,0.15);color:var(--green);}
+.badge.red{background:rgba(220,80,80,0.15);color:#e57373;}
+.badge.gray{background:rgba(150,150,150,0.12);color:var(--text-muted);}
+.btn-sm{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold);}
+.btn-gold{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+.btn-danger-sm{border-color:rgba(220,80,80,0.3);color:#e57373;}
+.btn-danger-sm:hover{background:rgba(220,80,80,0.1);}
+.btn-primary{background:var(--gold);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s;}
+.btn-primary:hover{opacity:.88;}
+.btn-secondary{background:transparent;color:var(--gray2);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s;}
+.btn-secondary:hover{border-color:var(--gray2);color:var(--white);}
+.input{background:var(--s2);border:1px solid var(--border);color:var(--white);border-radius:9px;padding:9px 14px;font-size:13px;font-family:inherit;direction:rtl;width:100%;outline:none;transition:border-color .2s;}
+.input:focus{border-color:var(--gold);}
+
+/* ── Pagination ── */
+.admin-pag{display:flex;align-items:center;gap:8px;margin-top:10px;}
+
+/* ── Plans Grid ── */
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color .2s;}
+.plan-card:hover{border-color:var(--gold);}
+.plan-card.plan-inactive{opacity:0.5;}
+.plan-card.plan-add{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;cursor:pointer;border-style:dashed;}
+
+/* ── Log Filter ── */
+.log-filter-btn.active{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+
+/* ── Admin Analytics KPIs ── */
+.adm-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:20px;}
+.adm-kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;transition:border-color .2s;}
+.adm-kpi-card:hover{border-color:var(--gold);}
+.adm-kpi-gold{border-color:rgba(201,168,76,0.5);background:var(--gold-d);}
+.adm-kpi-accent{border-color:rgba(124,92,191,0.4);background:rgba(124,92,191,0.08);}
+.adm-kpi-label{font-size:11px;color:var(--text-muted);margin-bottom:8px;}
+.adm-kpi-value{font-size:28px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px;}
+.adm-kpi-sub{font-size:11px;color:var(--text-muted);}
+.adm-charts-row{display:grid;grid-template-columns:1fr 1fr 200px;gap:14px;margin-bottom:16px;}
+.adm-chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.adm-chart-donut{display:flex;flex-direction:column;}
+.adm-chart-title{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:12px;}
+.adm-mid-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.adm-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+.adm-panel-title{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.adm-activity-list{display:flex;flex-direction:column;gap:0;}
+.adm-activity-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);}
+.adm-activity-item:last-child{border-bottom:none;}
+.adm-activity-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.adm-heatmap{display:flex;flex-direction:column;gap:9px;}
+.adm-heatmap-row{display:flex;align-items:center;gap:8px;}
+.adm-heatmap-day{font-size:11px;color:var(--text-muted);width:55px;text-align:right;flex-shrink:0;}
+.adm-heatmap-bar-bg{flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;}
+.adm-heatmap-bar{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));border-radius:4px;min-width:2px;}
+.adm-heatmap-count{font-size:11px;color:var(--text-muted);width:18px;text-align:left;}
+.adm-alert-item{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.03);font-size:12px;margin-bottom:7px;border:1px solid var(--border);}
+.adm-alert-item:last-child{margin-bottom:0;}
+.adm-funnel{display:flex;flex-direction:column;gap:14px;}
+.adm-funnel-step{display:flex;flex-direction:column;gap:6px;}
+.adm-funnel-info{display:flex;align-items:center;gap:10px;}
+.adm-funnel-label{font-size:12px;color:var(--text-muted);flex:1;}
+.adm-funnel-num{font-size:15px;font-weight:700;}
+.adm-funnel-pct{font-size:12px;font-weight:600;min-width:36px;text-align:left;}
+.adm-funnel-bar-bg{width:100%;height:10px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden;}
+.adm-funnel-bar{height:100%;border-radius:5px;transition:width .7s ease;}
+@media(max-width:900px){.adm-charts-row{grid-template-columns:1fr;}.adm-mid-row{grid-template-columns:1fr;}.adm-chart-donut{max-width:100%;}}
+
+/* ── Modals ── */
+.plan-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.plan-modal-box{background:#1a1a24;border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;}
+
+/* ── User Profile Panel ── */
+#user-profile-panel{position:fixed;left:0;top:0;bottom:0;width:420px;background:#111118;border-right:1px solid var(--border);z-index:200;overflow-y:auto;transform:translateX(-100%);transition:transform .3s ease;padding:0;}
+#user-profile-panel.open{transform:translateX(0);}
+
+/* ── Toast ── */
+#admin-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1f26;border:1px solid var(--border);color:var(--white);padding:12px 24px;border-radius:10px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+
+/* ── Loading Screen ── */
+#admin-loading{position:fixed;inset:0;background:#07080a;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── Access Denied ── */
+#access-denied{display:none;text-align:center;padding:80px 20px;}
+.denied-icon{font-size:64px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="admin-loading">
+  <div class="loading-spinner"></div>
+  <div style="font-size:14px;color:var(--gray2)">جارٍ التحقق من الصلاحيات…</div>
+</div>
+
+<!-- Access Denied -->
+<div id="access-denied">
+  <div class="denied-icon">🔒</div>
+  <h2 style="font-size:22px;margin-bottom:8px">غير مسموح بالدخول</h2>
+  <p style="color:var(--gray2);margin-bottom:24px">هذه الصفحة مخصصة للمسؤولين فقط</p>
+  <a href="https://app.towkd.com" style="color:var(--gold);text-decoration:none;font-size:14px">← العودة للتطبيق</a>
+</div>
+
+<!-- Main App -->
+<div class="app" id="admin-app" style="display:none">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">
+        <div class="sb-icon">ت</div>
+        <div>
+          <div class="sb-name">توكّ<span>د</span></div>
+          <div class="sb-tagline">لوحة الإدارة</div>
+        </div>
+      </div>
+      <div class="admin-badge">⚙️ Admin Panel</div>
+    </div>
+
+    <div class="sb-nav">
+      <div class="sb-section">الأقسام</div>
+      <div class="nav-item active" id="snav-overview" onclick="adminNavTo('overview')">
+        <span class="nav-icon">📊</span> نظرة عامة
+      </div>
+      <div class="nav-item" id="snav-users" onclick="adminNavTo('users')">
+        <span class="nav-icon">👥</span> المستخدمون
+      </div>
+      <div class="nav-item" id="snav-reports" onclick="adminNavTo('reports')">
+        <span class="nav-icon">📄</span> التقارير
+      </div>
+      <div class="nav-item" id="snav-usage" onclick="adminNavTo('usage')">
+        <span class="nav-icon">📈</span> الاستخدام
+      </div>
+      <div class="nav-item" id="snav-plans" onclick="adminNavTo('plans')">
+        <span class="nav-icon">💎</span> الخطط والأسعار
+      </div>
+      <div class="nav-item" id="snav-logs" onclick="adminNavTo('logs')">
+        <span class="nav-icon">🗂</span> السجلات
+      </div>
+
+      <div class="sb-section" style="margin-top:16px">روابط سريعة</div>
+      <div class="nav-item" onclick="window.open('https://app.towkd.com','_blank')">
+        <span class="nav-icon">🚀</span> التطبيق
+      </div>
+      <div class="nav-item" onclick="window.open('https://towkd.com','_blank')">
+        <span class="nav-icon">🌐</span> الصفحة الرئيسية
+      </div>
+    </div>
+
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-avatar" id="admin-avatar">م</div>
+        <div style="overflow:hidden">
+          <div class="sb-user-name" id="admin-user-name">المسؤول</div>
+          <div style="font-size:11px;color:var(--gray)">Admin</div>
+        </div>
+      </div>
+      <div class="sb-logout" onclick="adminSignOut()">
+        <span>🚪</span> تسجيل الخروج
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-area">
+    <div class="page-header">
+      <h1 class="page-title" id="admin-page-title">📊 نظرة عامة</h1>
+      <div style="font-size:12px;color:var(--gray2)" id="admin-page-sub">مرحباً بك في لوحة إدارة توكّد</div>
+    </div>
+
+    <!-- ── Overview ── -->
+    <div class="admin-section" id="asec-overview">
+      <div id="admin-overview-content" style="margin-top:4px">
+        <p style="color:var(--text-muted);padding:40px;text-align:center">جارٍ تحميل البيانات…</p>
+      </div>
+    </div>
+
+    <!-- ── Users ── -->
+    <div class="admin-section hidden" id="asec-users">
+      <div style="display:flex;gap:10px;align-items:center;margin:0 0 16px;flex-wrap:wrap">
+        <input id="admin-user-search" class="input" style="max-width:280px"
+               placeholder="بحث بالبريد أو الاسم…"
+               oninput="clearTimeout(_adminUserSearchTimer);_adminUserSearchTimer=setTimeout(()=>{_adminUserSearch=this.value;renderAdminUsers(1);},400)">
+        <span style="font-size:12px;color:var(--text-muted)" id="admin-users-count"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>المستخدم</th><th>الخطة</th><th>التقارير</th><th>التحليلات</th><th>الحالة</th><th>تاريخ التسجيل</th><th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-tbody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="admin-users-pag" style="margin-top:12px"></div>
+    </div>
+
+    <!-- ── Reports ── -->
+    <div class="admin-section hidden" id="asec-reports">
+      <div style="display:flex;gap:10px;align-items:center;margin:0 0 16px;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--gold)" id="admin-reports-filter-label"></span>
+        <button class="btn-sm" onclick="adminClearUserFilter()" id="admin-reports-clear-filter"
+                style="font-size:12px;padding:4px 10px">✕ إلغاء الفلتر</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>المشروع</th><th>المستخدم</th><th>الصحة</th><th>التاريخ</th><th>عرض</th>
+            </tr>
+          </thead>
+          <tbody id="admin-reports-tbody">
+            <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="admin-reports-pag" style="margin-top:12px"></div>
+    </div>
+
+    <!-- ── Usage ── -->
+    <div class="admin-section hidden" id="asec-usage">
+      <div class="kpi-row" id="admin-usage-kpis" style="margin-top:0;display:flex;gap:12px;flex-wrap:wrap">
+        <p style="color:var(--text-muted)">جارٍ التحميل…</p>
+      </div>
+      <div style="margin-top:24px;height:280px;position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <canvas id="admin-usage-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- ── Plans ── -->
+    <div class="admin-section hidden" id="asec-plans">
+      <div id="admin-plans-grid" class="plans-grid" style="margin-top:0">
+        <p style="color:var(--text-muted)">جارٍ التحميل…</p>
+      </div>
+    </div>
+
+    <!-- ── Logs ── -->
+    <div class="admin-section hidden" id="asec-logs">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px">
+        <button class="btn-sm log-filter-btn active" id="lf-all"      onclick="renderAdminLogs(1,'all')">🗂 الكل</button>
+        <button class="btn-sm log-filter-btn"        id="lf-api_call" onclick="renderAdminLogs(1,'api_call')">🔌 API Calls</button>
+        <button class="btn-sm log-filter-btn"        id="lf-ai_usage" onclick="renderAdminLogs(1,'ai_usage')">🤖 AI Usage</button>
+        <button class="btn-sm log-filter-btn"        id="lf-error"    onclick="renderAdminLogs(1,'error')">❌ Errors</button>
+        <button class="btn-sm log-filter-btn"        id="lf-payment"  onclick="renderAdminLogs(1,'payment')">💳 Payments</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>النوع</th><th>الإجراء</th><th>التفاصيل</th><th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody id="admin-logs-tbody">
+            <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">جارٍ التحميل…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="admin-logs-pag" style="margin-top:12px"></div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /app -->
+
+<!-- ── Modals ── -->
+<div class="plan-modal-overlay" id="admin-assign-plan-overlay" style="display:none" onclick="if(event.target===this)closeAssignPlan()">
+  <div class="plan-modal-box" id="admin-assign-plan-content"></div>
+</div>
+
+<div class="plan-modal-overlay" id="plan-modal-overlay" style="display:none" onclick="if(event.target===this)closePlanModal()">
+  <div class="plan-modal-box">
+    <h3 style="margin:0 0 16px">✏️ تعديل الخطة</h3>
+    <div id="plan-modal-form"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+      <button class="btn-secondary" onclick="closePlanModal()">إلغاء</button>
+      <button class="btn-primary" onclick="savePlan()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Profile Side Panel -->
+<div id="user-profile-panel">
+  <div id="user-profile-content" style="padding:24px"></div>
+</div>
+<div id="user-profile-backdrop" onclick="closeUserProfile()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199"></div>
+
+<!-- Toast -->
+<div id="admin-toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  Scripts                                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+window.__SUPABASE_URL__  = window.__SUPABASE_URL__  || '';
+window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
+</script>
+<script src="/api/config.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ── Toast ──────────────────────────────────────────────────
+window.toast = function(msg, dur=3000) {
+  const el = document.getElementById('admin-toast');
+  if (!el) return;
+  el.textContent = msg; el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, dur);
+};
+
+// ── Sidebar Navigation ─────────────────────────────────────
+const ADMIN_TABS = {
+  overview: { title: '📊 نظرة عامة',      sub: 'إحصائيات عامة عن النظام' },
+  users:    { title: '👥 المستخدمون',      sub: 'إدارة حسابات المستخدمين' },
+  reports:  { title: '📄 التقارير',        sub: 'جميع التقارير في النظام' },
+  usage:    { title: '📈 الاستخدام',       sub: 'تحليلات الاستخدام والأداء' },
+  plans:    { title: '💎 الخطط والأسعار',  sub: 'إدارة خطط الاشتراك' },
+  logs:     { title: '🗂 السجلات',          sub: 'سجلات النشاط والأخطاء' },
+};
+
+window.adminNavTo = function(tab) {
+  // Update sidebar
+  document.querySelectorAll('.nav-item[id^="snav-"]').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('snav-' + tab);
+  if (navEl) navEl.classList.add('active');
+
+  // Update sections
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+  const sec = document.getElementById('asec-' + tab);
+  if (sec) sec.classList.remove('hidden');
+
+  // Update page header
+  const info = ADMIN_TABS[tab] || {};
+  const titleEl = document.getElementById('admin-page-title');
+  const subEl = document.getElementById('admin-page-sub');
+  if (titleEl) titleEl.textContent = info.title || tab;
+  if (subEl) subEl.textContent = info.sub || '';
+
+  // Trigger tab load
+  if (tab === 'overview')  renderAdminOverview();
+  if (tab === 'users')     renderAdminUsers(1);
+  if (tab === 'reports')   renderAdminReports(1);
+  if (tab === 'usage')     renderAdminUsage();
+  if (tab === 'plans')     renderAdminPlans();
+  if (tab === 'logs')      renderAdminLogs(1, 'all');
+};
+
+// Keep old switchAdminTab for compatibility with admin.js
+window.switchAdminTab = window.adminNavTo;
+
+// ── Sign Out ───────────────────────────────────────────────
+window.adminSignOut = async function() {
+  if (!window.sb) return;
+  await window.sb.auth.signOut();
+  window.location.href = 'https://app.towkd.com/auth';
+};
+
+// ── Auth Guard ────────────────────────────────────────────
+(async function() {
+  await new Promise(r => setTimeout(r, 350));
+
+  const url  = window.__SUPABASE_URL__  || '';
+  const anon = window.__SUPABASE_ANON__ || '';
+  if (!url || !anon) {
+    document.getElementById('admin-loading').style.display = 'none';
+    document.getElementById('access-denied').style.display = 'block';
+    return;
+  }
+
+  const sb = window.supabase.createClient(url, anon);
+  window.sb = sb;
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'https://app.towkd.com/auth';
+    return;
+  }
+
+  window.__AUTH_TOKEN__ = session.access_token;
+  window.__USER__ = session.user;
+
+  // Check admin permission
+  const { data: profile } = await sb
+    .from('profiles').select('is_admin, full_name').eq('id', session.user.id).single();
+
+  if (!profile?.is_admin) {
+    document.getElementById('admin-loading').style.display = 'none';
+    document.getElementById('access-denied').style.display = 'block';
+    return;
+  }
+
+  // ✅ Authorized — show admin panel
+  const name = profile?.full_name
+    || session.user?.user_metadata?.full_name
+    || session.user?.email?.split('@')[0]
+    || 'المسؤول';
+
+  const nameEl = document.getElementById('admin-user-name');
+  const avatarEl = document.getElementById('admin-avatar');
+  if (nameEl) nameEl.textContent = name;
+  if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
+
+  document.getElementById('admin-loading').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'flex';
+
+  // Auto-refresh token
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      window.location.href = 'https://app.towkd.com/auth';
+    } else if (session) {
+      window.__AUTH_TOKEN__ = session.access_token;
+    }
+  });
+
+  // Load initial tab
+  adminNavTo('overview');
+})();
+</script>
+
+<!-- Admin Service — loaded from parent services folder -->
+<script src="/services/admin.js"></script>
+
+</body>
+</html>
