@@ -860,3 +860,269 @@
     <small>يستغرق ذلك 10–20 ثانية</small>
   </div>
 </div>
+
+<!-- ════ PRODUCT COST CALCULATOR PAGE ════ -->
+<div class="page" id="page-costcalc">
+  <div class="page-header">
+    <h1 class="page-title">🧮 حاسبة تكلفة المنتج</h1>
+    <p style="color:var(--gray);font-size:13px;margin-top:4px">احسب التكلفة الحقيقية لكل منتج، حدّد السعر الصحيح، واعرف تأثيره على ربح مشروعك</p>
+  </div>
+
+  <div id="pc-printable">
+
+    <!-- ── الصف الأول: بيانات المنتج + المكونات ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+
+      <!-- بيانات المنتج -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">📝</div>بيانات المنتج</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>اسم المنتج</label>
+            <input class="input" id="pc-name" placeholder="مثال: قهوة عربية مع هيل" oninput="calcProductCost()">
+          </div>
+          <div class="form-group">
+            <label>نوع المنتج / الفئة</label>
+            <select class="input" id="pc-type" onchange="calcProductCost()" style="appearance:auto">
+              <option value="طعام">🍽 طعام</option>
+              <option value="مشروب">☕ مشروب</option>
+              <option value="خدمة">🛠 خدمة</option>
+              <option value="منتج بيع بالتجزئة">📦 منتج بيع بالتجزئة</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>سعر البيع الحالي (﷼)</label>
+            <input class="input num-input" id="pc-price" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()">
+          </div>
+          <div class="form-group">
+            <label>سعر البيع المقترح للتجربة (﷼) — اختياري</label>
+            <input class="input num-input" id="pc-suggested-price" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()">
+          </div>
+          <div class="form-group">
+            <label>المبيعات الشهرية المتوقعة (وحدة)</label>
+            <input class="input num-input" id="pc-monthly-sales" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()">
+          </div>
+          <div class="form-group">
+            <label>المبيعات اليومية التقريبية — يحوّلها النظام شهرياً (×30)</label>
+            <input class="input num-input" id="pc-daily-sales" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()">
+            <div id="pc-daily-converted" style="font-size:11px;color:var(--gold);margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- مكونات المنتج -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">🧪</div>مكونات المنتج (تكلفة البضاعة / وحدة واحدة)</div>
+
+        <!-- رأس الجدول -->
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;">
+          <div style="font-size:11px;color:var(--gray);padding:4px 8px">المكوّن</div>
+          <div style="font-size:11px;color:var(--gray);padding:4px 4px;text-align:center">الكمية</div>
+          <div style="font-size:11px;color:var(--gray);padding:4px 4px;text-align:center">الوحدة</div>
+          <div style="font-size:11px;color:var(--gray);padding:4px 4px;text-align:center">تكلفة/وحدة</div>
+          <div style="font-size:11px;color:var(--gray);padding:4px 4px;text-align:center">الإجمالي</div>
+          <div style="width:30px"></div>
+        </div>
+
+        <!-- صفوف المكونات -->
+        <div id="pc-ingredients"></div>
+
+        <!-- زر إضافة مكون -->
+        <button onclick="addIngredient()" style="width:100%;background:var(--s2);border:1px dashed var(--gold-b);color:var(--gold);border-radius:8px;padding:8px;cursor:pointer;font-size:13px;margin-top:8px;transition:all 0.2s" onmouseover="this.style.background='var(--gold-d)'" onmouseout="this.style.background='var(--s2)'">
+          + إضافة مكوّن جديد
+        </button>
+
+        <!-- الإجمالي -->
+        <div style="margin-top:14px;padding:12px;background:var(--s2);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border)">
+          <span style="color:var(--gray);font-size:13px">إجمالي تكلفة المكونات (لكل وحدة)</span>
+          <span style="color:var(--gold);font-weight:700;font-size:16px" id="pc-ing-total">﷼ 0.00</span>
+        </div>
+        <div style="margin-top:6px;padding:10px;background:rgba(200,164,90,0.06);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--gray);font-size:12px">نسبة المكونات من سعر البيع</span>
+          <span style="font-weight:700;font-size:14px" id="pc-ing-pct" style="color:var(--white)">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── التكاليف التشغيلية ── -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title"><div class="card-title-icon">⚙️</div>التكاليف التشغيلية الشهرية للمشروع بالكامل</div>
+      <p style="color:var(--gray);font-size:12px;margin-bottom:14px">أدخل تكاليف مشروعك الشهرية لحساب حصة هذا المنتج منها بدقة</p>
+      <div class="form-grid">
+        <div class="form-group"><label>الإيجار (﷼)</label>
+          <input class="input num-input" id="pc-rent" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>الرواتب (﷼)</label>
+          <input class="input num-input" id="pc-salaries" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>الكهرباء (﷼)</label>
+          <input class="input num-input" id="pc-elec" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>الماء (﷼)</label>
+          <input class="input num-input" id="pc-water" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>الإنترنت (﷼)</label>
+          <input class="input num-input" id="pc-internet" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>الصيانة (﷼)</label>
+          <input class="input num-input" id="pc-maintenance" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>التسويق (﷼)</label>
+          <input class="input num-input" id="pc-marketing" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+        <div class="form-group"><label>مصاريف أخرى (﷼)</label>
+          <input class="input num-input" id="pc-op-other" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()"></div>
+      </div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="padding:12px;background:var(--s2);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border)">
+          <span style="color:var(--gray);font-size:13px">إجمالي التكاليف التشغيلية / شهر</span>
+          <span style="color:var(--warn);font-weight:700;font-size:16px" id="pc-op-total">﷼ 0</span>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>إجمالي مبيعات المشروع الشهرية (﷼) — لحساب حصة المنتج</label>
+          <input class="input num-input" id="pc-project-sales" type="text" inputmode="numeric" placeholder="0" oninput="calcProductCost()">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── الصف الثاني: النتائج + التنبيهات ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+
+      <!-- النتائج -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">📊</div>النتائج والتحليل</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border);text-align:center">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:6px">تكلفة المكونات / وحدة</div>
+              <div style="font-size:18px;font-weight:700;color:var(--warn)" id="res-ing-cost">0.00 ﷼</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border);text-align:center">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:6px">التكلفة التشغيلية / وحدة</div>
+              <div style="font-size:18px;font-weight:700;color:var(--warn)" id="res-op-cost-unit">0.00 ﷼</div>
+            </div>
+          </div>
+
+          <div style="background:rgba(217,95,95,0.08);border:1px solid rgba(217,95,95,0.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:6px">التكلفة الحقيقية الكاملة / وحدة</div>
+            <div style="font-size:22px;font-weight:700;color:var(--red)" id="res-true-cost">0.00 ﷼</div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border);text-align:center">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:6px">الربح / وحدة</div>
+              <div style="font-size:18px;font-weight:700" id="res-profit-unit">0.00 ﷼</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border);text-align:center">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:6px">هامش الربح</div>
+              <div style="font-size:18px;font-weight:700" id="res-margin">0%</div>
+            </div>
+          </div>
+
+          <div style="background:rgba(76,175,130,0.08);border:1px solid rgba(76,175,130,0.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:6px">الربح الشهري المتوقع من هذا المنتج</div>
+            <div style="font-size:22px;font-weight:700" id="res-monthly-profit">0 ﷼</div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px">حصته من التكاليف</div>
+              <div style="font-size:14px;font-weight:700;color:var(--blue)" id="res-product-share">0%</div>
+            </div>
+            <div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px">المبيعات الفعلية</div>
+              <div style="font-size:14px;font-weight:700;color:var(--white)" id="res-sales-count">—</div>
+            </div>
+            <div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px">تقييم الربحية</div>
+              <div style="font-size:13px;font-weight:700" id="res-rating">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- التنبيهات + الهامش المستهدف -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">🔔</div>التنبيهات والتوصيات</div>
+        <div id="pc-alerts" style="margin-bottom:16px">
+          <div style="color:var(--gray);font-size:13px;text-align:center;padding:10px">أدخل البيانات لرؤية التنبيهات</div>
+        </div>
+
+        <!-- السعر المقترح -->
+        <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border);margin-bottom:14px">
+          <div style="font-size:12px;color:var(--gray);margin-bottom:8px">السعر المقترح لتحقيق هامش مستهدف</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:12px;color:var(--gray2);white-space:nowrap">الهامش المستهدف:</span>
+            <input type="range" id="pc-target-margin" min="10" max="80" value="40" step="5"
+              oninput="updateTargetMargin(this.value)"
+              style="flex:1;accent-color:var(--gold)">
+            <span style="font-size:14px;font-weight:700;color:var(--gold);min-width:40px" id="pc-target-margin-val">40%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--gold-d);border-radius:8px;padding:10px">
+            <span style="font-size:12px;color:var(--gray2)">السعر المقترح</span>
+            <span style="font-size:18px;font-weight:700;color:var(--gold)" id="res-suggested-price">— ﷼</span>
+          </div>
+        </div>
+
+        <!-- تأثير السعر المقترح مقابل الحالي -->
+        <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:8px">📈 تأثير تغيير السعر على الربح الشهري</div>
+          <div id="pc-price-impact-table" style="font-size:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── الصف الثالث: نقطة التعادل + تأثير المبيعات ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+
+      <!-- نقطة التعادل -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">⚖️</div>نقطة التعادل لهذا المنتج</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:rgba(91,143,204,0.08);border:1px solid rgba(91,143,204,0.2);border-radius:10px;padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:8px">وحدات لتغطية التكلفة (نقطة التعادل)</div>
+            <div style="font-size:26px;font-weight:700;color:var(--blue)" id="res-be-units">—</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:4px">وحدة / شهر</div>
+          </div>
+          <div style="background:rgba(76,175,130,0.08);border:1px solid rgba(76,175,130,0.2);border-radius:10px;padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:8px">مقارنة بالمبيعات المتوقعة</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green)" id="res-be-vs-sales">—</div>
+          </div>
+        </div>
+
+        <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--gray);margin-bottom:10px">كم وحدة تحتاج لتحقيق ربح معين؟</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="input num-input" id="pc-target-profit" type="text" inputmode="numeric"
+              placeholder="الربح المستهدف (﷼)" oninput="calcUnitsForProfit()"
+              style="flex:1;font-size:13px">
+            <div style="text-align:center;min-width:90px">
+              <div style="font-size:11px;color:var(--gray)">تحتاج</div>
+              <div style="font-size:15px;font-weight:700;color:var(--green)" id="res-units-for-profit">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- تأثير تغيير المبيعات -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">📉</div>تأثير تغيير المبيعات على الربح</div>
+        <p style="color:var(--gray);font-size:12px;margin-bottom:14px">شوف كيف تتغير أرباحك إذا زادت أو نقصت مبيعات هذا المنتج</p>
+        <div id="pc-sales-impact-table" style="font-size:13px"></div>
+      </div>
+    </div>
+
+    <!-- ── مقارنة المنتجات ── -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title"><div class="card-title-icon">⚖️</div>مقارنة المنتجات المحفوظة</div>
+      <p style="color:var(--gray);font-size:12px;margin-bottom:14px">احفظ أكثر من منتج لمقارنة ربحيتها ومعرفة الأفضل والأقل</p>
+      <div id="pc-comparison">
+        <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">احفظ منتجات لمقارنتها هنا</div>
+      </div>
+    </div>
+
+  </div><!-- /pc-printable -->
+
+  <!-- ── أزرار الإجراءات ── -->
+  <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:4px;margin-bottom:40px;flex-wrap:wrap">
+    <div id="pc-save-status" style="color:var(--gray);font-size:13px;align-self:center"></div>
+    <button onclick="saveProductCost()" class="btn-primary" style="padding:12px 24px;font-size:14px">💾 حفظ المنتج</button>
+    <button onclick="exportProductCostPDF()" style="background:var(--s2);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:12px 24px;font-size:14px;cursor:pointer;font-weight:600">📄 تنزيل PDF</button>
+  </div>
+
+</div><!-- /page-costcalc -->

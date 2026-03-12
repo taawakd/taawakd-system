@@ -83,6 +83,7 @@ function showPage(name) {
   if(name==='forecast' && STATE.currentReport) renderSmartForecast();
   if(name==='healthadvisor' && STATE.currentReport) renderHealthAdvisor();
   if(name==='profile') loadBusinessProfile();
+  if(name==='costcalc' && typeof initProductCostPage==='function') initProductCostPage();
   if(name==='admin' && typeof initAdminDashboard==='function') initAdminDashboard();
   loadReportsFromDB();
   window.scrollTo(0,0);
