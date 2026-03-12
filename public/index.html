@@ -469,6 +469,13 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 <script>
 // ── Auth Guard — يمنع الدخول بدون تسجيل ──
 (async function() {
+  // ── حماية الدومين: لو فُتح index.html على نطاق التسويق، حوّل لـ landing ──
+  const _h = window.location.hostname;
+  if (_h === 'towkd.com' || _h === 'www.towkd.com') {
+    window.location.replace('/landing.html');
+    return;
+  }
+
   // انتظر config.js يحمّل المتغيرات
   await new Promise(r => setTimeout(r, 300));
 
