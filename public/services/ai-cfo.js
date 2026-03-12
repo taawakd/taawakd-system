@@ -188,7 +188,7 @@ function defaultActionPlan(rep) {
   const m = rep.metrics;
   return [
     { week:1, focus:'تخفيض التكاليف الفورية', actions:[
-      {text:'راجع عقود الموردين وطلب تخفيض 5-10%', impact:'وفر تصل '+fmt(m.cogs*0.07)+' ر', priority:'high'},
+      {text:'راجع عقود الموردين وطلب تخفيض 5-10%', impact:'وفر تصل '+fmt(m.cogs*0.07)+' ﷼', priority:'high'},
       {text:'حدّد المصاريف غير الضرورية وأوقفها فوراً', impact:'تخفيض مباشر للتكاليف', priority:'high'},
       {text:'راجع ساعات العمل وتوزيع الموظفين', impact:'تحسين الكفاءة التشغيلية', priority:'med'},
     ]},

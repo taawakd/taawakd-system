@@ -7,10 +7,10 @@ function updateDashboard() {
   if(!rep){ return; }
   const m = rep.metrics;
 
-  document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ر';
+  document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ﷼';
 
   const pk = document.getElementById('dk-profit');
-  pk.textContent = (m.netProfit>=0?'+':'')+fmt(m.netProfit)+' ر';
+  pk.textContent = (m.netProfit>=0?'+':'')+fmt(m.netProfit)+' ﷼';
   pk.className = 'kpi-val '+(m.netProfit>=0?'pos':'neg');
 
   const mk = document.getElementById('dk-margin');

@@ -199,8 +199,8 @@ function updatePricingRow(i, origPrice, cost, qty) {
   const newMargin = newPrice > 0 ? ((newPrice-cost)/newPrice*100).toFixed(0) : 0;
 
   document.getElementById('pslider-val-'+i).textContent = (sliderPct>=0?'+':'')+sliderPct+'%';
-  document.getElementById('pr-new-'+i).textContent      = newPrice.toFixed(0)+' ر';
-  document.getElementById('pr-impact-'+i).textContent   = (delta>=0?'+':'')+fmt(delta)+' ر';
+  document.getElementById('pr-new-'+i).textContent      = newPrice.toFixed(0)+' ﷼';
+  document.getElementById('pr-impact-'+i).textContent   = (delta>=0?'+':'')+fmt(delta)+' ﷼';
   document.getElementById('pr-impact-'+i).style.color   = delta>=0?'var(--green)':'var(--red)';
 
   document.getElementById('pricingSuggestion').innerHTML =

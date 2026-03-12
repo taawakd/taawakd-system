@@ -24,13 +24,13 @@ function liveCalc() {
     if (color) el.style.color = color;
   };
 
-  setEl('lv-total-exp', fmt(exp) + ' ر', 'var(--white)');
-  setEl('lv-profit',    (profit>=0?'+':'-') + fmt(profit) + ' ر', profit>=0 ? 'var(--green)' : 'var(--red)');
+  setEl('lv-total-exp', fmt(exp) + ' ﷼', 'var(--white)');
+  setEl('lv-profit',    (profit>=0?'+':'-') + fmt(profit) + ' ﷼', profit>=0 ? 'var(--green)' : 'var(--red)');
   setEl('lv-margin',    margin + '%', margin>=15 ? 'var(--green)' : margin>=0 ? 'var(--gold)' : 'var(--red)');
-  setEl('lv-be',        fmt(be) + ' ر', 'var(--white)');
+  setEl('lv-be',        fmt(be) + ' ﷼', 'var(--white)');
 
   // backward compat — العناصر القديمة إن وجدت
-  setEl('lv-exp',    fmt(exp) + ' ر');
+  setEl('lv-exp',    fmt(exp) + ' ﷼');
   const liveBar = document.getElementById('liveBar');
   if (liveBar) liveBar.style.display = 'grid';
 }
@@ -573,7 +573,7 @@ function initChart() {
       scales:{
         x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'var(--gray)',font:{size:11}} },
         y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'var(--gray)',font:{size:11},
-          callback: v => v>=1000 ? (v/1000).toFixed(0)+'ك' : v
+          callback: v => v>=1000 ? (v/1000).toFixed(0)+' ألف' : v
         }}
       }
     }

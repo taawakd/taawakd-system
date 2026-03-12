@@ -17,8 +17,8 @@ function renderResults(report) {
   const kpiContainer = document.getElementById('resultKpis');
   kpiContainer.innerHTML = '';
   [
-    {val: fmt(revenue) + ' ر',                               label: 'الإيرادات',   cls: 'neu'},
-    {val: (netProfit >= 0 ? '+' : '') + fmt(netProfit) + ' ر', label: 'صافي الربح', cls: netProfit >= 0 ? 'pos' : 'neg'},
+    {val: fmt(revenue) + ' ﷼',                               label: 'الإيرادات',   cls: 'neu'},
+    {val: (netProfit >= 0 ? '+' : '') + fmt(netProfit) + ' ﷼', label: 'صافي الربح', cls: netProfit >= 0 ? 'pos' : 'neg'},
     {val: netMargin + '%',                                    label: 'هامش الربح',  cls: netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn'},
     {val: scoreData.total + '/100',                           label: 'مؤشر الصحة', cls: scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg'},
   ].forEach(k => {

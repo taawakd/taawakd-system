@@ -19,8 +19,8 @@ window.getN = getN;
 // تنسيق الأرقام الكبيرة (مليون = م، ألف = ك)
 const fmt = n => {
   const a = Math.abs(n);
-  if(a >= 1e6) return (n/1e6).toFixed(1)+'م';
-  if(a >= 1e3) return (n/1e3).toFixed(1)+'ك';
+  if(a >= 1e6) return (n/1e6).toFixed(1)+' مليون';
+  if(a >= 1e3) return (n/1e3).toFixed(1)+' ألف';
   return Math.round(n).toLocaleString('ar-SA');
 };
 window.fmt = fmt;

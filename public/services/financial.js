@@ -314,7 +314,7 @@ function handleExcel(input) {
           } else if (validDates.length===1) {
             window._excelReportPeriod = validDates[0].toLocaleDateString('ar-SA');
           }
-          toast('✅ إجمالي '+data.length+' يوم: '+total.toLocaleString('ar-SA')+' ر.س');
+          toast('✅ إجمالي '+data.length+' يوم: '+total.toLocaleString('ar-SA')+' ﷼');
           return;
         }
       }
@@ -632,10 +632,10 @@ async function exportPDF() {
     <!-- KPIs -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
       ${[
-        { val: f(revenue)+' ر', label: 'الإيرادات', color: '#1a1a1a' },
-        { val: (netProfit>=0?'+':'')+f(netProfit)+' ر', label: 'صافي الربح', color: profitColor },
+        { val: f(revenue)+' ﷼', label: 'الإيرادات', color: '#1a1a1a' },
+        { val: (netProfit>=0?'+':'')+f(netProfit)+' ﷼', label: 'صافي الربح', color: profitColor },
         { val: netMargin+'%', label: 'هامش الربح', color: marginColor },
-        { val: f(totalExpenses)+' ر', label: 'إجمالي المصاريف', color: '#1a1a1a' },
+        { val: f(totalExpenses)+' ﷼', label: 'إجمالي المصاريف', color: '#1a1a1a' },
       ].map(k => `<div style="background:#ffffff;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
         <div style="font-size:15px;font-weight:700;color:${k.color};">${k.val}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:5px;">${k.label}</div>
