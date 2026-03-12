@@ -129,7 +129,12 @@ async function runAnalysis() {
 
   STATE.currentReport = report;
   STATE.savedReports.unshift(report);
-  localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
+  // حفظ في مفتاح المشروع الحالي
+  if (typeof saveProjectReports === 'function') {
+    saveProjectReports(STATE.savedReports);
+  } else {
+    localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0, 20)));
+  }
 
   try {
     const token = window.__AUTH_TOKEN__;
@@ -201,7 +206,8 @@ function openSavedReport(id) {
 function deleteSavedReport(id) {
   if(!confirm('حذف هذا التقرير؟')) return;
   STATE.savedReports = STATE.savedReports.filter(r=>r.id!==id);
-  localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports));
+  if (typeof saveProjectReports === 'function') saveProjectReports(STATE.savedReports);
+  else localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports));
   renderSavedReports();
   toast('تم الحذف');
 }

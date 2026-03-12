@@ -67,6 +67,20 @@ async function loadReportsFromDB() {
   try {
     const user = window.__USER__;
     if (!user) return;
+
+    // ── مشاريع غير الافتراضي تُحمَّل من localStorage ──────────────
+    const projId = window.__CURRENT_PROJECT_ID__ || 'default';
+    if (projId !== 'default') {
+      const key   = typeof projectReportsKey === 'function' ? projectReportsKey(projId) : `tw_reports_${projId}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        STATE.savedReports = JSON.parse(saved);
+        if (!STATE.currentReport && STATE.savedReports.length) STATE.currentReport = STATE.savedReports[0];
+      }
+      if (document.getElementById('savedReportsGrid')) renderSavedReports();
+      return;
+    }
+
     const userId = typeof user === 'string' ? user : user.id;
     const { data, error } = await sb
       .from('reports')
@@ -120,7 +134,12 @@ async function loadReportsFromDB() {
       console.log('[Tawakkad] loadReportsFromDB — auto-set STATE.currentReport:', STATE.currentReport.bizName);
     }
 
-    localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
+    // حفظ في المفتاح الصحيح (افتراضي = tw_reports، مشروع = tw_reports_[id])
+    if (typeof saveProjectReports === 'function') {
+      saveProjectReports(STATE.savedReports);
+    } else {
+      localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
+    }
     console.log('[Tawakkad] loadReportsFromDB — loaded', STATE.savedReports.length,
       'reports | currentReport:', STATE.currentReport?.bizName,
       '| grossMargin from report_json:', STATE.savedReports[0]?.metrics?.grossMargin);

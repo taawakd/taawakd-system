@@ -7,6 +7,14 @@ async function loadBusinessProfile() {
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
+
+    // ── مشاريع غير الافتراضي تُحمَّل من localStorage ──────────────
+    const projId = window.__CURRENT_PROJECT_ID__ || 'default';
+    if (projId !== 'default' && typeof _loadProjectProfile === 'function') {
+      _loadProjectProfile(projId);
+      return;
+    }
+
     const { data, error } = await sb.from('business_profile')
       .select('*').eq('user_id', user.id).single();
     if (error || !data) return;
@@ -42,6 +50,31 @@ async function saveBusinessProfile() {
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { toast('يجب تسجيل الدخول أولاً'); return; }
+
+    // ── مشاريع غير الافتراضي تُحفظ في localStorage ──────────────
+    const projId = window.__CURRENT_PROJECT_ID__ || 'default';
+    if (projId !== 'default') {
+      const g = id => parseNum(document.getElementById(id)?.value || '');
+      const profile = {
+        biz_name:            document.getElementById('bp-name')?.value?.trim() || '',
+        biz_type:            document.getElementById('bp-type')?.value?.trim() || '',
+        fixed_rent:          g('bp-rent'),
+        fixed_salaries:      g('bp-salaries'),
+        fixed_utilities:     g('bp-utilities'),
+        fixed_subscriptions: g('bp-subscriptions'),
+        fixed_other:         g('bp-fixed-other'),
+        var_cogs_pct:        g('bp-cogs'),
+        var_delivery_pct:    g('bp-delivery'),
+        var_marketing_pct:   g('bp-marketing'),
+        var_other_pct:       g('bp-var-other'),
+        products: window.BP_PRODUCTS || [],
+      };
+      if (typeof saveProjectProfile === 'function') saveProjectProfile(projId, profile);
+      window._businessProfile = profile;
+      if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
+      toast('✅ تم حفظ ملف المشروع');
+      return;
+    }
     // parseNum يتعامل مع الأرقام المنسّقة بفواصل ("5,000" → 5000) بخلاف parseFloat ("5,000" → 5)
     const g = id => parseNum(document.getElementById(id)?.value || '');
     const profile = {
