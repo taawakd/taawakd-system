@@ -1,8 +1,7 @@
 {
   "redirects": [
     { "source": "/landing",   "destination": "/landing.html",   "permanent": false },
-    { "source": "/marketing", "destination": "/landing.html",   "permanent": false },
-    { "source": "/auth",      "destination": "/auth.html",      "permanent": false }
+    { "source": "/marketing", "destination": "/landing.html",   "permanent": false }
   ],
   "rewrites": [
 
@@ -16,50 +15,9 @@
       "destination": "/public/admin/index.html"
     },
     {
-      "source": "/admin(.*)",
-      "has": [{ "type": "host", "value": "admin\\.towkd\\.com" }],
-      "destination": "/public/admin/index.html"
-    },
-    {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "admin\\.towkd\\.com" }],
       "destination": "/public/admin/$1"
-    },
-
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "towkd\\.com" }],
-      "destination": "/public/landing.html"
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "www\\.towkd\\.com" }],
-      "destination": "/public/landing.html"
-    },
-    {
-      "source": "/login",
-      "has": [{ "type": "host", "value": "towkd\\.com" }],
-      "destination": "/public/auth.html"
-    },
-    {
-      "source": "/signup",
-      "has": [{ "type": "host", "value": "towkd\\.com" }],
-      "destination": "/public/auth.html"
-    },
-    {
-      "source": "/pricing",
-      "has": [{ "type": "host", "value": "towkd\\.com" }],
-      "destination": "/public/landing.html"
-    },
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "towkd\\.com" }],
-      "destination": "/public/$1"
-    },
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www\\.towkd\\.com" }],
-      "destination": "/public/$1"
     },
 
     {
@@ -78,7 +36,8 @@
       "destination": "/public/$1"
     },
 
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+    { "source": "/",      "destination": "/public/landing.html" },
+    { "source": "/(.*)",  "destination": "/public/$1" }
+
   ]
 }
