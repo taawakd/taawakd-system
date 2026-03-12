@@ -99,13 +99,18 @@ async function runAnalysis() {
     });
     const data = await resp.json();
 
-    // فحص حد الخطة المجانية
+    // فحص حد الخطة
     if (data.limit_reached) {
       if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
       if(document.getElementById('analyzeBtnText')) document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';
       if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'none';
       btn.disabled = false;
-      if (typeof window.showLimitModal === 'function') window.showLimitModal(data.used, data.limit);
+      const plan = window.__USER_PLAN__ || 'free';
+      const featureName = plan === 'free'
+        ? `التحليلات (استخدمت ${data.used} من ${data.limit})`
+        : `حد التحليلات الشهري (${data.used}/${data.limit})`;
+      if (typeof showUpgradeModal === 'function') showUpgradeModal(featureName, plan === 'free' ? 'pro' : 'enterprise');
+      else if (typeof window.showLimitModal === 'function') window.showLimitModal(data.used, data.limit);
       return;
     }
 
@@ -474,6 +479,11 @@ function handleExcel(input) {
 // Fix: deep-clone the results content into a self-contained light-mode wrapper
 // with all colours set via explicit inline styles so html2canvas sees real values.
 async function exportPDF() {
+  // فحص الخطة — PDF للخطط المدفوعة فقط
+  if (!planAllows('pdf_export')) {
+    if (typeof showUpgradeModal === 'function') showUpgradeModal('تصدير تقرير PDF', 'pro');
+    return;
+  }
   const rep = STATE.currentReport;
   if (!rep) { alert('لا يوجد تقرير للتصدير. يرجى إجراء تحليل أولاً.'); return; }
 

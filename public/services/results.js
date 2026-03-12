@@ -72,9 +72,25 @@ function renderResults(report) {
   });
   bdEl.appendChild(bdWrap);
 
-  const bench = BENCHMARKS[resolvedSectorKey];
-  const bMetrics = { netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
-  renderBenchmarkItems(bMetrics, bench, 'benchmarkContainer');
+  const benchEl = document.getElementById('benchmarkContainer');
+  if (benchEl) {
+    if (!planAllows('market_compare')) {
+      benchEl.innerHTML = `
+        <div style="text-align:center;padding:32px 20px;border:1px dashed rgba(201,168,76,0.25);border-radius:14px;background:rgba(201,168,76,0.04);">
+          <div style="font-size:32px;margin-bottom:10px;">📈</div>
+          <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">مقارنة بمعايير السوق</div>
+          <p style="font-size:13px;color:#888;margin:0 0 16px;">متاحة في الخطة الاحترافية فأعلى</p>
+          <button onclick="showUpgradeModal('مقارنة السوق','pro')"
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            ترقية للخطة الاحترافية ←
+          </button>
+        </div>`;
+    } else {
+      const bench = BENCHMARKS[resolvedSectorKey];
+      const bMetrics = { netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
+      renderBenchmarkItems(bMetrics, bench, 'benchmarkContainer');
+    }
+  }
   renderAlerts(alerts, 'resultAlerts');
 
   const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0)+(metrics.utilities||0);

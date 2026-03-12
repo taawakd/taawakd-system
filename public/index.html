@@ -545,6 +545,27 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       if (navAdmin) navAdmin.style.display = '';
       if (navAdminSec) navAdminSec.style.display = '';
     }
+    // تحديث اسم الخطة في القائمة الجانبية
+    const _plan = window.__USER_PLAN__;
+    const _planLabels = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
+    setTimeout(() => {
+      const planEl = document.querySelector('.sb-user-plan');
+      if (planEl) planEl.textContent = _planLabels[_plan] || 'الخطة المجانية';
+    }, 600);
+    const _locked = _plan === 'free';
+    const _lockIds = {
+      'sb-lock-reports':  _locked,
+      'sb-lock-benchmark': _locked,
+      'sb-lock-compare':  _locked,
+      'sb-lock-forecast': _locked,
+    };
+    // تأخير بسيط لضمان تحميل sidebar.html
+    setTimeout(() => {
+      Object.entries(_lockIds).forEach(([id, show]) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'inline' : 'none';
+      });
+    }, 800);
   } catch(e) { window.__USER_PLAN__ = 'free'; }
 })();
 </script>

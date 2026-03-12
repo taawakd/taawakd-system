@@ -31,17 +31,33 @@ function updateDashboard() {
   const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.other||0)+(m.utilities||0);
   renderBreakeven(m.revenue, m.cogs||0, fixedCosts, 'breakevenContainer', m.netProfit);
 
-  const forecast3m = m.netProfit * 3;
-  const optimistic = (m.netProfit + m.revenue*0.1) * 3;
-  document.getElementById('forecastContainer').innerHTML = `
-    <div class="kpi-row kpi-row-2">
-      <div class="kpi"><div class="kpi-val ${forecast3m>=0?'pos':'neg'}">${fmt(forecast3m)} ${SAR}</div><div class="kpi-label">متوقع خلال 3 أشهر (الوضع الحالي)</div></div>
-      <div class="kpi gold"><div class="kpi-val pos">${fmt(optimistic)} ${SAR}</div><div class="kpi-label">متوقع مع تطبيق التوصيات</div></div>
-    </div>
-    <div class="alert alert-info" style="margin-top:12px;">
-      <span class="alert-icon">🔮</span>
-      <span>لو طبّقت توصيات التحليل، ربحك المتوقع أعلى بـ ${fmt(optimistic-forecast3m)} ${SAR} خلال 3 أشهر</span>
-    </div>`;
+  const fc = document.getElementById('forecastContainer');
+  if (fc) {
+    if (!planAllows('forecast')) {
+      fc.innerHTML = `
+        <div style="text-align:center;padding:32px 20px;border:1px dashed rgba(201,168,76,0.25);border-radius:14px;background:rgba(201,168,76,0.04);">
+          <div style="font-size:32px;margin-bottom:10px;">🔮</div>
+          <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">التوقعات الذكية</div>
+          <p style="font-size:13px;color:#888;margin:0 0 16px;">متاحة في الخطة الاحترافية فأعلى</p>
+          <button onclick="showUpgradeModal('التوقعات الذكية','pro')"
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            ترقية للخطة الاحترافية ←
+          </button>
+        </div>`;
+    } else {
+      const forecast3m = m.netProfit * 3;
+      const optimistic = (m.netProfit + m.revenue*0.1) * 3;
+      fc.innerHTML = `
+        <div class="kpi-row kpi-row-2">
+          <div class="kpi"><div class="kpi-val ${forecast3m>=0?'pos':'neg'}">${fmt(forecast3m)} ${SAR}</div><div class="kpi-label">متوقع خلال 3 أشهر (الوضع الحالي)</div></div>
+          <div class="kpi gold"><div class="kpi-val pos">${fmt(optimistic)} ${SAR}</div><div class="kpi-label">متوقع مع تطبيق التوصيات</div></div>
+        </div>
+        <div class="alert alert-info" style="margin-top:12px;">
+          <span class="alert-icon">🔮</span>
+          <span>لو طبّقت توصيات التحليل، ربحك المتوقع أعلى بـ ${fmt(optimistic-forecast3m)} ${SAR} خلال 3 أشهر</span>
+        </div>`;
+    }
+  }
 }
 
 // ══════════════════════════════════════════
@@ -118,6 +134,23 @@ async function loadReportsFromDB() {
 
 function renderSavedReports() {
   const grid = document.getElementById('savedReportsGrid');
+  if (!grid) return;
+
+  // فحص الخطة — سجل التقارير للخطط المدفوعة فقط
+  if (!planAllows('save_reports')) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:48px 24px;border:1px dashed rgba(201,168,76,0.25);border-radius:16px;background:rgba(201,168,76,0.04);">
+        <div style="font-size:40px;margin-bottom:12px;">📁</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">سجل التقارير المحفوظة</div>
+        <p style="font-size:13px;color:#888;margin:0 0 20px;">احفظ جميع تحليلاتك وارجع إليها في أي وقت — متاح في الخطة الاحترافية</p>
+        <button onclick="showUpgradeModal('حفظ التقارير','pro')"
+          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          ترقية للخطة الاحترافية ←
+        </button>
+      </div>`;
+    return;
+  }
+
   if(!STATE.savedReports.length){
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;background:var(--s1);border:1px dashed var(--border);border-radius:16px;">
       <div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📭</div>

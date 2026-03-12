@@ -5,13 +5,27 @@ async function sendCFO(quickMsg) {
   const msg = quickMsg || input.value.trim();
   if (!msg) return;
 
-  // ── فحص الخطة: AI CFO للخطط المدفوعة فقط ──────────────────────────────
-  if ((window.__USER_PLAN__ || 'free') === 'free') {
-    input.value = '';
-    appendCFOMessage('ai',
-      '🔒 **AI CFO متاح للخطط المدفوعة فقط.**\n\n' +
-      'قم بترقية حسابك إلى الخطة الاحترافية للوصول إلى المستشار المالي الذكي والحصول على توصيات مخصصة لمشروعك.');
-    return;
+  // ── فحص الخطة: AI CFO محدود للمجانيين (3 أسئلة) ─────────────────────────
+  const userPlan = window.__USER_PLAN__ || 'free';
+  const CFO_FREE_LIMIT = 3;
+  if (userPlan === 'free') {
+    const cfoCount = parseInt(localStorage.getItem('tw_cfo_free_count') || '0', 10);
+    if (cfoCount >= CFO_FREE_LIMIT) {
+      input.value = '';
+      appendCFOMessage('ai',
+        `🔒 **وصلت لحد ${CFO_FREE_LIMIT} أسئلة في الخطة المجانية.**\n\n` +
+        'قم بالترقية إلى الخطة الاحترافية للحصول على وصول كامل بدون قيود.');
+      if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO كامل', 'pro');
+      return;
+    }
+    // تسجيل السؤال
+    localStorage.setItem('tw_cfo_free_count', String(cfoCount + 1));
+    // تحذير عند آخر سؤال مجاني
+    if (cfoCount + 1 >= CFO_FREE_LIMIT) {
+      setTimeout(() => appendCFOMessage('ai',
+        `⚠️ هذا آخر سؤال مجاني — استخدمت ${CFO_FREE_LIMIT}/${CFO_FREE_LIMIT} أسئلة. قم بالترقية للاستمرار.`
+      ), 500);
+    }
   }
 
   input.value = '';

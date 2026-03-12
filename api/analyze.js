@@ -33,17 +33,59 @@ export default async function handler(req, res) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'جلسة منتهية، سجّل دخولك مجدداً' });
 
-  // فحص حد الاستخدام
+  // فحص حد الاستخدام بناءً على الخطة
   const { data: profile } = await supabase
-    .from('profiles').select('analyses_used, analyses_limit, plan').eq('id', user.id).single();
+    .from('profiles').select('analyses_used, analyses_limit, plan, analyses_reset_at').eq('id', user.id).single();
 
-  if (profile?.plan === 'free' && profile?.analyses_used >= profile?.analyses_limit) {
+  const plan = profile?.plan || 'free';
+  const isCFOReq = req.body?._type === 'cfo';
+
+  // حدود التحليلات لكل خطة
+  const PLAN_LIMITS = { free: 3, pro: 12, enterprise: Infinity };
+  const planLimit   = PLAN_LIMITS[plan] ?? 3;
+
+  // إعادة تعيين عداد الخطة الاحترافية شهرياً
+  if (plan === 'pro' && !isCFOReq) {
+    const resetAt = profile?.analyses_reset_at ? new Date(profile.analyses_reset_at) : null;
+    const now     = new Date();
+    if (!resetAt || (now - resetAt) >= 30 * 24 * 60 * 60 * 1000) {
+      await supabase.from('profiles')
+        .update({ analyses_used: 0, analyses_reset_at: now.toISOString() })
+        .eq('id', user.id);
+      profile.analyses_used = 0;
+    }
+  }
+
+  // فحص الحد (ما عدا enterprise وطلبات CFO)
+  if (plan !== 'enterprise' && !isCFOReq && (profile?.analyses_used || 0) >= planLimit) {
+    const msg = plan === 'free'
+      ? `وصلت لحد ${planLimit} تحليلات في الخطة المجانية — قم بالترقية للاستمرار`
+      : `وصلت لحد ${planLimit} تحليل شهري في خطتك — يُعاد التعيين كل 30 يوماً`;
     return res.status(403).json({
-      error: 'وصلت لحد 2 تحليلات، يرجى الترقية للاستمرار',
+      error: msg,
       limit_reached: true,
-      used: profile.analyses_used,
-      limit: profile.analyses_limit
+      used: profile?.analyses_used || 0,
+      limit: planLimit,
+      plan,
     });
+  }
+
+  // فحص حد أسئلة CFO للخطة المجانية (يُتحقق منه في الـ frontend أيضاً)
+  if (isCFOReq && plan === 'free') {
+    const cfoUsed = profile?.cfo_questions_used || 0;
+    if (cfoUsed >= 3) {
+      return res.status(403).json({
+        error: 'وصلت لحد 3 أسئلة لـ AI CFO في الخطة المجانية — قم بالترقية للحصول على وصول كامل',
+        limit_reached: true,
+        cfo_limit: true,
+        used: cfoUsed,
+        limit: 3,
+      });
+    }
+    // زيادة عداد CFO
+    await supabase.from('profiles')
+      .update({ cfo_questions_used: cfoUsed + 1 })
+      .eq('id', user.id);
   }
 
   try {
@@ -81,7 +123,7 @@ export default async function handler(req, res) {
           content: [{ type: 'text', text: cached.result_text }],
           from_cache: true,
           analyses_used: (profile?.analyses_used || 0) + 1,
-          analyses_limit: profile?.analyses_limit || 2
+          analyses_limit: planLimit
         });
       }
     }
@@ -155,7 +197,7 @@ export default async function handler(req, res) {
       content: [{ type: 'text', text: resultText }],
       from_cache: false,
       analyses_used: (profile?.analyses_used || 0) + 1,
-      analyses_limit: profile?.analyses_limit || 2
+      analyses_limit: planLimit
     });
 
   } catch (e) {

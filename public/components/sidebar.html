@@ -23,11 +23,13 @@
     </div>
     <div class="nav-item" onclick="showPage('reports')">
       <span class="nav-icon">📁</span> التقارير المحفوظة
+      <span id="sb-lock-reports" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
 
     <div class="sb-section" style="margin-top:16px;">الأدوات</div>
     <div class="nav-item" onclick="showPage('benchmark')">
       <span class="nav-icon">📈</span> مقارنة السوق
+      <span id="sb-lock-benchmark" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
     <div class="nav-item" onclick="showPage('scenarios')">
       <span class="nav-icon">🎯</span> سيناريوهات
@@ -40,6 +42,7 @@
     </div>
       <div class="nav-item" onclick="showPage('compare')">
       <span class="nav-icon">⚖️</span> مقارنة الفترات
+      <span id="sb-lock-compare" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
 
     <div class="sb-section" style="margin-top:16px;">ذكاء اصطناعي</div>
@@ -51,7 +54,9 @@
     <div class="nav-item" onclick="showPage('cashflow')"><span class="nav-icon">💧</span> التدفق النقدي</div>
     <div class="nav-item" onclick="showPage('integrations')"><span class="nav-icon">🔌</span> الربط والاستيراد</div>
     <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon">💲</span> تحليل التسعير</div>
-    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">🔮</span> التوقعات الذكية</div>
+    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">🔮</span> التوقعات الذكية
+      <span id="sb-lock-forecast" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
+    </div>
     <div class="nav-item" onclick="showPage('healthadvisor')"><span class="nav-icon">❤️</span> مستشار الصحة</div>
 
     <!-- Admin — مخفي افتراضياً, يظهر فقط لحسابات is_admin -->
