@@ -820,23 +820,41 @@ function getCFOContext() {
 
     // ── structured multi-report context for the AI system prompt ──
     cfoContext: {
-      latest: {
-        bizName:       rep.bizName,
-        bizType:       rep.bizType,
-        revenue:       m.revenue,
-        profit:        m.netProfit,
-        margin:        m.netMargin,
-        grossMargin:   m.grossMargin,
-        totalExpenses: m.totalExpenses,
-        rentPct:       m.rentPct,
-        salPct:        m.salPct,
-        cogsPct:       m.cogsPct,
-        mktPct:        m.mktPct,
-        score:         rep.scoreData?.total,
-        period:        rep.reportPeriod || rep.period,
-        alerts:        rep.alerts?.map(a => a.msg) || [],
-        products:      rep.products || []
-      },
+      latest: (() => {
+        // حساب نقطة التعادل مرة واحدة وإرسالها جاهزة للـ AI
+        const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.utilities||0)+(m.other||0);
+        const contribRatio = m.revenue > 0 ? (m.revenue - (m.cogs||0)) / m.revenue : 1;
+        const breakEven = contribRatio > 0 ? Math.round(fixedCosts / contribRatio) : 0;
+        return {
+          bizName:       rep.bizName,
+          bizType:       rep.bizType,
+          revenue:       m.revenue,
+          profit:        m.netProfit,
+          margin:        m.netMargin,
+          grossMargin:   m.grossMargin,
+          totalExpenses: m.totalExpenses,
+          // أرقام ريال فعلية لكل بند (ليس فقط النسب)
+          rent:          m.rent,
+          salaries:      m.salaries,
+          cogs:          m.cogs,
+          marketing:     m.marketing,
+          utilities:     m.utilities,
+          other:         m.other,
+          // نسب مئوية
+          rentPct:       m.rentPct,
+          salPct:        m.salPct,
+          cogsPct:       m.cogsPct,
+          mktPct:        m.mktPct,
+          // نقطة التعادل محسوبة مسبقاً
+          fixedCosts:    fixedCosts,
+          contribRatio:  parseFloat((contribRatio * 100).toFixed(1)),
+          breakEven:     breakEven,
+          score:         rep.scoreData?.total,
+          period:        rep.reportPeriod || rep.period,
+          alerts:        rep.alerts?.map(a => a.msg) || [],
+          products:      rep.products || []
+        };
+      })(),
       previous: previousReports,
       trend
     }
@@ -901,7 +919,21 @@ function buildCFOSystemPrompt(ctx) {
 - صافي الربح: ${fmtN(latest.profit)} ريال (${latest.margin ?? '—'}%)
 - هامش إجمالي: ${latest.grossMargin ?? '—'}%
 - المصاريف الكلية: ${fmtN(latest.totalExpenses)} ريال
-- الإيجار: ${latest.rentPct ?? '—'}% | الرواتب: ${latest.salPct ?? '—'}% | تكلفة البضاعة: ${latest.cogsPct ?? '—'}% | التسويق: ${latest.mktPct ?? '—'}%
+
+══ تفاصيل المصاريف (أرقام فعلية) ══
+- تكلفة البضاعة: ${fmtN(latest.cogs)} ريال (${latest.cogsPct ?? '—'}%)
+- الإيجار: ${fmtN(latest.rent)} ريال (${latest.rentPct ?? '—'}%)
+- الرواتب: ${fmtN(latest.salaries)} ريال (${latest.salPct ?? '—'}%)
+- التسويق: ${fmtN(latest.marketing)} ريال (${latest.mktPct ?? '—'}%)
+- الكهرباء والمياه: ${fmtN(latest.utilities)} ريال
+- مصاريف أخرى: ${fmtN(latest.other)} ريال
+
+══ نقطة التعادل (محسوبة) ══
+- التكاليف الثابتة = إيجار + رواتب + تسويق + كهرباء + أخرى = ${fmtN(latest.fixedCosts)} ريال
+- نسبة هامش المساهمة = (إيرادات − تكلفة البضاعة) ÷ إيرادات = ${latest.contribRatio ?? '—'}%
+- نقطة التعادل = ${fmtN(latest.breakEven)} ريال
+[تعليمات صارمة: عند سؤالك عن نقطة التعادل، استخدم هذه الأرقام فقط. لا تعيد الحساب ولا تستخدم أرقاماً مختلفة.]
+
 - مؤشر الصحة: ${latest.score ?? '—'}/100
 - المنتجات: ${prodsText}
 - التنبيهات: ${latest.alerts?.join(' | ') || 'لا توجد'}
