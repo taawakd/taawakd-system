@@ -185,15 +185,24 @@ function renderScore(ringId, valId, labelId, bkId, score) {
 // ══════════════════════════════════════════
 function getSectorKey(bizType) {
   const map = {
+    // مطاعم ومقاهي
     'مطعم': 'restaurant', 'restaurant': 'restaurant',
-    'مقهى': 'cafe', 'كافيه': 'cafe', 'cafe': 'cafe', 'مقهى / كافيه': 'cafe',
-    'كيوسك عصائر': 'juice_kiosk', 'juice_kiosk': 'juice_kiosk', 'عصائر': 'juice_kiosk',
-    'مخبز': 'bakery', 'حلويات': 'bakery', 'bakery': 'bakery', 'مخبز / حلويات': 'bakery',
+    'مقهى': 'cafe', 'كافيه': 'cafe', 'cafe': 'cafe', 'مقهى / كافيه': 'cafe', 'قهوة': 'cafe',
+    'كيوسك عصائر': 'juice_kiosk', 'juice_kiosk': 'juice_kiosk', 'عصائر': 'juice_kiosk', 'عصير': 'juice_kiosk',
+    'مخبز': 'bakery', 'حلويات': 'bakery', 'bakery': 'bakery', 'مخبز / حلويات': 'bakery', 'كيك': 'bakery', 'معجنات': 'bakery',
     'فود ترك': 'food_truck', 'food_truck': 'food_truck',
-    'متجر تجزئة': 'retail', 'retail': 'retail',
-    'خدمات': 'services', 'services': 'services',
-    'حلاقة': 'barber', 'تجميل': 'barber', 'barber': 'barber', 'حلاقة وتجميل': 'barber',
-    'تجارة إلكترونية': 'ecom', 'ecom': 'ecom',
+    // تجارة
+    'متجر تجزئة': 'retail', 'retail': 'retail', 'متجر': 'retail',
+    'بقالة': 'grocery', 'grocery': 'grocery', 'سوبرماركت': 'grocery', 'ميني ماركت': 'grocery',
+    'خضار': 'vegetables', 'خضروات': 'vegetables', 'vegetables': 'vegetables', 'محل خضار': 'vegetables', 'فواكه': 'vegetables',
+    'عطور': 'perfumes', 'perfumes': 'perfumes', 'عطر': 'perfumes', 'بخور': 'perfumes',
+    'تجارة إلكترونية': 'ecom', 'ecom': 'ecom', 'متجر إلكتروني': 'ecom', 'أونلاين': 'ecom',
+    // خدمات
+    'حلاقة': 'barber', 'تجميل': 'barber', 'barber': 'barber', 'حلاقة وتجميل': 'barber', 'صالون': 'barber', 'سبا': 'barber',
+    'مغسلة': 'laundry', 'laundry': 'laundry', 'غسيل': 'laundry', 'كوي': 'laundry',
+    'عيادة': 'clinic', 'clinic': 'clinic', 'كلينيك': 'clinic', 'طبيب': 'clinic', 'أسنان': 'clinic',
+    'صيدلية': 'pharmacy', 'pharmacy': 'pharmacy', 'دواء': 'pharmacy',
+    'خدمات': 'services', 'services': 'services', 'خدمات عامة': 'services',
   };
   return map[bizType] || map[Object.keys(map).find(k => bizType?.includes(k))] || 'restaurant';
 }
@@ -272,24 +281,54 @@ function renderBenchmarkPage() {
 // ALERTS
 // ══════════════════════════════════════════
 function generateAlerts(data, sectorKey) {
-  const bench = BENCHMARKS[sectorKey] || BENCHMARKS.restaurant;
+  const bench = (window.BENCHMARKS || BENCHMARKS)[sectorKey] || (window.BENCHMARKS || BENCHMARKS).restaurant;
   const alerts = [];
-  const {revenue, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, netProfit} = data;
+  const { netMargin, rentPct, salPct, cogsPct, mktPct, netProfit } = data;
+  const rnt  = parseFloat(rentPct).toFixed(1);
+  const sal  = parseFloat(salPct).toFixed(1);
+  const cogs = parseFloat(cogsPct).toFixed(1);
+  const mkt  = parseFloat(mktPct).toFixed(1);
+  const nm   = parseFloat(netMargin).toFixed(1);
 
-  if(netProfit < 0) alerts.push({type:'danger', icon:'🔴', msg:`المشروع يعمل بخسارة ${fmt(Math.abs(netProfit))} ${SAR} — يجب اتخاذ إجراء فوري`});
-  if(netMargin < 5 && netProfit >= 0) alerts.push({type:'warn', icon:'⚠️', msg:`هامش الربح ${netMargin}% منخفض جداً — أقل من الحد الآمن`});
+  // ── تنبيهات الخسارة والربح ────────────────────────────────────────
+  if (netProfit < 0)
+    alerts.push({ type:'danger', icon:'🔴', msg:`المشروع يعمل بخسارة ${fmt(Math.abs(netProfit))} ريال — يجب اتخاذ إجراء فوري لمعالجة هذا الوضع` });
 
-  if(bench.rentPct && rentPct > bench.rentPct.max*1.2)
-    alerts.push({type:'warn', icon:'🏠', msg:`الإيجار ${parseFloat(rentPct).toFixed(1)}% من الإيرادات — المعدل الطبيعي ${bench.rentPct.min}–${bench.rentPct.max}%`});
+  // ── التنبيهات الذكية الأساسية ─────────────────────────────────────
+  // 1. هامش الربح < 5%
+  if (netProfit >= 0 && netMargin < 5)
+    alerts.push({ type:'danger', icon:'⛔', msg:`غير مجدٍ — هامش الربح ${nm}% يعني أنك تعمل لصالح الآخرين. راجع تكاليفك الثابتة فوراً` });
 
-  if(bench.salPct && salPct > bench.salPct.max*1.1)
-    alerts.push({type:'warn', icon:'👥', msg:`الرواتب ${parseFloat(salPct).toFixed(1)}% من الإيرادات — أعلى من الطبيعي (${bench.salPct.min}–${bench.salPct.max}%)`});
+  // 2. الإيجار > 20%
+  if (rentPct > 20)
+    alerts.push({ type:'danger', icon:'🏚️', msg:`انتحار مالي — الإيجار ${rnt}% من الإيرادات، لا يوجد مشروع يتحمل هذا العبء على المدى البعيد` });
 
-  if(bench.cogsPct && cogsPct > bench.cogsPct.max*1.1)
-    alerts.push({type:'warn', icon:'📦', msg:`تكلفة البضاعة ${parseFloat(cogsPct).toFixed(1)}% — أعلى من المعدل (${bench.cogsPct.min}–${bench.cogsPct.max}%)`});
+  // 3. الرواتب > 50%
+  if (salPct > 50)
+    alerts.push({ type:'danger', icon:'⚙️', msg:`خلل تشغيلي — الرواتب ${sal}% تستهلك كل القيمة المضافة. ابحث عن حلول أتمتة أو إعادة هيكلة` });
 
-  if(netMargin >= 20)
-    alerts.push({type:'good', icon:'🌟', msg:`هامش الربح ${netMargin}% ممتاز — أعلى من المتوسط في القطاع`});
+  // 4. التسويق > 20% (ما عدا العطور التي معدلها 20-40%)
+  if (mktPct > 20 && sectorKey !== 'perfumes')
+    alerts.push({ type:'warn', icon:'🔥', msg:`حرق مال — الإنفاق التسويقي ${mkt}% مرتفع جداً نسبةً للإيرادات. راجع كفاءة قنوات التسويق` });
+
+  // ── تنبيهات المعايير القطاعية ─────────────────────────────────────
+  if (bench.rentPct && rentPct > bench.rentPct.max * 1.2 && rentPct <= 20)
+    alerts.push({ type:'warn', icon:'🏠', msg:`الإيجار ${rnt}% أعلى من المعدل الطبيعي لنشاطك (${bench.rentPct.min}–${bench.rentPct.max}%)` });
+
+  if (bench.salPct && salPct > bench.salPct.max * 1.1 && salPct <= 50)
+    alerts.push({ type:'warn', icon:'👥', msg:`الرواتب ${sal}% أعلى من المعدل الطبيعي لنشاطك (${bench.salPct.min}–${bench.salPct.max}%)` });
+
+  if (bench.cogsPct && cogsPct > bench.cogsPct.max * 1.1)
+    alerts.push({ type:'warn', icon:'📦', msg:`${bench.cogsPct.label} ${cogs}% أعلى من المعدل الطبيعي لنشاطك (${bench.cogsPct.min}–${bench.cogsPct.max}%)` });
+
+  if (bench.mktPct && mktPct > bench.mktPct.max * 1.3 && sectorKey !== 'perfumes')
+    alerts.push({ type:'warn', icon:'📢', msg:`التسويق ${mkt}% أعلى من المعدل الطبيعي لنشاطك (${bench.mktPct.min}–${bench.mktPct.max}%)` });
+
+  // ── تنبيه إيجابي ──────────────────────────────────────────────────
+  if (netMargin >= bench.netMargin?.max)
+    alerts.push({ type:'good', icon:'🌟', msg:`هامش الربح ${nm}% ممتاز ويتجاوز المعدل العلوي لنشاطك (${bench.netMargin.max}%) — استمر في هذا المسار` });
+  else if (netMargin >= 20 && netProfit >= 0)
+    alerts.push({ type:'good', icon:'✅', msg:`هامش الربح ${nm}% جيد جداً — المشروع في وضع صحي` });
 
   return alerts;
 }
