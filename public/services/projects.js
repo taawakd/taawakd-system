@@ -79,7 +79,10 @@ function createProject(name, type, color) {
   const maxProj  = MAX_PROJECTS_PER_PLAN[plan] || 1;
 
   if (projects.length >= maxProj) {
-    toast(`❌ خطتك المؤسسية تسمح بـ ${maxProj} مشاريع فقط`);
+    const _planLabels = { free: 'المجانية', pro: 'الاحترافية', enterprise: 'المؤسسية' };
+    const _planLabel  = _planLabels[plan] || plan;
+    const _projWord   = maxProj === 1 ? 'مشروع واحد فقط' : `${maxProj} مشاريع فقط`;
+    toast(`❌ خطتك ${_planLabel} تسمح بـ ${_projWord}`);
     return null;
   }
 

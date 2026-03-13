@@ -25,7 +25,7 @@ function liveCalc() {
   };
 
   setEl('lv-total-exp', fmt(exp) + ' ﷼', 'var(--white)');
-  setEl('lv-profit',    (profit>=0?'+':'-') + fmt(profit) + ' ﷼', profit>=0 ? 'var(--green)' : 'var(--red)');
+  setEl('lv-profit',    (profit>0?'+':profit<0?'-':'') + fmt(Math.abs(profit)) + ' ﷼', profit>0 ? 'var(--green)' : profit<0 ? 'var(--red)' : 'var(--gray2)');
   setEl('lv-margin',    margin + '%', margin>=15 ? 'var(--green)' : margin>=0 ? 'var(--gold)' : 'var(--red)');
   setEl('lv-be',        fmt(be) + ' ﷼', 'var(--white)');
 
@@ -171,13 +171,18 @@ function renderScore(ringId, valId, labelId, bkId, score) {
   const circumference = 377;
   const offset = circumference - (score/100)*circumference;
 
+  // ── null-safe DOM access — prevents crash when score card isn't rendered ──
   const ring = document.getElementById(ringId);
-  ring.style.stroke = color;
-  setTimeout(()=>ring.style.strokeDashoffset = offset, 100);
+  if (ring) {
+    ring.style.stroke = color;
+    setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+  }
 
-  document.getElementById(valId).textContent = score;
-  document.getElementById(valId).style.color = color;
-  document.getElementById(labelId).textContent = scoreText(score);
+  const valEl = document.getElementById(valId);
+  if (valEl) { valEl.textContent = score; valEl.style.color = color; }
+
+  const labelEl = document.getElementById(labelId);
+  if (labelEl) labelEl.textContent = scoreText(score);
 }
 
 // ══════════════════════════════════════════
@@ -253,10 +258,10 @@ function renderBenchmarkPage() {
   let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
   keys.forEach(k => {
     if(!bench[k]) return;
-    const {min,max,label} = bench[k];
+    const {min,max,label,lowerIsBetter} = bench[k];
     const val = metrics[k];
     const hasData = val !== undefined;
-    const status = hasData ? benchStatus(val, min, max) : 'none';
+    const status = hasData ? benchStatus(val, min, max, lowerIsBetter) : 'none';
     const badgeClass = status==='good'?'badge-good':status==='warn'?'badge-warn':status==='bad'?'badge-bad':'';
 
     html += `<div class="bench-item ${hasData?status:''}">
@@ -479,7 +484,7 @@ function renderScenariosPage() {
           <div class="sc-desc">${s.desc}</div>
           <div class="sc-result ${s.newProfit>=0?'pos':'neg'}">${fmt(s.newProfit)} ${SAR}</div>
           <div class="sc-delta" style="color:${s.delta>=0?'var(--green)':'var(--red)'};">
-            +${fmt(s.delta)} ${SAR} • هامش ${newMargin}%
+            ${s.delta>=0?'+':''}${fmt(s.delta)} ${SAR} • هامش ${newMargin}%
           </div>
         </div>`;
       }).join('')}</div>
@@ -540,10 +545,36 @@ function renderComparePage() {
 // ══════════════════════════════════════════
 // CHART
 // ══════════════════════════════════════════
+// ── helper: بناء بيانات الرسم من التقارير المحفوظة ─────────────
+// يُرجع { labels, rev, prf, isReal } — isReal=false → بيانات تجريبية
+function _buildChartFromReports(maxPoints) {
+  const reports = (STATE.savedReports || [])
+    .filter(r => r.metrics?.revenue > 0)
+    .sort((a, b) => new Date(a.createdAt || a.date || 0) - new Date(b.createdAt || b.date || 0));
+  if (reports.length < 2) return null;
+  const slice = maxPoints ? reports.slice(-maxPoints) : reports;
+  return {
+    labels: slice.map(r => r.reportPeriod || r.bizName || '—'),
+    rev:    slice.map(r => r.metrics.revenue    || 0),
+    prf:    slice.map(r => r.metrics.netProfit  || 0),
+    isReal: true,
+  };
+}
+
 function initChart() {
   const ctx = document.getElementById('perfChart')?.getContext('2d');
   if(!ctx) return;
-  const labels6m = ['أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس'];
+
+  // حاول استخدام بيانات حقيقية أولاً
+  const real = _buildChartFromReports(6);
+  const labels6m = real ? real.labels : ['أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس'];
+  const revData  = real ? real.rev    : [65,72,68,80,75,85].map(v=>v*1000);
+  const prfData  = real ? real.prf    : [12,15,11,18,14,17].map(v=>v*1000);
+
+  // أبلغ المستخدم إذا كانت البيانات تجريبية
+  const labelEl = document.getElementById('chartRangeLabel');
+  if (labelEl) labelEl.textContent = real ? '' : '⚠️ بيانات تجريبية — أجرِ تحليلاً لرؤية بياناتك الحقيقية';
+
   STATE.chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -551,7 +582,7 @@ function initChart() {
       datasets: [
         {
           label:'الإيرادات',
-          data:[65,72,68,80,75,85].map(v=>v*1000),
+          data: revData,
           borderColor:'var(--gold)',
           backgroundColor:'rgba(200,164,90,0.08)',
           borderWidth:2, fill:true, tension:0.4, pointRadius:4,
@@ -559,7 +590,7 @@ function initChart() {
         },
         {
           label:'الأرباح',
-          data:[12,15,11,18,14,17].map(v=>v*1000),
+          data: prfData,
           borderColor:'var(--green)',
           backgroundColor:'rgba(76,175,130,0.06)',
           borderWidth:2, fill:true, tension:0.4, pointRadius:4,
@@ -714,14 +745,31 @@ function switchChart(mode) {
   // Hide custom range if switching to preset
   if(mode !== 'custom') document.getElementById('chartCustomRange').style.display = 'none';
 
-  const data = {
+  // بيانات تجريبية للاحتياط
+  const demoData = {
     day:   { labels:['12ص','3ص','6ص','9ص','12ظ','3م','6م','9م'], rev:[2,1.5,1,3,8,12,9,6].map(v=>v*1000), prf:[0.3,0.2,0.1,0.5,1.4,2.2,1.6,1].map(v=>v*1000) },
     week:  { labels:['السبت','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'], rev:[8,12,9,14,11,16,13].map(v=>v*1000), prf:[1.5,2.2,1.8,3,2,3.5,2.5].map(v=>v*1000) },
     month: { labels:['الأسبوع 1','الأسبوع 2','الأسبوع 3','الأسبوع 4'], rev:[18,22,20,25].map(v=>v*1000), prf:[3.5,4.2,3.8,5].map(v=>v*1000) },
     '6m':  { labels:['أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس'], rev:[65,72,68,80,75,85].map(v=>v*1000), prf:[12,15,11,18,14,17].map(v=>v*1000) },
     year:  { labels:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], rev:[60,65,70,68,75,80,78,85,82,88,90,95].map(v=>v*1000), prf:[10,12,14,11,15,17,16,18,17,19,20,22].map(v=>v*1000) },
   };
-  const d = data[mode];
+
+  // للوضعيات التاريخية: حاول استخدام التقارير المحفوظة أولاً
+  let d = null;
+  const labelEl = document.getElementById('chartRangeLabel');
+  if (mode === '6m' || mode === 'year') {
+    const maxPoints = mode === '6m' ? 6 : 12;
+    const real = _buildChartFromReports(maxPoints);
+    if (real) {
+      d = { labels: real.labels, rev: real.rev, prf: real.prf };
+      if (labelEl) labelEl.textContent = '';
+    }
+  }
+  if (!d) {
+    d = demoData[mode];
+    if (labelEl && mode !== 'custom')
+      labelEl.textContent = '⚠️ بيانات تجريبية — أجرِ تحليلاً لرؤية بياناتك الحقيقية';
+  }
   if(!d) return;
   STATE.chartInstance.data.labels = d.labels;
   STATE.chartInstance.data.datasets[0].data = d.rev;

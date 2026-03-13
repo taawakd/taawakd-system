@@ -1,6 +1,9 @@
 // public/services/userprofile.js — User Profile Page Service
 'use strict';
 
+// ── رقم واتساب للتواصل (عدّله برقم الشركة الفعلي) ──────────────
+const WHATSAPP_NUMBER = '966XXXXXXXXX'; // ← غيّر هذا الرقم
+
 const PLAN_LABELS = {
   free:       'الخطة المجانية',
   pro:        'الخطة الاحترافية',
@@ -162,6 +165,15 @@ window.saveUserProfile = async function () {
 const _PLAN_LABELS_MAP = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
 
 window.initPlansPage = async function () {
+  // جلب الخطة من Supabase إذا لم تكن محفوظة — مرة واحدة فقط بدون استدعاء ذاتي
+  if (!window.__USER_PLAN__ && window.sb && window.__USER__) {
+    try {
+      const userId = window.__USER__?.id || window.__USER__;
+      const { data } = await window.sb.from('profiles').select('plan').eq('id', userId).single();
+      if (data?.plan) window.__USER_PLAN__ = data.plan;
+    } catch(e) { /* تجاهل — نستخدم الافتراضي */ }
+  }
+
   const plan = window.__USER_PLAN__ || 'free';
 
   // Update current badge
@@ -187,16 +199,6 @@ window.initPlansPage = async function () {
       if (p === 'enterprise') { btn.textContent = '🏢 تواصل معنا';   btn.className = 'plans-btn plans-btn-enterprise'; }
     }
   });
-
-  // If we don't have plan cached, try fetching
-  if (!window.__USER_PLAN__ && window.sb && window.__USER__) {
-    const userId = window.__USER__?.id || window.__USER__;
-    const { data } = await window.sb.from('profiles').select('plan').eq('id', userId).single();
-    if (data?.plan) {
-      window.__USER_PLAN__ = data.plan;
-      window.initPlansPage(); // re-render with real data
-    }
-  }
 };
 
 window.selectPlan = function (plan) {
@@ -205,7 +207,7 @@ window.selectPlan = function (plan) {
 
   if (plan === 'enterprise') {
     // Open WhatsApp / contact
-    window.open('https://wa.me/966500000000?text=' + encodeURIComponent('أريد الاشتراك في الخطة المؤسسية لـ توكّد'), '_blank');
+    window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent('أريد الاشتراك في الخطة المؤسسية لـ توكّد'), '_blank');
     return;
   }
 

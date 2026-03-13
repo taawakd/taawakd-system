@@ -2,6 +2,15 @@
 // product-cost.js — حاسبة تكلفة المنتج
 // ════════════════════════════════════════════════════════════════
 
+// ── escape helper — تمنع XSS عند تضمين اسم المنتج في innerHTML ──
+function _esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ── الحالة العامة ──────────────────────────────────────────────
 var PC_STATE = {
   products: JSON.parse(localStorage.getItem('tw_product_costs') || '[]'),
@@ -473,7 +482,7 @@ function renderProductComparison() {
   const rows   = computed.map((p, i) => {
     const mc = p.margin >= 40 ? '#4caf82' : p.margin >= 20 ? '#d4af37' : '#d95f5f';
     return `<tr style="background:${i % 2 === 0 ? '#111' : '#0d0d0d'}">
-      <td style="padding:8px;color:#eee;font-weight:500">${medals[i] || ''} ${p.name}</td>
+      <td style="padding:8px;color:#eee;font-weight:500">${medals[i] || ''} ${_esc(p.name)}</td>
       <td style="padding:8px;text-align:center;color:#aaa;font-size:12px">${p.type}</td>
       <td style="padding:8px;text-align:center;color:var(--gold)">${p.salePrice} ﷼</td>
       <td style="padding:8px;text-align:center;color:#aaa;font-size:12px">${p.trueCost.toFixed(2)} ﷼</td>
