@@ -542,14 +542,21 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   const sb = window.supabase.createClient(url, anon);
   window.sb = sb; // expose for global use
 
-  // استرداد الـ token عند تحميل الصفحة
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      window.__AUTH_TOKEN__ = session.access_token;
-      window.__USER__ = session.user.id;
-    }
+  // ── انتظر INITIAL_SESSION بدلاً من getSession() المباشر ──────
+  // getSession() يُنفَّذ قبل اكتمال تبادل كود OAuth (race condition)
+  // INITIAL_SESSION يُطلَق فقط بعد أن تُعالج Supabase الـ callback كاملاً
+  const session = await new Promise(resolve => {
+    let settled = false;
+    const { data: { subscription } } = sb.auth.onAuthStateChange((event, _session) => {
+      if (event === 'INITIAL_SESSION' && !settled) {
+        settled = true;
+        subscription.unsubscribe();
+        resolve(_session);
+      }
+    });
+    // timeout احتياطي 7 ثوانٍ — كافٍ لتبادل كود OAuth حتى على شبكة بطيئة
+    setTimeout(() => { if (!settled) { settled = true; resolve(null); } }, 7000);
   });
-  const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
     // مافي جلسة — حوّل لصفحة الدخول
