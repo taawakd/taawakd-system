@@ -1126,3 +1126,109 @@
   </div>
 
 </div><!-- /page-costcalc -->
+
+<!-- ════ USER PROFILE PAGE ════ -->
+<div class="page" id="page-userprofile">
+  <div class="page-header">
+    <h1 class="page-title">👤 حسابي</h1>
+    <p style="color:var(--gray2);font-size:13px;margin-top:4px">بياناتك الشخصية ومعلومات اشتراكك</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+
+    <!-- بطاقة المعلومات الشخصية -->
+    <div style="grid-column:1/-1">
+      <div class="card" style="padding:24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+          <div id="up-avatar-big" style="width:60px;height:60px;background:var(--gold-d);border:2px solid var(--gold-b);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--gold);flex-shrink:0">م</div>
+          <div>
+            <div id="up-display-name" style="font-size:18px;font-weight:700;color:var(--white)">مستخدم</div>
+            <div id="up-display-email" style="font-size:13px;color:var(--gray2);margin-top:3px"></div>
+          </div>
+          <button onclick="saveUserProfile()" class="btn-primary" style="margin-right:auto;padding:9px 22px;font-size:13px">💾 حفظ التغييرات</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">الاسم الكامل</label>
+            <input class="input" id="up-full-name" type="text" placeholder="محمد العبدالله">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">البريد الإلكتروني</label>
+            <input class="input" id="up-email" type="email" placeholder="email@example.com" readonly style="opacity:.6;cursor:not-allowed">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">اسم الشركة</label>
+            <input class="input" id="up-company" type="text" placeholder="شركة الوليد للتجارة">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">النشاط التجاري</label>
+            <select class="input" id="up-activity">
+              <option value="">اختر النشاط</option>
+              <option value="restaurant">🍽️ مطعم</option>
+              <option value="cafe">☕ مقهى / كافيه</option>
+              <option value="retail">🛍️ متجر تجزئة</option>
+              <option value="services">⚙️ خدمات</option>
+              <option value="ecom">💻 تجارة إلكترونية</option>
+              <option value="barber">✂️ حلاقة وتجميل</option>
+              <option value="bakery">🥐 مخبز / حلويات</option>
+              <option value="food_truck">🚚 فود ترك</option>
+              <option value="other">📦 أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">مدينة الشركة</label>
+            <input class="input" id="up-city" type="text" placeholder="الرياض">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">رقم الهاتف</label>
+            <input class="input" id="up-phone" type="tel" placeholder="05xxxxxxxx" dir="ltr" style="text-align:right">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">رقم السجل التجاري</label>
+            <input class="input" id="up-crn" type="text" placeholder="10xxxxxxxx" dir="ltr" style="text-align:right">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:var(--gray2);display:block;margin-bottom:6px">الرقم الضريبي</label>
+            <input class="input" id="up-vat" type="text" placeholder="3xxxxxxxxxxxxxxx" dir="ltr" style="text-align:right">
+          </div>
+        </div>
+        <div id="up-save-msg" style="margin-top:12px;font-size:13px;color:var(--green);display:none">✅ تم حفظ البيانات بنجاح</div>
+      </div>
+    </div>
+
+    <!-- بطاقة الاشتراك -->
+    <div style="grid-column:1/-1">
+      <div class="card" style="padding:24px">
+        <div class="card-title" style="margin-bottom:20px"><div class="card-title-icon">💎</div>معلومات الاشتراك</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
+            <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">الخطة الحالية</div>
+            <div id="up-plan-name" style="font-size:20px;font-weight:700;color:var(--gold)">—</div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
+            <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">تاريخ الانتهاء</div>
+            <div id="up-plan-expiry" style="font-size:17px;font-weight:700;color:var(--white)">—</div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
+            <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">المتبقي</div>
+            <div id="up-plan-days" style="font-size:20px;font-weight:700;color:var(--green)">—</div>
+          </div>
+        </div>
+        <div id="up-usage-bar-wrap" style="margin-top:20px;display:none">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--gray2);margin-bottom:6px">
+            <span>التحليلات المستخدمة هذا الشهر</span>
+            <span id="up-usage-text">0 / 0</span>
+          </div>
+          <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">
+            <div id="up-usage-fill" style="height:100%;background:var(--gold);border-radius:4px;transition:width .5s ease;width:0%"></div>
+          </div>
+        </div>
+        <div style="margin-top:20px;text-align:center">
+          <button onclick="showPage('pricing')" style="background:var(--gold-d);border:1px solid var(--gold-b);color:var(--gold);border-radius:10px;padding:10px 28px;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit">⚡ ترقية الخطة</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /page-userprofile -->

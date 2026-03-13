@@ -95,6 +95,7 @@ function showPage(name) {
   }
   if(name==='healthadvisor' && STATE.currentReport) renderHealthAdvisor();
   if(name==='profile') loadBusinessProfile();
+  if(name==='userprofile' && typeof loadUserProfile==='function') loadUserProfile();
   if(name==='costcalc' && typeof initProductCostPage==='function') initProductCostPage();
   if(name==='admin' && typeof initAdminDashboard==='function') initAdminDashboard();
   loadReportsFromDB();

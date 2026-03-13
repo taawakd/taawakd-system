@@ -48,7 +48,8 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(
 .nav-icon{font-size:15px;width:20px;text-align:center;}
 
 .sb-bottom{padding:16px 12px;border-top:1px solid var(--border);}
-.sb-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--s2);}
+.sb-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--s2);transition:background .2s,border-color .2s;border:1px solid transparent;}
+.sb-user:hover{background:var(--s3);border-color:var(--gold-b);}
 .sb-user-av{width:32px;height:32px;border-radius:50%;background:var(--gold-d);border:1px solid var(--gold-b);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gold);font-weight:700;flex-shrink:0;}
 .sb-user-info{flex:1;overflow:hidden;}
 .sb-user-name{font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -619,6 +620,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 <script src="services/ai-cfo.js"></script>
 <script src="services/financial.js"></script>
 <script src="services/admin.js"></script>
+<script src="services/userprofile.js"></script>
 
 <!-- Tools -->
 <script src="tools/index.js"></script>
