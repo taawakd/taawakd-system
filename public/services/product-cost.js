@@ -562,17 +562,23 @@ async function exportProductCostPDF() {
       scale: 2,
       backgroundColor: '#07080a',
       useCORS: true,
+      allowTaint: true,
       logging: false,
-      foreignObjectRendering: true,          // يُصحّح عرض النص العربي RTL
       onclone: (clonedDoc) => {
-        // تأكيد اتجاه RTL على النسخة المستنسخة قبل الرسم
+        // تأكيد اتجاه RTL على جميع عناصر النص قبل الرسم
         clonedDoc.documentElement.setAttribute('dir', 'rtl');
         clonedDoc.documentElement.setAttribute('lang', 'ar');
         const clonedEl = clonedDoc.getElementById('pc-printable');
         if (clonedEl) {
           clonedEl.setAttribute('dir', 'rtl');
-          clonedEl.style.direction = 'rtl';
-          clonedEl.style.unicodeBidi = 'embed';
+          // تطبيق RTL على كل عنصر نصي داخل المقطع
+          clonedEl.querySelectorAll('*').forEach(node => {
+            const cs = window.getComputedStyle(node);
+            if (cs.direction === 'rtl' || node.textContent.trim()) {
+              node.style.direction  = 'rtl';
+              node.style.unicodeBidi = 'plaintext';
+            }
+          });
         }
       },
     });
