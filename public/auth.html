@@ -131,7 +131,7 @@ async function signUp(){
 async function sendReset(){
   const email=document.getElementById('reset-email').value.trim();
   if(!email)return showErr('أدخل بريدك');
-  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://app.towkd.com/auth'});
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://app.towkd.com/auth.html'});
   if(error)return showErr(error.message);
   document.getElementById('resetForm').style.display='none';
   document.getElementById('authSuccess').textContent='✓ تم إرسال رابط الاستعادة';
