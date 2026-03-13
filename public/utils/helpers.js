@@ -107,6 +107,7 @@ function showPage(name, _fromHash) {
   if(name==='userprofile' && typeof loadUserProfile==='function') loadUserProfile();
   if(name==='costcalc' && typeof initProductCostPage==='function') initProductCostPage();
   if(name==='admin' && typeof initAdminDashboard==='function') initAdminDashboard();
+  if(name==='plans' && typeof initPlansPage==='function') initPlansPage();
   loadReportsFromDB();
   window.scrollTo(0,0);
 }

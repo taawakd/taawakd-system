@@ -57,6 +57,9 @@ window.loadUserProfile = async function () {
       if (upAvatarBig) upAvatarBig.textContent = profile.full_name.charAt(0).toUpperCase();
     }
 
+    // ── Cache plan globally for plans page ──
+    window.__USER_PLAN__ = profile?.plan || 'free';
+
     // ── Subscription info ──
     const plan = profile?.plan || 'free';
     const planEl    = document.getElementById('up-plan-name');
@@ -112,7 +115,7 @@ window.saveUserProfile = async function () {
   if (!window.sb || !window.__USER__) return;
 
   const userId = window.__USER__?.id || window.__USER__;
-  const btn = document.querySelector('#page-userprofile .btn-primary');
+  const btn = document.querySelector('#page-userprofile [onclick="saveUserProfile()"]');
   if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الحفظ…'; }
 
   const payload = {
@@ -153,6 +156,66 @@ window.saveUserProfile = async function () {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '💾 حفظ التغييرات'; }
   }
+};
+
+// ── Plans Page ─────────────────────────────────────────────
+const _PLAN_LABELS_MAP = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
+
+window.initPlansPage = async function () {
+  const plan = window.__USER_PLAN__ || 'free';
+
+  // Update current badge
+  const badge = document.getElementById('plans-current-badge');
+  if (badge) badge.textContent = _PLAN_LABELS_MAP[plan] || plan;
+
+  // Highlight current plan card
+  ['free','pro','enterprise'].forEach(p => {
+    const card = document.getElementById('plan-card-' + p);
+    const btn  = document.getElementById('plan-btn-' + p);
+    if (!card || !btn) return;
+
+    if (p === plan) {
+      // Current plan
+      card.style.borderColor = 'var(--gold-b)';
+      btn.disabled = true;
+      btn.textContent = '✅ خطتك الحالية';
+      btn.className = 'plans-btn plans-btn-ghost';
+    } else {
+      btn.disabled = false;
+      if (p === 'free')       { btn.textContent = '⬇️ تخفيض الخطة'; btn.className = 'plans-btn plans-btn-ghost'; }
+      if (p === 'pro')        { btn.textContent = '⚡ اشترك الآن';   btn.className = 'plans-btn plans-btn-primary'; }
+      if (p === 'enterprise') { btn.textContent = '🏢 تواصل معنا';   btn.className = 'plans-btn plans-btn-enterprise'; }
+    }
+  });
+
+  // If we don't have plan cached, try fetching
+  if (!window.__USER_PLAN__ && window.sb && window.__USER__) {
+    const userId = window.__USER__?.id || window.__USER__;
+    const { data } = await window.sb.from('profiles').select('plan').eq('id', userId).single();
+    if (data?.plan) {
+      window.__USER_PLAN__ = data.plan;
+      window.initPlansPage(); // re-render with real data
+    }
+  }
+};
+
+window.selectPlan = function (plan) {
+  const current = window.__USER_PLAN__ || 'free';
+  if (plan === current) return;
+
+  if (plan === 'enterprise') {
+    // Open WhatsApp / contact
+    window.open('https://wa.me/966500000000?text=' + encodeURIComponent('أريد الاشتراك في الخطة المؤسسية لـ توكّد'), '_blank');
+    return;
+  }
+
+  if (plan === 'free') {
+    if (typeof toast === 'function') toast('📬 تواصل معنا على واتساب لتعديل خطتك');
+    return;
+  }
+
+  // Pro plan — سيتم ربطه بنظام الدفع لاحقاً
+  if (typeof toast === 'function') toast('🔄 سيتم توجيهك لبوابة الدفع قريباً…');
 };
 
 // ── Helpers ────────────────────────────────────────────────

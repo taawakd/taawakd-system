@@ -471,6 +471,34 @@ textarea.input{resize:vertical;min-height:80px;}
 .adm-activity-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
 .adm-heatmap{display:flex;flex-direction:column;gap:9px;}
 .adm-heatmap-row{display:flex;align-items:center;gap:8px;}
+/* ── PLANS PAGE ── */
+.plans-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;gap:0;position:relative;transition:border-color .2s,transform .2s;overflow:hidden;}
+.plans-card:hover{border-color:var(--gold-b);transform:translateY(-3px);}
+.plans-card-featured{border-color:var(--gold-b);background:linear-gradient(160deg,rgba(200,164,90,0.07) 0%,var(--s1) 60%);}
+.plans-recommended-badge{position:absolute;top:0;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-size:11px;font-weight:700;padding:4px 16px;border-radius:0 0 10px 10px;white-space:nowrap;}
+.plans-card-header{text-align:center;padding-top:16px;margin-bottom:24px;}
+.plans-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 14px;border-radius:20px;margin-bottom:14px;}
+.plans-badge-free{background:rgba(122,118,112,0.15);color:var(--gray2);}
+.plans-badge-pro{background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-b);}
+.plans-badge-enterprise{background:rgba(176,108,240,0.12);color:#b06cf0;border:1px solid rgba(176,108,240,0.25);}
+.plans-price{font-size:38px;font-weight:800;color:var(--white);line-height:1;margin-bottom:6px;}
+.plans-price .plans-currency{font-size:16px;font-weight:600;color:var(--gray2);}
+.plans-price .plans-period{font-size:13px;color:var(--gray);font-weight:400;}
+.plans-plan-id{font-size:12px;color:var(--gray);letter-spacing:1px;}
+.plans-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px;flex:1;}
+.plans-features li{font-size:13px;color:var(--gray2);line-height:1.4;}
+.plans-feat-off{opacity:.4;}
+.plans-btn{width:100%;padding:12px;border-radius:12px;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.plans-btn-ghost{background:transparent;border:1px solid var(--border);color:var(--gray2);}
+.plans-btn-ghost:hover:not(:disabled){border-color:var(--gold-b);color:var(--gold);}
+.plans-btn-primary{background:var(--gold);color:#000;}
+.plans-btn-primary:hover{background:var(--gold2);box-shadow:0 6px 24px rgba(200,164,90,0.35);}
+.plans-btn-enterprise{background:rgba(176,108,240,0.15);color:#b06cf0;border:1px solid rgba(176,108,240,0.3);}
+.plans-btn-enterprise:hover{background:rgba(176,108,240,0.25);}
+.plans-btn:disabled{opacity:.5;cursor:not-allowed;}
+@media(max-width:768px){#plans-grid{grid-template-columns:1fr;}}
+@media(max-width:900px) and (min-width:769px){#plans-grid{grid-template-columns:1fr 1fr;}}
+
 .adm-heatmap-day{font-size:11px;color:var(--text-muted);width:55px;text-align:right;flex-shrink:0;}
 .adm-heatmap-bar-bg{flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;}
 .adm-heatmap-bar{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));border-radius:4px;min-width:2px;}
