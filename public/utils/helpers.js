@@ -64,7 +64,10 @@ function initNumInputs() {
 window.initNumInputs = initNumInputs;
 
 // التنقل بين الصفحات
-function showPage(name) {
+// الصفحات التي لا تُضاف لـ URL hash (صفحات وسيطة أو نتائج مؤقتة)
+const _NO_HASH_PAGES = new Set(['results','scenarios','actionplan','healthadvisor']);
+
+function showPage(name, _fromHash) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById('page-'+name);
@@ -72,6 +75,12 @@ function showPage(name) {
   document.querySelectorAll('.nav-item').forEach(n=>{
     if(n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
   });
+
+  // ── Hash Routing: تحديث الرابط ──
+  if (!_fromHash && !_NO_HASH_PAGES.has(name)) {
+    history.pushState({ page: name }, '', '#' + name);
+  }
+
   if(name==='dashboard') updateDashboard();
   if(name==='reports') {
     if (!planAllows('save_reports')) { showUpgradeModal('سجل التقارير المحفوظة', 'pro'); return; }
@@ -102,6 +111,20 @@ function showPage(name) {
   window.scrollTo(0,0);
 }
 window.showPage = showPage;
+
+// ── الاستجابة لزر Back/Forward في المتصفح ──
+window.addEventListener('popstate', function(e) {
+  const page = e.state?.page || location.hash.replace('#','') || 'dashboard';
+  showPage(page, true);
+});
+
+// ── تحميل الصفحة من الـ hash عند الدخول ──
+window.addEventListener('tw:appReady', function() {
+  const hash = location.hash.replace('#','');
+  if (hash && !_NO_HASH_PAGES.has(hash)) {
+    showPage(hash, true);
+  }
+});
 
 // ══════════════════════════════════════════
 // PLAN GATING — التحقق من الخطة والميزات

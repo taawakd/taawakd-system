@@ -598,6 +598,9 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       });
     }, 800);
   } catch(e) { window.__USER_PLAN__ = 'free'; }
+
+  // ── أطلق حدث اكتمال التهيئة لتفعيل Hash Routing ──
+  setTimeout(() => window.dispatchEvent(new Event('tw:appReady')), 900);
 })();
 </script>
 
