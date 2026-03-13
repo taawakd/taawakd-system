@@ -563,6 +563,18 @@ async function exportProductCostPDF() {
       backgroundColor: '#07080a',
       useCORS: true,
       logging: false,
+      foreignObjectRendering: true,          // يُصحّح عرض النص العربي RTL
+      onclone: (clonedDoc) => {
+        // تأكيد اتجاه RTL على النسخة المستنسخة قبل الرسم
+        clonedDoc.documentElement.setAttribute('dir', 'rtl');
+        clonedDoc.documentElement.setAttribute('lang', 'ar');
+        const clonedEl = clonedDoc.getElementById('pc-printable');
+        if (clonedEl) {
+          clonedEl.setAttribute('dir', 'rtl');
+          clonedEl.style.direction = 'rtl';
+          clonedEl.style.unicodeBidi = 'embed';
+        }
+      },
     });
     const { jsPDF } = window.jspdf;
     const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
