@@ -246,18 +246,45 @@ textarea.input{resize:vertical;min-height:80px;}
 .live-val{font-size:17px;font-weight:700;color:var(--gold);}
 .live-lbl{font-size:11px;color:var(--gray);margin-top:3px;}
 
+/* ── MOBILE TOP BAR ── */
+.mob-topbar{display:none;position:fixed;top:0;right:0;left:0;height:56px;background:var(--s1);border-bottom:1px solid var(--border);z-index:200;align-items:center;padding:0 16px;gap:12px;}
+.mob-hamburger{width:38px;height:38px;border-radius:10px;background:var(--s2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;}
+.mob-hamburger:hover{border-color:var(--gold-b);}
+.mob-logo{display:flex;align-items:center;gap:8px;flex:1;justify-content:center;}
+.mob-logo-icon{width:30px;height:30px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#000;}
+.mob-logo-name{font-size:16px;font-weight:700;color:var(--white);}
+.mob-logo-name span{color:var(--gold);}
+
+/* ── SIDEBAR OVERLAY ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;backdrop-filter:blur(2px);}
+.sidebar-overlay.open{display:block;}
+
 /* ── MOBILE ── */
 @media(max-width:768px){
-  .sidebar{display:none;}
-  .main-area{margin-right:0;}
+  .mob-topbar{display:flex;}
+  .main-area{margin-right:0;padding-top:56px;}
   .page{padding:20px 16px 60px;}
+  .page-header{padding:20px 16px 16px;flex-direction:column;gap:12px;}
+  .page-header .header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;}
   .kpi-row-4{grid-template-columns:1fr 1fr;}
+  .kpi-row-3{grid-template-columns:1fr 1fr;}
   .form-grid{grid-template-columns:1fr;}
   .grid-2,.grid-3{grid-template-columns:1fr;}
   .prod-head{display:none;}
   .prod-row{grid-template-columns:1fr 1fr;}.prod-row .input:first-child{grid-column:1/-1;}
-  .page-header{flex-direction:column;}
   .live-bar{grid-template-columns:1fr 1fr;}
+  .kpi-val{font-size:20px;}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Sidebar slides in from the right on mobile */
+  .sidebar{
+    display:flex;
+    transform:translateX(100%);
+    transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    z-index:160;
+    box-shadow:-8px 0 40px rgba(0,0,0,0.5);
+  }
+  .sidebar.mob-open{transform:translateX(0);}
 }
 
 /* ── AI CFO ── */
@@ -636,5 +663,32 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 
 <!-- App -->
 <script src="js/app.js"></script>
+
+<!-- ══ Mobile Sidebar Toggle ══ -->
+<script>
+(function(){
+  function openMobSidebar(){
+    document.getElementById('mainSidebar').classList.add('mob-open');
+    document.getElementById('sidebarOverlay').classList.add('open');
+    document.body.style.overflow='hidden';
+  }
+  function closeMobSidebar(){
+    document.getElementById('mainSidebar').classList.remove('mob-open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.body.style.overflow='';
+  }
+  window.toggleMobSidebar = function(){ document.getElementById('mainSidebar').classList.contains('mob-open') ? closeMobSidebar() : openMobSidebar(); };
+  window.closeMobSidebar = closeMobSidebar;
+
+  // Auto-close sidebar when any nav item is tapped on mobile
+  document.addEventListener('click', function(e){
+    if(window.innerWidth > 768) return;
+    const navItem = e.target.closest('.nav-item');
+    if(navItem && document.getElementById('mainSidebar').classList.contains('mob-open')){
+      closeMobSidebar();
+    }
+  });
+})();
+</script>
 </body>
 </html>

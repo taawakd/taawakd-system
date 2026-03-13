@@ -1,8 +1,21 @@
 
+<!-- ══ MOBILE TOP BAR ══ -->
+<header class="mob-topbar">
+  <div class="mob-hamburger" onclick="toggleMobSidebar()">☰</div>
+  <div class="mob-logo">
+    <div class="mob-logo-icon">ت</div>
+    <div class="mob-logo-name"><span>توكّد</span></div>
+  </div>
+  <div style="width:38px;"></div><!-- spacer to center logo -->
+</header>
+
+<!-- ══ SIDEBAR OVERLAY ══ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobSidebar()"></div>
+
 <div class="app">
 
 <!-- ══ SIDEBAR ══ -->
-<aside class="sidebar">
+<aside class="sidebar" id="mainSidebar">
   <div class="sb-logo">
     <div class="sb-logo-mark">
       <div class="sb-icon">ت</div>
