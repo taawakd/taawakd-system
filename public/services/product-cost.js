@@ -548,74 +548,64 @@ function calcUnitsForProfit() {
   }
 }
 
-// ── تصدير PDF ──────────────────────────────────────────────────
+// ── تصدير PDF — يستخدم window.print() لضمان عرض صحيح للعربية ──
 async function exportProductCostPDF() {
   const el = document.getElementById('pc-printable');
   if (!el) { toast('❌ لم يُعثر على محتوى للتصدير'); return; }
 
-  const statusEl = document.getElementById('pc-save-status');
-  if (statusEl) statusEl.textContent = 'جاري إنشاء PDF...';
-  toast('⏳ جاري إنشاء PDF...');
+  const productName = document.getElementById('pc-name')?.value?.trim() || 'منتج';
+  const statusEl    = document.getElementById('pc-save-status');
+  if (statusEl) statusEl.textContent = 'جاري فتح نافذة الطباعة...';
+  toast('🖨️ جاري فتح نافذة الطباعة...');
 
-  try {
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      backgroundColor: '#07080a',
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      onclone: (clonedDoc) => {
-        // تأكيد اتجاه RTL على جميع عناصر النص قبل الرسم
-        clonedDoc.documentElement.setAttribute('dir', 'rtl');
-        clonedDoc.documentElement.setAttribute('lang', 'ar');
-        const clonedEl = clonedDoc.getElementById('pc-printable');
-        if (clonedEl) {
-          clonedEl.setAttribute('dir', 'rtl');
-          // تطبيق RTL على كل عنصر نصي داخل المقطع
-          clonedEl.querySelectorAll('*').forEach(node => {
-            const cs = window.getComputedStyle(node);
-            if (cs.direction === 'rtl' || node.textContent.trim()) {
-              node.style.direction  = 'rtl';
-              node.style.unicodeBidi = 'plaintext';
-            }
-          });
-        }
-      },
-    });
-    const { jsPDF } = window.jspdf;
-    const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW   = 210, pageH = 297, margin = 10;
-    const imgW    = pageW - margin * 2;
-    const ratio   = canvas.width / canvas.height;
-    const imgH    = imgW / ratio;
+  // جمع كل <style> من الصفحة الحالية لنقلها للنافذة الجديدة
+  const inlineStyles = Array.from(document.querySelectorAll('style'))
+    .map(s => s.textContent).join('\n');
 
-    const addPageImg = (srcCanvas, srcY, srcH) => {
-      const tmp = document.createElement('canvas');
-      tmp.width = srcCanvas.width; tmp.height = srcH;
-      tmp.getContext('2d').drawImage(srcCanvas, 0, srcY, srcCanvas.width, srcH, 0, 0, srcCanvas.width, srcH);
-      return tmp.toDataURL('image/jpeg', 0.92);
-    };
-
-    const sliceH    = Math.floor((canvas.width / imgW) * (pageH - margin * 2));
-    let   remaining = canvas.height, srcY = 0, first = true;
-
-    while (remaining > 0) {
-      const chunk = Math.min(sliceH, remaining);
-      const chunkImgH = (chunk / canvas.width) * imgW;
-      if (!first) pdf.addPage();
-      pdf.addImage(addPageImg(canvas, srcY, chunk), 'JPEG', margin, margin, imgW, chunkImgH);
-      srcY += chunk; remaining -= chunk; first = false;
-    }
-
-    const productName = document.getElementById('pc-name')?.value?.trim() || 'منتج';
-    pdf.save(`تكلفة_المنتج_${productName}.pdf`);
-    if (statusEl) statusEl.textContent = '✅ تم تنزيل PDF';
-    toast('✅ تم تنزيل PDF');
-  } catch(err) {
-    console.error(err);
-    if (statusEl) statusEl.textContent = '❌ خطأ في PDF';
-    toast('❌ خطأ في إنشاء PDF: ' + err.message);
+  const printWin = window.open('', '_blank', 'width=900,height=700');
+  if (!printWin) {
+    toast('❌ يرجى السماح بالنوافذ المنبثقة في متصفحك');
+    if (statusEl) statusEl.textContent = '';
+    return;
   }
+
+  printWin.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تكلفة المنتج — ${productName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      background: #07080a;
+      color: #edeae2;
+      direction: rtl;
+      padding: 24px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    ${inlineStyles}
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      button, .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  ${el.outerHTML}
+  <script>
+    // انتظر تحميل الخط العربي ثم اطبع
+    document.fonts.ready.then(function() {
+      setTimeout(function() { window.print(); }, 600);
+    });
+  </script>
+</body>
+</html>`);
+  printWin.document.close();
+
+  if (statusEl) statusEl.textContent = '✅ تم فتح نافذة الطباعة — اختر "حفظ كـ PDF"';
 }
 
 // ── تهيئة الصفحة عند الدخول إليها ─────────────────────────────
