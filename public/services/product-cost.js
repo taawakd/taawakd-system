@@ -548,64 +548,187 @@ function calcUnitsForProfit() {
   }
 }
 
-// ── تصدير PDF — يستخدم window.print() لضمان عرض صحيح للعربية ──
+// ── تصدير PDF — نفس أسلوب financial.js: HTML مضمّن + html2canvas ─
 async function exportProductCostPDF() {
-  const el = document.getElementById('pc-printable');
-  if (!el) { toast('❌ لم يُعثر على محتوى للتصدير'); return; }
-
   const productName = document.getElementById('pc-name')?.value?.trim() || 'منتج';
+  const productType = document.getElementById('pc-type')?.value || 'طعام';
+  const salePrice   = parseNum(document.getElementById('pc-price')?.value || '');
   const statusEl    = document.getElementById('pc-save-status');
-  if (statusEl) statusEl.textContent = 'جاري فتح نافذة الطباعة...';
-  toast('🖨️ جاري فتح نافذة الطباعة...');
 
-  // جمع كل <style> من الصفحة الحالية لنقلها للنافذة الجديدة
-  const inlineStyles = Array.from(document.querySelectorAll('style'))
-    .map(s => s.textContent).join('\n');
+  if (statusEl) statusEl.textContent = 'جاري إنشاء PDF...';
+  toast('⏳ جاري إنشاء PDF...');
 
-  const printWin = window.open('', '_blank', 'width=900,height=700');
-  if (!printWin) {
-    toast('❌ يرجى السماح بالنوافذ المنبثقة في متصفحك');
-    if (statusEl) statusEl.textContent = '';
-    return;
-  }
+  // ── قراءة النتائج من DOM ──────────────────────────────────────
+  const g  = id => document.getElementById(id)?.textContent?.trim() || '—';
+  const ingCostTxt   = g('res-ing-cost');
+  const opCostTxt    = g('res-op-cost-unit');
+  const trueCostTxt  = g('res-true-cost');
+  const profitUnitTxt= g('res-profit-unit');
+  const marginTxt    = g('res-margin');
+  const monthPrfTxt  = g('res-monthly-profit');
+  const beUnitsTxt   = g('res-be-units');
+  const ratingTxt    = g('res-rating');
+  const sugPriceTxt  = g('res-suggested-price');
+  const salesCntTxt  = g('res-sales-count');
+  const prodShareTxt = g('res-product-share');
 
-  printWin.document.write(`<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <title>تكلفة المنتج — ${productName}</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
-      background: #07080a;
-      color: #edeae2;
-      direction: rtl;
-      padding: 24px;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    ${inlineStyles}
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      button, .no-print { display: none !important; }
-    }
-  </style>
-</head>
-<body>
-  ${el.outerHTML}
-  <script>
-    // انتظر تحميل الخط العربي ثم اطبع
-    document.fonts.ready.then(function() {
-      setTimeout(function() { window.print(); }, 600);
+  const marginVal    = parseFloat(marginTxt) || 0;
+  const marginColor  = marginVal >= 40 ? '#16a34a' : marginVal >= 20 ? '#d97706' : '#dc2626';
+  const profitNum    = parseNum((profitUnitTxt).replace(/[^\d.\-]/g, '')) *
+                       (profitUnitTxt.startsWith('-') ? -1 : 1);
+  const profitColor  = profitNum >= 0 ? '#16a34a' : '#dc2626';
+  const mPrfNum      = parseNum((monthPrfTxt).replace(/[^\d,\-]/g, '').replace(/,/g, ''));
+  const mPrfColor    = mPrfNum >= 0 ? '#16a34a' : '#dc2626';
+
+  // ── المكونات ─────────────────────────────────────────────────
+  const ingredients = pcGetIngredients();
+  const ingRows = ingredients.map((ing, i) => {
+    const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
+    return `<tr style="background:${bg};">
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#374151;font-size:12px;">${_esc(ing.name)}</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-size:12px;">${ing.qty} ${_esc(ing.unit)}</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-size:12px;">${ing.unitCost} ﷼</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1a1a1a;font-size:12px;">${ing.total.toFixed(2)} ﷼</td>
+    </tr>`;
+  }).join('');
+
+  // ── التنبيهات ────────────────────────────────────────────────
+  const alertsHtml = Array.from(document.querySelectorAll('#pc-alerts .alert') || [])
+    .map(a => {
+      const cls    = a.className.includes('danger') ? 'danger' : a.className.includes('warn') ? 'warn' :
+                     a.className.includes('good')   ? 'good'   : 'info';
+      const bg     = cls === 'danger' ? '#fee2e2' : cls === 'warn' ? '#fef3c7' : cls === 'good' ? '#dcfce7' : '#eff6ff';
+      const border = cls === 'danger' ? '#fca5a5' : cls === 'warn' ? '#fcd34d' : cls === 'good' ? '#86efac' : '#bfdbfe';
+      return `<div style="padding:9px 12px;margin-bottom:7px;border-radius:7px;background:${bg};border-right:4px solid ${border};font-size:12px;color:#1a1a1a;">${a.textContent.trim()}</div>`;
+    }).join('');
+
+  // ── جدول تأثير السعر ─────────────────────────────────────────
+  const priceTable = document.getElementById('pc-price-impact-table');
+  const priceTableHtml = priceTable ? priceTable.innerHTML : '';
+
+  // ── مساعد البناء ─────────────────────────────────────────────
+  const sec = (title, content) => content ? `
+    <div style="margin-bottom:20px;padding:18px;background:#ffffff;border-radius:10px;border:1px solid #e5e7eb;">
+      <h3 style="font-size:15px;font-weight:700;color:#1a1a1a;margin:0 0 14px 0;padding-bottom:8px;border-bottom:2px solid #f3f4f6;">${title}</h3>
+      ${content}
+    </div>` : '';
+
+  // ── HTML الكامل (light theme + ألوان ثابتة) ──────────────────
+  const htmlContent = `
+  <div style="font-family:'IBM Plex Sans Arabic',Arial,sans-serif;direction:rtl;background:#f1f5f9;color:#1a1a1a;padding:28px;width:750px;box-sizing:border-box;">
+
+    <!-- رأس الصفحة -->
+    <div style="background:#1a1a1a;border-radius:14px;padding:24px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:20px;font-weight:800;color:#ffffff;margin-bottom:4px;">🧾 ${_esc(productName)}</div>
+        <div style="font-size:13px;color:#9ca3af;">نوع المنتج: ${_esc(productType)} · سعر البيع: ${salePrice} ﷼</div>
+      </div>
+      <div style="text-align:center;background:rgba(255,255,255,0.08);padding:14px 22px;border-radius:10px;">
+        <div style="font-size:28px;font-weight:800;color:${marginColor};">${marginTxt}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">هامش الربح</div>
+        <div style="font-size:12px;font-weight:600;color:${marginColor};margin-top:4px;">${ratingTxt}</div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      ${[
+        { val: trueCostTxt,   label: 'التكلفة الحقيقية/وحدة', color: '#1a1a1a'     },
+        { val: profitUnitTxt, label: 'الربح/وحدة',             color: profitColor   },
+        { val: monthPrfTxt,   label: 'الربح الشهري',           color: mPrfColor     },
+        { val: beUnitsTxt,    label: 'نقطة التعادل (وحدة)',    color: '#1a1a1a'     },
+        { val: salesCntTxt,   label: 'المبيعات الشهرية',       color: '#1a1a1a'     },
+        { val: sugPriceTxt,   label: 'السعر المقترح',          color: '#1e40af'     },
+      ].map(k => `
+        <div style="background:#ffffff;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="font-size:15px;font-weight:700;color:${k.color};">${k.val}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:5px;">${k.label}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- التنبيهات -->
+    ${alertsHtml ? sec('⚡ التنبيهات والتوصيات', alertsHtml) : ''}
+
+    <!-- المكونات -->
+    ${ingredients.length ? sec('🧪 تفصيل المكونات (لكل وحدة)', `
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#f3f4f6;">
+          <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:right;color:#374151;">المكوّن</th>
+          <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">الكمية</th>
+          <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">تكلفة/وحدة</th>
+          <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;">الإجمالي</th>
+        </tr></thead>
+        <tbody>${ingRows}</tbody>
+      </table>
+      <div style="margin-top:10px;padding:10px 14px;background:#fffbeb;border-radius:8px;border:1px solid #fcd34d;font-size:13px;font-weight:700;color:#92400e;">
+        إجمالي تكلفة المكونات: ${ingCostTxt}
+      </div>`) : ''}
+
+    <!-- تفاصيل التكلفة -->
+    ${sec('⚙️ تفاصيل التكلفة الإجمالية', `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div style="padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e5e7eb;text-align:center;">
+          <div style="font-size:11px;color:#6b7280;">تكلفة المكونات / وحدة</div>
+          <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-top:6px;">${ingCostTxt}</div>
+        </div>
+        <div style="padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e5e7eb;text-align:center;">
+          <div style="font-size:11px;color:#6b7280;">حصة التشغيل / وحدة</div>
+          <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-top:6px;">${opCostTxt}</div>
+        </div>
+      </div>
+      <div style="padding:14px;background:#fffbeb;border-radius:8px;border:2px solid #fcd34d;text-align:center;">
+        <div style="font-size:11px;color:#92400e;">التكلفة الحقيقية الإجمالية / وحدة</div>
+        <div style="font-size:22px;font-weight:800;color:#d97706;margin-top:4px;">${trueCostTxt}</div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#6b7280;text-align:center;">مشاركة هذا المنتج من إيرادات المشروع: ${prodShareTxt}</div>
+    `)}
+
+    <!-- تذييل -->
+    <div style="text-align:center;padding-top:16px;border-top:1px solid #e5e7eb;">
+      <p style="font-size:11px;color:#9ca3af;margin:0;">تم إنشاء هذا التقرير بواسطة توكّد · ${new Date().toLocaleDateString('ar-SA')}</p>
+    </div>
+  </div>`;
+
+  // ── رسم وتحويل لـ PDF ─────────────────────────────────────────
+  const wrapper = document.createElement('div');
+  Object.assign(wrapper.style, { position:'fixed', top:'-9999px', left:'0', width:'806px', background:'#f1f5f9', zIndex:'99999' });
+  wrapper.innerHTML = htmlContent;
+  document.body.appendChild(wrapper);
+
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
+
+  try {
+    const canvas = await window.html2canvas(wrapper, {
+      scale: 2, useCORS: true, allowTaint: true,
+      backgroundColor: '#f1f5f9', logging: false, width: 806,
     });
-  </script>
-</body>
-</html>`);
-  printWin.document.close();
 
-  if (statusEl) statusEl.textContent = '✅ تم فتح نافذة الطباعة — اختر "حفظ كـ PDF"';
+    const { jsPDF } = window.jspdf;
+    const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW   = 210, pageH = 297;
+    const imgW    = pageW;
+    const imgH    = (canvas.height * pageW) / canvas.width;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    let yOffset = 0, pageNum = 0;
+    while (yOffset < imgH) {
+      if (pageNum > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
+      yOffset += pageH;
+      pageNum++;
+    }
+
+    pdf.save(`تكلفة_المنتج_${productName}.pdf`);
+    if (statusEl) statusEl.textContent = '✅ تم تنزيل PDF';
+    toast('✅ تم تنزيل PDF');
+  } catch(err) {
+    console.error(err);
+    if (statusEl) statusEl.textContent = '❌ خطأ في PDF';
+    toast('❌ خطأ في إنشاء PDF: ' + err.message);
+  } finally {
+    document.body.removeChild(wrapper);
+  }
 }
 
 // ── تهيئة الصفحة عند الدخول إليها ─────────────────────────────
