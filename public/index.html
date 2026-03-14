@@ -650,43 +650,45 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   if (greetEl) greetEl.textContent = name;
 
   // فحص الصلاحيات والخطة
+  // نستخدم maybeSingle() بدلاً من single() لتجنب الخطأ إذا لم يكن للمستخدم صف في profiles
   try {
-    const { data: userProfile } = await sb.from('profiles').select('is_admin, plan').eq('id', session.user.id).single();
+    const { data: userProfile } = await sb.from('profiles').select('is_admin, plan').eq('id', session.user.id).maybeSingle();
     // حفظ الخطة عالمياً (يستخدمها AI CFO وغيره)
     window.__USER_PLAN__ = userProfile?.plan || 'free';
     if (userProfile?.is_admin) {
       window.__IS_ADMIN__ = true;
+    }
+  } catch(e) { window.__USER_PLAN__ = 'free'; }
+
+  // ── إظهار عناصر الواجهة بعد تأكد تحميل sidebar.html ──────────────
+  // نستخدم setTimeout لضمان أن initApp() قد أدرج sidebar.html في DOM
+  setTimeout(() => {
+    const _plan = window.__USER_PLAN__;
+    const _planLabels = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
+    const planEl = document.querySelector('.sb-user-plan');
+    if (planEl) planEl.textContent = _planLabels[_plan] || 'الخطة المجانية';
+
+    // تهيئة منتقي المشاريع للخطة المؤسسية
+    if (_plan === 'enterprise' && typeof initProjectSelector === 'function') initProjectSelector();
+
+    // إظهار أقفال الخطة المجانية
+    const _locked = _plan === 'free';
+    ['sb-lock-reports','sb-lock-benchmark','sb-lock-compare','sb-lock-forecast'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = _locked ? 'inline' : 'none';
+    });
+
+    // ── إظهار زر الإدارة (مضمون بعد تحميل sidebar) ──
+    if (window.__IS_ADMIN__) {
       const navAdmin = document.getElementById('nav-admin');
       const navAdminSec = document.getElementById('nav-admin-section');
       if (navAdmin) navAdmin.style.display = '';
       if (navAdminSec) navAdminSec.style.display = '';
     }
-    // تحديث اسم الخطة في القائمة الجانبية
-    const _plan = window.__USER_PLAN__;
-    const _planLabels = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
-    setTimeout(() => {
-      const planEl = document.querySelector('.sb-user-plan');
-      if (planEl) planEl.textContent = _planLabels[_plan] || 'الخطة المجانية';
-      // تهيئة منتقي المشاريع للخطة المؤسسية
-      if (_plan === 'enterprise' && typeof initProjectSelector === 'function') {
-        initProjectSelector();
-      }
-    }, 700);
-    const _locked = _plan === 'free';
-    const _lockIds = {
-      'sb-lock-reports':  _locked,
-      'sb-lock-benchmark': _locked,
-      'sb-lock-compare':  _locked,
-      'sb-lock-forecast': _locked,
-    };
-    // تأخير بسيط لضمان تحميل sidebar.html
-    setTimeout(() => {
-      Object.entries(_lockIds).forEach(([id, show]) => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = show ? 'inline' : 'none';
-      });
-    }, 800);
-  } catch(e) { window.__USER_PLAN__ = 'free'; }
+
+    // أطلق حدث جاهزية الملف الشخصي ليلتقطه app.js إذا احتاج
+    window.dispatchEvent(new Event('tw:profileReady'));
+  }, 800);
 
   // ── أطلق حدث اكتمال التهيئة لتفعيل Hash Routing ──
   setTimeout(() => window.dispatchEvent(new Event('tw:appReady')), 900);
