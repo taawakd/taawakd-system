@@ -90,19 +90,19 @@ function showPage(name, _fromHash) {
     if (!planAllows('market_compare')) { showUpgradeModal('مقارنة السوق', 'pro'); return; }
     renderBenchmarkPage();
   }
-  if(name==='scenarios' && STATE.currentReport) renderScenariosPage();
+  if(name==='scenarios' && window.STATE?.currentReport) renderScenariosPage();
   if(name==='compare') {
     if (!planAllows('compare_reports')) { showUpgradeModal('مقارنة التقارير', 'pro'); return; }
     renderComparePage();
   }
-  if(name==='actionplan' && STATE.currentReport) generateActionPlan();
+  if(name==='actionplan' && window.STATE?.currentReport) generateActionPlan();
   if(name==='cashflow') prefillCashFlowFromReport();
   if(name==='pricing') renderPricingPage();
   if(name==='forecast') {
     if (!planAllows('forecast')) { showUpgradeModal('التوقعات الذكية', 'pro'); return; }
-    if (STATE.currentReport) renderSmartForecast();
+    if (window.STATE?.currentReport) renderSmartForecast();
   }
-  if(name==='healthadvisor' && STATE.currentReport) renderHealthAdvisor();
+  if(name==='healthadvisor' && window.STATE?.currentReport) renderHealthAdvisor();
   if(name==='profile') loadBusinessProfile();
   if(name==='userprofile' && typeof loadUserProfile==='function') loadUserProfile();
   if(name==='costcalc' && typeof initProductCostPage==='function') initProductCostPage();

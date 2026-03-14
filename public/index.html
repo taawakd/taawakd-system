@@ -705,6 +705,16 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 </div>
 <div id="toast" class="toast"></div>
 
+<!-- ✅ تهيئة STATE بشكل متزامن قبل تحميل أي service — يمنع ReferenceError عند أي popstate أو استدعاء مبكر -->
+<script>
+  window.STATE = window.STATE || {
+    currentReport: null,
+    savedReports: JSON.parse(localStorage.getItem('tw_reports') || '[]'),
+    chartInstance: null,
+    chartMode: 'net'
+  };
+</script>
+
 <!-- Services (order matters: supabase → helpers → dashboard → results → reports → ai-cfo → financial) -->
 <script src="services/supabase.js"></script>
 <script src="utils/helpers.js"></script>

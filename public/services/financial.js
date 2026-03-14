@@ -1091,8 +1091,8 @@ window.handleExcel = handleExcel;
 window.exportPDF = exportPDF;
 window.importFromProductCostCalc = importFromProductCostCalc;
 // window.renderResults → في services/results.js
-window.updateDashboard = updateDashboard;
-window.renderSavedReports = renderSavedReports;
+// window.updateDashboard  → في services/dashboard.js (دالة عامة، لا تكرار)
+// window.renderSavedReports → في services/dashboard.js (دالة عامة، لا تكرار)
 window.openSavedReport = openSavedReport;
 window.deleteSavedReport = deleteSavedReport;
 window.getCFOContext = getCFOContext;
