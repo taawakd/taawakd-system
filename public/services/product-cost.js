@@ -339,6 +339,8 @@ function saveProductCost() {
     },
     projectTotalSales: parseNum(document.getElementById('pc-project-sales')?.value || ''),
     targetMargin: PC_TARGET_MARGIN,
+    // خزّن التكلفة الحقيقية المحسوبة — تُستخدم عند الاستيراد لنموذج التحليل المالي
+    trueCost:     parseNum(document.getElementById('res-true-cost')?.textContent?.replace(/[^0-9.]/g, '') || '') || undefined,
     savedAt:      new Date().toISOString(),
   };
 
@@ -354,6 +356,8 @@ function saveProductCost() {
   pcSyncToDB();
   renderProductComparison();
   toast('✅ تم حفظ المنتج: ' + name);
+  // حدّث زر الاستيراد في نموذج التحليل المالي
+  if (typeof window._updateImportBtn === 'function') window._updateImportBtn();
 }
 
 // ── مزامنة مع Supabase ──────────────────────────────────────────

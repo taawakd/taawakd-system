@@ -788,3 +788,14 @@ window.applyCustomChart = applyCustomChart;
 window.addProdRow = addProdRow;
 window.removeRow = removeRow;
 window.togglePeriod = togglePeriod;
+
+// ── تهيئة قسم المنتجات في نموذج التحليل ──────────────────────
+function initProdsSection() {
+  // أضف صفاً فارغاً أولياً إذا كان الحاوي فارغاً
+  const c = document.getElementById('prodsContainer');
+  if (c && c.children.length === 0) addProdRow();
+
+  // أظهر / أخفِ زر الاستيراد بناءً على المنتجات المحفوظة في الحاسبة
+  if (typeof window._updateImportBtn === 'function') window._updateImportBtn();
+}
+window.initProdsSection = initProdsSection;

@@ -12,6 +12,7 @@ async function initApp() {
     if (sc) sc.innerHTML = sidebarHTML;
     if (pc) pc.innerHTML = pagesHTML;
     if (typeof initNumInputs === 'function') initNumInputs();
+    if (typeof initProdsSection === 'function') initProdsSection();
     if (typeof loadBusinessProfile === 'function') loadBusinessProfile();
     if (typeof renderSavedReports === 'function') {
       // تأكّد من وجود STATE قبل الاستدعاء

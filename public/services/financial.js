@@ -1000,10 +1000,96 @@ ${hasPreviousReports
 - إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال (كالطبخ أو الرياضة)، قل باختصار أن اختصاصك في الاستشارات المالية والتجارية فقط.`;
 }
 
+// ══════════════════════════════════════════════════════════════
+// استيراد المنتجات من حاسبة تكاليف المنتج إلى نموذج التحليل
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * يحسب التكلفة الحقيقية من بيانات المنتج المحفوظة في حاسبة التكاليف
+ * (بديل للتكلفة المحسوبة مباشرة من الـ DOM عند الحفظ)
+ */
+function _calcTrueCostFromPC(p) {
+  // إذا خُزّنت التكلفة الحقيقية مسبقاً عند الحفظ → استخدمها مباشرة
+  if (p.trueCost && p.trueCost > 0) return p.trueCost;
+
+  // احسب تكلفة المكونات (تكلفة البضاعة)
+  const ingCost = (p.ingredients || []).reduce((s, ing) => {
+    return s + ((parseFloat(ing.qty) || 0) * (parseFloat(ing.unitCost) || 0));
+  }, 0);
+
+  // إجمالي التكاليف التشغيلية
+  const opTotal = Object.values(p.opCosts || {}).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+
+  // التكلفة التشغيلية لكل وحدة (بناءً على حصة المنتج من الإيرادات الكلية)
+  const totalProjectSales = p.projectTotalSales || 0;
+  const monthlySales      = p.monthlySales || 0;
+  let opPerUnit = 0;
+  if (totalProjectSales > 0 && monthlySales > 0 && p.salePrice > 0) {
+    const productRevShare = (p.salePrice * monthlySales) / totalProjectSales;
+    opPerUnit = (opTotal * productRevShare) / monthlySales;
+  } else if (monthlySales > 0 && opTotal > 0) {
+    opPerUnit = opTotal / monthlySales;
+  }
+
+  return Math.round((ingCost + opPerUnit) * 100) / 100;
+}
+
+/**
+ * يستورد المنتجات المحفوظة في حاسبة التكاليف إلى جدول المنتجات في نموذج التحليل
+ */
+function importFromProductCostCalc() {
+  // اقرأ المنتجات من PC_STATE أو من localStorage مباشرة
+  const pcProducts = (window.PC_STATE?.products?.length)
+    ? window.PC_STATE.products
+    : JSON.parse(localStorage.getItem('tw_product_costs') || '[]');
+
+  if (!pcProducts.length) {
+    if (typeof toast === 'function') toast('لا توجد منتجات محفوظة في حاسبة التكاليف');
+    return;
+  }
+
+  // حوّل بيانات حاسبة التكاليف إلى الصيغة المطلوبة في نموذج التحليل
+  const mapped = pcProducts
+    .filter(p => p.name)
+    .map(p => ({
+      name:  p.name,
+      price: p.salePrice || 0,
+      cost:  _calcTrueCostFromPC(p),
+      qty:   p.monthlySales || 0,
+    }));
+
+  if (!mapped.length) {
+    if (typeof toast === 'function') toast('لا توجد منتجات صالحة للاستيراد');
+    return;
+  }
+
+  // املأ جدول المنتجات في النموذج
+  if (typeof showProductTable === 'function') showProductTable(mapped);
+  if (typeof toast === 'function') toast(`✅ تم استيراد ${mapped.length} منتج من حاسبة التكاليف`);
+}
+
+/**
+ * يُظهر / يُخفي زر الاستيراد بناءً على وجود منتجات في حاسبة التكاليف
+ */
+function _updateImportBtn() {
+  const btn = document.getElementById('btn-import-from-pc');
+  if (!btn) return;
+  const pcProducts = (window.PC_STATE?.products?.length)
+    ? window.PC_STATE.products
+    : JSON.parse(localStorage.getItem('tw_product_costs') || '[]');
+  btn.style.display = pcProducts.length ? '' : 'none';
+  if (pcProducts.length) {
+    btn.textContent = `📥 استيراد من حاسبة التكاليف (${pcProducts.length})`;
+  }
+}
+
+window._updateImportBtn = _updateImportBtn;
+
 // expose to window
 window.runAnalysis = runAnalysis;
 window.handleExcel = handleExcel;
 window.exportPDF = exportPDF;
+window.importFromProductCostCalc = importFromProductCostCalc;
 // window.renderResults → في services/results.js
 window.updateDashboard = updateDashboard;
 window.renderSavedReports = renderSavedReports;
