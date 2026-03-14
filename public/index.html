@@ -542,24 +542,41 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   const sb = window.supabase.createClient(url, anon);
   window.sb = sb; // expose for global use
 
-  // ── انتظر INITIAL_SESSION بدلاً من getSession() المباشر ──────
-  // getSession() يُنفَّذ قبل اكتمال تبادل كود OAuth (race condition)
-  // INITIAL_SESSION يُطلَق فقط بعد أن تُعالج Supabase الـ callback كاملاً
+  // ── كشف OAuth callback في URL ─────────────────────────────────
+  // عند العودة من Google يكون في URL إما ?code= (PKCE) أو #access_token= (implicit)
+  const hasOAuthCallback = window.location.search.includes('code=') ||
+                           window.location.hash.includes('access_token=');
+
+  // ── انتظر الجلسة مع مراعاة تسلسل أحداث Supabase v2 ──────────
+  // في Supabase v2 بعد OAuth redirect:
+  //   1. INITIAL_SESSION يُطلَق بـ null (لا session مخزّن بعد)
+  //   2. يبدأ تبادل الكود مع Supabase (async)
+  //   3. SIGNED_IN يُطلَق لاحقاً بالجلسة الحقيقية
+  // لذا: إذا كان في URL كود OAuth، لا نستسلم عند INITIAL_SESSION=null
+  // بل ننتظر SIGNED_IN
   const session = await new Promise(resolve => {
     let settled = false;
     const { data: { subscription } } = sb.auth.onAuthStateChange((event, _session) => {
-      if (event === 'INITIAL_SESSION' && !settled) {
-        settled = true;
-        subscription.unsubscribe();
-        resolve(_session);
+      if (settled) return;
+      if (event === 'INITIAL_SESSION') {
+        if (_session) {
+          // جلسة موجودة مخزّنة (مستخدم سبق له الدخول)
+          settled = true; subscription.unsubscribe(); resolve(_session);
+        } else if (!hasOAuthCallback) {
+          // لا جلسة ولا كود OAuth → مستخدم غير مسجّل فعلاً
+          settled = true; subscription.unsubscribe(); resolve(null);
+        }
+        // إذا hasOAuthCallback=true → انتظر SIGNED_IN بعد اكتمال تبادل الكود
+      } else if (event === 'SIGNED_IN' && _session) {
+        // اكتمل تبادل كود OAuth بنجاح
+        settled = true; subscription.unsubscribe(); resolve(_session);
       }
     });
-    // timeout احتياطي 7 ثوانٍ — كافٍ لتبادل كود OAuth حتى على شبكة بطيئة
-    setTimeout(() => { if (!settled) { settled = true; resolve(null); } }, 7000);
+    // timeout احتياطي 10 ثوانٍ (شبكة بطيئة أو فشل تبادل الكود)
+    setTimeout(() => { if (!settled) { settled = true; resolve(null); } }, 10000);
   });
 
   if (!session) {
-    // مافي جلسة — حوّل لصفحة الدخول
     window.location.href = '/auth.html';
     return;
   }
