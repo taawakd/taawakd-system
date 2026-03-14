@@ -164,8 +164,15 @@ window.saveUserProfile = async function () {
 // ── Plans Page ─────────────────────────────────────────────
 const _PLAN_LABELS_MAP = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
 
+// قيم الخطط الافتراضية — مصدر الحقيقة الوحيد (تُحدَّث من لوحة الإدارة عبر DB)
+const _DEFAULT_PLANS = {
+  free:       { price: 0,   limit: 2,  label: 'مجاني' },
+  pro:        { price: 79,  limit: 8,  label: 'احترافي' },
+  enterprise: { price: 199, limit: 30, label: 'مؤسسي' },
+};
+
 window.initPlansPage = async function () {
-  // جلب الخطة من Supabase إذا لم تكن محفوظة — مرة واحدة فقط بدون استدعاء ذاتي
+  // ── 1. جلب خطة المستخدم الحالية ─────────────────────────────
   if (!window.__USER_PLAN__ && window.sb && window.__USER__) {
     try {
       const userId = window.__USER__?.id || window.__USER__;
@@ -176,18 +183,47 @@ window.initPlansPage = async function () {
 
   const plan = window.__USER_PLAN__ || 'free';
 
-  // Update current badge
+  // ── 2. جلب بيانات الخطط من قاعدة البيانات ──────────────────
+  let plansData = { ..._DEFAULT_PLANS };
+  if (window.sb) {
+    try {
+      const { data: rows } = await window.sb.from('plans').select('id,price_monthly,analyses_limit,name_ar').eq('is_active', true);
+      if (rows?.length) {
+        rows.forEach(r => {
+          if (plansData[r.id]) {
+            plansData[r.id].price = r.price_monthly ?? plansData[r.id].price;
+            plansData[r.id].limit = r.analyses_limit ?? plansData[r.id].limit;
+            if (r.name_ar) plansData[r.id].label = r.name_ar;
+          }
+        });
+      }
+    } catch(e) { /* تجاهل — نستخدم القيم الافتراضية */ }
+  }
+
+  // ── 3. تحديث السعر وحد التحليلات في كل بطاقة ───────────────
+  ['free', 'pro', 'enterprise'].forEach(pid => {
+    const pd = plansData[pid];
+    if (!pd) return;
+    const amountEl = document.querySelector(`#plan-card-${pid} .plans-amount`);
+    const limitLi  = document.querySelector(`#plan-card-${pid} .plans-features li:first-child`);
+    if (amountEl) amountEl.textContent = pd.price > 0 ? pd.price : '0';
+    if (limitLi) {
+      if (pid === 'free') limitLi.textContent = `✅ حتى ${pd.limit} تحليلات شهرياً`;
+      else if (pd.limit === -1) limitLi.textContent = '✅ تحليلات غير محدودة';
+      else limitLi.textContent = `✅ حتى ${pd.limit} تحليل شهرياً`;
+    }
+  });
+
+  // ── 4. تحديث بادج الخطة الحالية ─────────────────────────────
   const badge = document.getElementById('plans-current-badge');
   if (badge) badge.textContent = _PLAN_LABELS_MAP[plan] || plan;
 
-  // Highlight current plan card
+  // ── 5. تمييز البطاقة الحالية ─────────────────────────────────
   ['free','pro','enterprise'].forEach(p => {
     const card = document.getElementById('plan-card-' + p);
     const btn  = document.getElementById('plan-btn-' + p);
     if (!card || !btn) return;
-
     if (p === plan) {
-      // Current plan
       card.style.borderColor = 'var(--gold-b)';
       btn.disabled = true;
       btn.textContent = '✅ خطتك الحالية';
