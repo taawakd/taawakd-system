@@ -133,7 +133,37 @@ async function switchProject(id) {
   STATE.currentReport = null;
   if (STATE.chartInstance) { STATE.chartInstance.destroy(); STATE.chartInstance = null; }
 
-  // ── ② مسح حقول ملف المشروع (الإيجار، الرواتب… إلخ) ──────────────
+  // ── ② مسح لوحة التحكم فوراً ──────────────────────────────────────
+  if (typeof _clearDashboard === 'function') _clearDashboard();
+  const reportsGrid = document.getElementById('savedReportsGrid');
+  if (reportsGrid) reportsGrid.innerHTML = '';
+  // مسح صفحة النتائج
+  const resultsPage = document.getElementById('page-results');
+  if (resultsPage) resultsPage.innerHTML = '<div style="padding:60px;text-align:center;color:var(--text-muted);">أجرِ تحليلاً لمشروعك لرؤية النتائج</div>';
+
+  // ── ③ مسح حقول نموذج التحليل (الإيرادات، المصاريف… إلخ) ──────────
+  const _analysisFields = [
+    'f-name','f-type','f-rev','f-cogs','f-sal','f-rent','f-mkt','f-utilities','f-emp',
+    'f-other','f-notes','f-from','f-to','f-period','f-month','f-quarter','f-year',
+    'f-week','f-half','f-single-date','f-year-h','f-year-q'
+  ];
+  _analysisFields.forEach(fid => {
+    const el = document.getElementById(fid);
+    if (!el) return;
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else { el.value = ''; el.dispatchEvent(new Event('input')); }
+  });
+  // مسح مؤشرات الحساب المباشر (اللايف فيو)
+  ['lv-total-exp','lv-profit','lv-margin','lv-be'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if (el) el.textContent = '—';
+  });
+  // مسح جدول المنتجات في نموذج التحليل
+  const prodsContainer = document.getElementById('prodsContainer');
+  if (prodsContainer) prodsContainer.innerHTML = '';
+  if (typeof addProdRow === 'function') setTimeout(() => addProdRow(), 50);
+
+  // ── ④ مسح حقول ملف المشروع (الإيجار، الرواتب… إلخ) ──────────────
   const _bpFields = ['bp-name','bp-type','bp-rent','bp-salaries','bp-utilities',
     'bp-subscriptions','bp-fixed-other','bp-cogs','bp-delivery','bp-marketing','bp-var-other'];
   _bpFields.forEach(fid => {
@@ -145,7 +175,7 @@ async function switchProject(id) {
   if (typeof calcBPFixed      === 'function') calcBPFixed();
   if (typeof renderBPProducts === 'function') renderBPProducts();
 
-  // ── ③ تحميل تكاليف المنتجات الخاصة بهذا المشروع ──────────────────
+  // ── ⑤ تحميل تكاليف المنتجات الخاصة بهذا المشروع ──────────────────
   const pcKey = projectProductCostsKey(id);
   const pcRaw = localStorage.getItem(pcKey);
   if (window.PC_STATE) {
@@ -153,16 +183,16 @@ async function switchProject(id) {
   }
   if (typeof renderProductList === 'function') renderProductList();
 
-  // ── ④ مسح سجل CFO ────────────────────────────────────────────────
+  // ── ⑥ مسح سجل CFO ────────────────────────────────────────────────
   window.CFO_HISTORY = [];
   window.bpContext   = '';
   const cfoMessages = document.getElementById('cfoMessages');
   if (cfoMessages) cfoMessages.innerHTML = '';
 
-  // ── ⑤ رسم القائمة من جديد ────────────────────────────────────────
+  // ── ⑦ رسم القائمة من جديد ────────────────────────────────────────
   renderProjectSelector();
 
-  // ── ⑥ تحميل بيانات المشروع الجديد ───────────────────────────────
+  // ── ⑧ تحميل بيانات المشروع الجديد ───────────────────────────────
   if (id === 'default') {
     if (typeof loadReportsFromDB   === 'function') await loadReportsFromDB();
     if (typeof loadBusinessProfile === 'function') loadBusinessProfile();
@@ -177,10 +207,10 @@ async function switchProject(id) {
     }
   }
 
-  // ── ⑦ تحديث لوحة التحكم ────────────────────────────────────────
+  // ── ⑨ تحديث لوحة التحكم ────────────────────────────────────────
   if (typeof updateDashboard === 'function') updateDashboard();
 
-  // ── ⑧ عرض صفحة لوحة التحكم ─────────────────────────────────────
+  // ── ⑩ عرض صفحة لوحة التحكم ─────────────────────────────────────
   if (typeof showPage === 'function') showPage('dashboard');
 
   const projName = getProjects().find(p => p.id === id)?.name || id;

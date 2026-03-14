@@ -2,9 +2,35 @@
 // ✅ المرحلة 3-B: استخراج updateDashboard + loadReportsFromDB + renderSavedReports
 // ============================================================
 
+function _clearDashboard() {
+  // مسح كل عناصر لوحة التحكم عند التبديل لمشروع فارغ
+  const _empty = id => { const el = document.getElementById(id); if(el) el.textContent = '—'; };
+  _empty('dk-rev'); _empty('dk-profit'); _empty('dk-margin'); _empty('dk-health');
+  ['dk-profit','dk-margin'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.className = 'kpi-val';
+  });
+  const ac = document.getElementById('alertsContainer');
+  if(ac) ac.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">أجرِ تحليلاً لمشروعك لرؤية التنبيهات</div>';
+  const bc = document.getElementById('breakevenContainer');
+  if(bc) bc.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">أجرِ تحليلاً لحساب نقطة التعادل</div>';
+  const fc = document.getElementById('forecastContainer');
+  if(fc) fc.innerHTML = '';
+  // مسح حلقة النتيجة
+  const fill = document.getElementById('scoreRingFill');
+  const val  = document.getElementById('scoreVal');
+  const lbl  = document.getElementById('scoreLabel');
+  const brk  = document.getElementById('scoreBreakdown');
+  if(fill) fill.style.strokeDasharray = '0 100';
+  if(val)  val.textContent  = '—';
+  if(lbl)  lbl.textContent  = '';
+  if(brk)  brk.innerHTML    = '';
+}
+window._clearDashboard = _clearDashboard;
+
 function updateDashboard() {
   const rep = STATE.savedReports[0];
-  if(!rep){ return; }
+  if(!rep){ _clearDashboard(); return; }
   const m = rep.metrics;
 
   document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ﷼';
