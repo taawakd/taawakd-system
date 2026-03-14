@@ -11,9 +11,17 @@ function _esc(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ── مفتاح التخزين الخاص بالمشروع الحالي ──────────────────────
+function _pcStorageKey() {
+  const projId = window.__CURRENT_PROJECT_ID__ || 'default';
+  return typeof projectProductCostsKey === 'function'
+    ? projectProductCostsKey(projId)
+    : 'tw_product_costs';
+}
+
 // ── الحالة العامة ──────────────────────────────────────────────
 var PC_STATE = {
-  products: JSON.parse(localStorage.getItem('tw_product_costs') || '[]'),
+  products: JSON.parse(localStorage.getItem(_pcStorageKey()) || '[]'),
 };
 var PC_TARGET_MARGIN = 40; // الهامش المستهدف الافتراضي
 window.PC_STATE = PC_STATE;
@@ -348,7 +356,7 @@ function saveProductCost() {
   if (idx >= 0) PC_STATE.products[idx] = productData;
   else PC_STATE.products.push(productData);
 
-  localStorage.setItem('tw_product_costs', JSON.stringify(PC_STATE.products));
+  localStorage.setItem(_pcStorageKey(), JSON.stringify(PC_STATE.products));
 
   const statusEl = document.getElementById('pc-save-status');
   if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
@@ -383,7 +391,7 @@ async function pcLoadFromDB() {
       .select('product_costs').eq('user_id', user.id).single();
     if (!error && Array.isArray(data?.product_costs) && data.product_costs.length) {
       PC_STATE.products = data.product_costs;
-      localStorage.setItem('tw_product_costs', JSON.stringify(PC_STATE.products));
+      localStorage.setItem(_pcStorageKey(), JSON.stringify(PC_STATE.products));
     }
   } catch(e) { console.warn('product-cost DB load:', e); }
 }
@@ -451,7 +459,7 @@ function duplicateProduct(id) {
 function deleteProductCost(id) {
   if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
   PC_STATE.products = PC_STATE.products.filter(p => p.id !== id);
-  localStorage.setItem('tw_product_costs', JSON.stringify(PC_STATE.products));
+  localStorage.setItem(_pcStorageKey(), JSON.stringify(PC_STATE.products));
   pcSyncToDB();
   renderProductComparison();
   toast('تم حذف المنتج');

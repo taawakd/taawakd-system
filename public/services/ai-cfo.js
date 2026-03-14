@@ -226,7 +226,10 @@ function defaultActionPlan(rep) {
 
 function renderActionPlan(weeks) {
   const c = document.getElementById('actionPlanContent');
-  let progress = JSON.parse(localStorage.getItem('tw_plan_progress') || '{}');
+  const _ppKey = typeof projectPlanProgressKey === 'function'
+    ? projectPlanProgressKey(window.__CURRENT_PROJECT_ID__ || 'default')
+    : 'tw_plan_progress';
+  let progress = JSON.parse(localStorage.getItem(_ppKey) || '{}');
 
   c.innerHTML = weeks.map(w => `
     <div class="week-card">
@@ -257,10 +260,13 @@ function renderActionPlan(weeks) {
 }
 
 function toggleAction(week, idx, el) {
-  let progress = JSON.parse(localStorage.getItem('tw_plan_progress') || '{}');
+  const _ppKey = typeof projectPlanProgressKey === 'function'
+    ? projectPlanProgressKey(window.__CURRENT_PROJECT_ID__ || 'default')
+    : 'tw_plan_progress';
+  let progress = JSON.parse(localStorage.getItem(_ppKey) || '{}');
   const key = week+'-'+idx;
   progress[key] = !progress[key];
-  localStorage.setItem('tw_plan_progress', JSON.stringify(progress));
+  localStorage.setItem(_ppKey, JSON.stringify(progress));
   el.classList.toggle('done');
   const check = el.querySelector('.ai-check');
   if(el.classList.contains('done')){check.textContent='✓';} else {check.textContent='';}

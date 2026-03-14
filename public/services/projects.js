@@ -69,6 +69,16 @@ function projectProfileKey(projId) {
   return projId === 'default' ? null : `tw_bp_${projId}`;
 }
 
+// مفتاح تكاليف المنتجات لمشروع معين
+function projectProductCostsKey(projId) {
+  return projId === 'default' ? 'tw_product_costs' : `tw_product_costs_${projId}`;
+}
+
+// مفتاح تقدم خطة العمل لمشروع معين
+function projectPlanProgressKey(projId) {
+  return projId === 'default' ? 'tw_plan_progress' : `tw_plan_progress_${projId}`;
+}
+
 // ═══════════════════════════════════════
 // CREATE / DELETE
 // ═══════════════════════════════════════
@@ -103,9 +113,11 @@ function deleteProject(id) {
   if (id === 'default') { toast('❌ لا يمكن حذف المشروع الافتراضي'); return false; }
   const projects = getProjects().filter(p => p.id !== id);
   _saveProjectsList(projects);
-  // حذف بيانات المشروع
+  // حذف جميع بيانات المشروع
   localStorage.removeItem(projectReportsKey(id));
   localStorage.removeItem(projectProfileKey(id));
+  localStorage.removeItem(projectProductCostsKey(id));
+  localStorage.removeItem(projectPlanProgressKey(id));
   return true;
 }
 
@@ -116,36 +128,60 @@ function deleteProject(id) {
 async function switchProject(id) {
   _setActiveProjectId(id);
 
-  // تحميل تقارير المشروع الجديد
-  const saved = localStorage.getItem(projectReportsKey(id));
-  STATE.savedReports  = saved ? JSON.parse(saved) : [];
-  STATE.currentReport = STATE.savedReports[0] || null;
+  // ── ① مسح النتائج والحالة الحالية ────────────────────────────────
+  STATE.savedReports  = [];
+  STATE.currentReport = null;
+  if (STATE.chartInstance) { STATE.chartInstance.destroy(); STATE.chartInstance = null; }
 
-  // مسح سجل CFO عند التبديل
+  // ── ② مسح حقول ملف المشروع (الإيجار، الرواتب… إلخ) ──────────────
+  const _bpFields = ['bp-name','bp-type','bp-rent','bp-salaries','bp-utilities',
+    'bp-subscriptions','bp-fixed-other','bp-cogs','bp-delivery','bp-marketing','bp-var-other'];
+  _bpFields.forEach(fid => {
+    const el = document.getElementById(fid);
+    if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
+  });
+  window._businessProfile = null;
+  window.BP_PRODUCTS = [];
+  if (typeof calcBPFixed      === 'function') calcBPFixed();
+  if (typeof renderBPProducts === 'function') renderBPProducts();
+
+  // ── ③ تحميل تكاليف المنتجات الخاصة بهذا المشروع ──────────────────
+  const pcKey = projectProductCostsKey(id);
+  const pcRaw = localStorage.getItem(pcKey);
+  if (window.PC_STATE) {
+    window.PC_STATE.products = pcRaw ? JSON.parse(pcRaw) : [];
+  }
+  if (typeof renderProductList === 'function') renderProductList();
+
+  // ── ④ مسح سجل CFO ────────────────────────────────────────────────
   window.CFO_HISTORY = [];
+  window.bpContext   = '';
   const cfoMessages = document.getElementById('cfoMessages');
   if (cfoMessages) cfoMessages.innerHTML = '';
 
-  // تحديث الـ context في CFO
-  window.bpContext = '';
-
-  // رسم القائمة من جديد
+  // ── ⑤ رسم القائمة من جديد ────────────────────────────────────────
   renderProjectSelector();
 
-  // إعادة تحميل بيانات المشروع من Supabase (للمشروع الافتراضي)
-  // أو من localStorage للمشاريع الأخرى
+  // ── ⑥ تحميل بيانات المشروع الجديد ───────────────────────────────
   if (id === 'default') {
-    if (typeof loadReportsFromDB === 'function') await loadReportsFromDB();
+    if (typeof loadReportsFromDB   === 'function') await loadReportsFromDB();
     if (typeof loadBusinessProfile === 'function') loadBusinessProfile();
   } else {
+    // تحميل التقارير من localStorage
+    const saved = localStorage.getItem(projectReportsKey(id));
+    STATE.savedReports  = saved ? JSON.parse(saved) : [];
+    STATE.currentReport = STATE.savedReports[0] || null;
     _loadProjectProfile(id);
     if (document.getElementById('savedReportsGrid')) {
       if (typeof renderSavedReports === 'function') renderSavedReports();
     }
   }
 
-  // تحديث لوحة التحكم
+  // ── ⑦ تحديث لوحة التحكم ────────────────────────────────────────
   if (typeof updateDashboard === 'function') updateDashboard();
+
+  // ── ⑧ عرض صفحة لوحة التحكم ─────────────────────────────────────
+  if (typeof showPage === 'function') showPage('dashboard');
 
   const projName = getProjects().find(p => p.id === id)?.name || id;
   toast(`✅ تم التبديل إلى: ${projName}`);
@@ -374,8 +410,14 @@ function confirmDeleteProject(id) {
   const proj = getProjects().find(p => p.id === id);
   if (!proj) return;
   if (!confirm(`هل تريد حذف مشروع "${proj.name}"؟\nسيتم حذف جميع بياناته نهائياً.`)) return;
+  const wasActive = getActiveProjectId() === id;
   if (deleteProject(id)) {
-    renderProjectSelector();
+    if (wasActive) {
+      // إذا حُذف المشروع النشط، انتقل للافتراضي أولاً
+      switchProject('default');
+    } else {
+      renderProjectSelector();
+    }
     toast(`✅ تم حذف "${proj.name}"`);
   }
 }
@@ -419,8 +461,10 @@ window.selectProjColor        = selectProjColor;
 window.submitNewProject       = submitNewProject;
 window.confirmDeleteProject   = confirmDeleteProject;
 window.initProjectSelector    = initProjectSelector;
-window.saveProjectReports     = saveProjectReports;
-window.loadProjectReports     = loadProjectReports;
-window.projectReportsKey      = projectReportsKey;
-window.saveProjectProfile     = saveProjectProfile;
-window._loadProjectProfile    = _loadProjectProfile;
+window.saveProjectReports       = saveProjectReports;
+window.loadProjectReports       = loadProjectReports;
+window.projectReportsKey        = projectReportsKey;
+window.projectProductCostsKey   = projectProductCostsKey;
+window.projectPlanProgressKey   = projectPlanProgressKey;
+window.saveProjectProfile       = saveProjectProfile;
+window._loadProjectProfile      = _loadProjectProfile;

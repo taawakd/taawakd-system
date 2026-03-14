@@ -1041,7 +1041,7 @@ function importFromProductCostCalc() {
   // اقرأ المنتجات من PC_STATE أو من localStorage مباشرة
   const pcProducts = (window.PC_STATE?.products?.length)
     ? window.PC_STATE.products
-    : JSON.parse(localStorage.getItem('tw_product_costs') || '[]');
+    : JSON.parse(localStorage.getItem(typeof projectProductCostsKey === 'function' ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default') : 'tw_product_costs') || '[]');
 
   if (!pcProducts.length) {
     if (typeof toast === 'function') toast('لا توجد منتجات محفوظة في حاسبة التكاليف');
@@ -1076,7 +1076,7 @@ function _updateImportBtn() {
   if (!btn) return;
   const pcProducts = (window.PC_STATE?.products?.length)
     ? window.PC_STATE.products
-    : JSON.parse(localStorage.getItem('tw_product_costs') || '[]');
+    : JSON.parse(localStorage.getItem(typeof projectProductCostsKey === 'function' ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default') : 'tw_product_costs') || '[]');
   btn.style.display = pcProducts.length ? '' : 'none';
   if (pcProducts.length) {
     btn.textContent = `📥 استيراد من حاسبة التكاليف (${pcProducts.length})`;
