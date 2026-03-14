@@ -13,7 +13,14 @@ async function initApp() {
     if (pc) pc.innerHTML = pagesHTML;
     if (typeof initNumInputs === 'function') initNumInputs();
     if (typeof initProdsSection === 'function') initProdsSection();
-    if (typeof loadBusinessProfile === 'function') loadBusinessProfile();
+    // loadBusinessProfile تحتاج window.sb — نستدعيها بعد tw:appReady لضمان جاهزيته
+    if (typeof loadBusinessProfile === 'function') {
+      if (window.sb) {
+        loadBusinessProfile();
+      } else {
+        window.addEventListener('tw:appReady', () => loadBusinessProfile(), { once: true });
+      }
+    }
     if (typeof renderSavedReports === 'function') {
       // تأكّد من وجود STATE قبل الاستدعاء
       window.STATE = window.STATE || { currentReport: null, savedReports: JSON.parse(localStorage.getItem('tw_reports')||'[]'), chartInstance: null, chartMode: 'net' };

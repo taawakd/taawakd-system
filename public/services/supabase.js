@@ -5,7 +5,8 @@ const delay = ms => new Promise(r=>setTimeout(r,ms));
 
 async function loadBusinessProfile() {
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    if (!window.sb) return; // ← الـ Supabase client لم يُضبط بعد
+    const { data: { user } } = await window.sb.auth.getUser();
     if (!user) return;
 
     // ── مشاريع غير الافتراضي تُحمَّل من localStorage ──────────────
@@ -15,7 +16,7 @@ async function loadBusinessProfile() {
       return;
     }
 
-    const { data, error } = await sb.from('business_profile')
+    const { data, error } = await window.sb.from('business_profile')
       .select('*').eq('user_id', user.id).single();
     if (error || !data) return;
     window._businessProfile = data;
@@ -48,7 +49,8 @@ async function saveBusinessProfile() {
   const statusEl = document.getElementById('bp-save-status');
   if (statusEl) statusEl.textContent = 'جاري الحفظ...';
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    if (!window.sb) { toast('خطأ: الاتصال غير جاهز'); return; }
+    const { data: { user } } = await window.sb.auth.getUser();
     if (!user) { toast('يجب تسجيل الدخول أولاً'); return; }
 
     // ── مشاريع غير الافتراضي تُحفظ في localStorage ──────────────
@@ -92,7 +94,7 @@ async function saveBusinessProfile() {
       var_other_pct:       g('bp-var-other'),
       products: window.BP_PRODUCTS || [],
     };
-    const { error } = await sb.from('business_profile')
+    const { error } = await window.sb.from('business_profile')
       .upsert(profile, { onConflict: 'user_id' });
     if (error) throw error;
     window._businessProfile = profile;

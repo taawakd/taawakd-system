@@ -364,9 +364,9 @@ function saveProductCost() {
 async function pcSyncToDB() {
   try {
     if (!window.sb) return;
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await window.sb.auth.getUser();
     if (!user) return;
-    await sb.from('business_profile').upsert(
+    await window.sb.from('business_profile').upsert(
       { user_id: user.id, product_costs: PC_STATE.products },
       { onConflict: 'user_id' }
     );
@@ -377,9 +377,9 @@ async function pcSyncToDB() {
 async function pcLoadFromDB() {
   try {
     if (!window.sb) return;
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await window.sb.auth.getUser();
     if (!user) return;
-    const { data, error } = await sb.from('business_profile')
+    const { data, error } = await window.sb.from('business_profile')
       .select('product_costs').eq('user_id', user.id).single();
     if (!error && Array.isArray(data?.product_costs) && data.product_costs.length) {
       PC_STATE.products = data.product_costs;

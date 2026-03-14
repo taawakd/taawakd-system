@@ -139,7 +139,7 @@ async function runAnalysis() {
   try {
     const token = window.__AUTH_TOKEN__;
     if (token) {
-      const { data: { user } } = await sb.auth.getUser();
+      const { data: { user } } = await window.sb.auth.getUser();
       if (user) {
         const basePayload = {
           user_id: user.id, biz_name: report.bizName, biz_type: report.bizType,
@@ -150,7 +150,7 @@ async function runAnalysis() {
         };
         // Try with report_period column; if column doesn't exist yet, fall back without it
         // (reportPeriod is always present inside report_json as a safe fallback)
-        let { error: insertErr } = await sb.from('reports').insert({
+        let { error: insertErr } = await window.sb.from('reports').insert({
           ...basePayload, report_period: report.reportPeriod || null
         });
         if (insertErr) {
@@ -158,7 +158,7 @@ async function runAnalysis() {
           // If the error is a missing column, retry without report_period
           if (insertErr.code === '42703' || (insertErr.message && insertErr.message.includes('report_period'))) {
             console.warn('[Tawakkad] report_period column missing — run SQL migration. Retrying without column...');
-            const { error: retryErr } = await sb.from('reports').insert(basePayload);
+            const { error: retryErr } = await window.sb.from('reports').insert(basePayload);
             if (retryErr) console.error('[Tawakkad] Supabase retry insert error:', retryErr.message, retryErr);
             else console.log('[Tawakkad] Insert succeeded without report_period (reportPeriod stored in report_json)');
           }
