@@ -41,6 +41,7 @@ window.switchAdminTab = function(tab) {
   if (tab === 'usage')     renderAdminUsage();
   if (tab === 'plans')     renderAdminPlans();
   if (tab === 'logs')      renderAdminLogs(1, 'all');
+  if (tab === 'insights')  renderAdminInsights();
 };
 
 // ── Init ───────────────────────────────────────────────────────────────────

@@ -748,6 +748,7 @@
     <button class="admin-tab-btn"        id="atab-usage"     onclick="switchAdminTab('usage')">📈 الاستخدام</button>
     <button class="admin-tab-btn"        id="atab-plans"     onclick="switchAdminTab('plans')">💎 الخطط</button>
     <button class="admin-tab-btn"        id="atab-logs"      onclick="switchAdminTab('logs')">🗂 Logs</button>
+    <button class="admin-tab-btn"        id="atab-insights"  onclick="switchAdminTab('insights')">📊 تحليلات السوق</button>
   </div>
 
   <!-- ── Overview ─────────────────────────────────────────── -->
@@ -842,6 +843,89 @@
     </div>
     <div id="admin-logs-pag" style="margin-top:12px"></div>
   </div>
+
+  <!-- ── Market Insights ───────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-insights">
+
+    <!-- Filter Bar -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:16px 0 20px">
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">🔍 فلاتر التحليل</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;align-items:end">
+
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:5px">القطاع / النشاط</label>
+          <select class="input" id="ins-biz-type">
+            <option value="all">🌐 جميع القطاعات</option>
+            <optgroup label="الطعام والمشروبات">
+              <option value="مطعم">🍽 مطعم</option>
+              <option value="مقهى">☕ مقهى</option>
+              <option value="مطبخ سحابي">📦 مطبخ سحابي</option>
+              <option value="مخبز">🥐 مخبز</option>
+              <option value="كيوسك">🥤 كيوسك</option>
+            </optgroup>
+            <optgroup label="التجزئة والتجارة">
+              <option value="متجر">🛍 متجر تجزئة</option>
+              <option value="تجارة إلكترونية">💻 تجارة إلكترونية</option>
+            </optgroup>
+            <optgroup label="الخدمات">
+              <option value="حلاقة وتجميل">✂️ حلاقة وتجميل</option>
+              <option value="خدمات">🔧 خدمات عامة</option>
+              <option value="أخرى">📋 أخرى</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:5px">الفترة</label>
+          <select class="input" id="ins-period">
+            <option value="all">كل الفترات</option>
+            <option value="شهري">شهري</option>
+            <option value="سنوي">سنوي</option>
+            <option value="ربع سنوي">ربع سنوي</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:5px">نطاق البيانات</label>
+          <select class="input" id="ins-date-range">
+            <option value="all">كل الوقت</option>
+            <option value="30">آخر 30 يوم</option>
+            <option value="90">آخر 3 أشهر</option>
+            <option value="180">آخر 6 أشهر</option>
+            <option value="365">آخر سنة</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:5px">حجم المشروع</label>
+          <select class="input" id="ins-size">
+            <option value="all">جميع الأحجام</option>
+            <option value="small">صغير (أقل من 50 ألف)</option>
+            <option value="medium">متوسط (50k – 200k)</option>
+            <option value="large">كبير (أكثر من 200 ألف)</option>
+          </select>
+        </div>
+
+        <div>
+          <button class="btn-primary" onclick="runInsightsAnalysis()" style="width:100%;justify-content:center;padding:10px">
+            <span>📊</span> تحليل السوق
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="ins-results">
+      <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+        <div style="font-size:40px;margin-bottom:12px;opacity:.4">🏪</div>
+        <p style="font-size:14px;margin-bottom:4px">اختر القطاع وابدأ التحليل</p>
+        <p style="font-size:12px">جميع البيانات مجمّعة — لا تُعرض أي بيانات فردية</p>
+      </div>
+    </div>
+
+  </div>
+
 </div><!-- end page-admin -->
 
 <!-- ── Assign Plan Modal ──────────────────────────────────── -->
