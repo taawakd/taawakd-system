@@ -277,11 +277,16 @@ function handleExcel(input) {
   reader.onload = e => {
     try {
       const wb   = XLSX.read(e.target.result, { type:'binary' });
-      const ws   = wb.Sheets[wb.SheetNames[0]];
+
+      // ── اختر الشيت الصحيح: ابحث عن "إدخال البيانات" أولاً ──────────────
+      const dataSheetName = wb.SheetNames.find(n =>
+        n.includes('إدخال') || n.includes('بيانات') || n.includes('data') || n.includes('Data')
+      ) || wb.SheetNames[0];
+      const ws   = wb.Sheets[dataSheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
       if (!rows.length) { toast('الملف فارغ'); return; }
 
-      const clean  = s  => String(s||'').trim().replace(/\s+/g,' ');
+      const clean  = s  => String(s||'').trim().replace(/[★✦•\s]+/g,' ').trim();
       const num    = v  => { const n=parseFloat(String(v).replace(/[,،\s]/g,'')); return isNaN(n)?0:n; };
       const isNum  = v  => !isNaN(parseFloat(String(v).replace(/[,،]/g,'')));
       const setFld = (id,v) => { const el=document.getElementById(id); if(el){el.value=v;el.dispatchEvent(new Event('input'));} };
@@ -307,6 +312,41 @@ function handleExcel(input) {
       };
 
       let matched = 0;
+
+      // ══════════════════════════════════════════════════════════════════════
+      // الاستراتيجية 0: قالب توكّد الرسمي — العمود B=التسمية، العمود C=القيمة
+      // يتعرف على الشيت بوجود "توكّد" في الصف الثاني
+      // ══════════════════════════════════════════════════════════════════════
+      const isTawakkadTemplate = rows.slice(0,4).some(r =>
+        r.some(cell => String(cell||'').includes('توكّد') || String(cell||'').includes('towkd'))
+      );
+      if (isTawakkadTemplate) {
+        rows.forEach(row => {
+          const label = clean(String(row[1]||''));  // العمود B (index 1)
+          const val   = row[2];                     // العمود C (index 2)
+          if (!label) return;
+          const m = matchField(label);
+          if (m) {
+            if (m.text) {
+              const strVal = String(val||'').trim();
+              if (strVal) { setFld(m.field, strVal); matched++; }
+            } else {
+              const n = num(val);
+              if (n > 0) { setFld(m.field, n); matched++; }
+            }
+          }
+          // الفترة الزمنية
+          const lc = label.replace(/\s+/g,'');
+          if (lc.includes('الفترة') || lc.includes('فترة') || lc.includes('period')) {
+            if (!window._excelReportPeriod && val) window._excelReportPeriod = String(val).trim();
+          }
+        });
+        if (matched > 0) {
+          if (typeof liveCalc === 'function') liveCalc();
+          toast('✅ تم قراءة ' + matched + ' حقل من قالب توكّد');
+          return;
+        }
+      }
 
       // ══════════════════════════════════════════════════════════════════════
       // الاستراتيجية 1: جدول منتجات (أعمدة: اسم المنتج، كمية، سعر، تكلفة)
