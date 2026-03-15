@@ -1122,21 +1122,53 @@ function importFromProductCostCalc() {
 }
 
 /**
- * يُظهر / يُخفي زر الاستيراد بناءً على وجود منتجات في حاسبة التكاليف
+ * يُظهر / يُخفي أزرار الاستيراد بناءً على المنتجات المتاحة
  */
 function _updateImportBtn() {
+  // ── زر حاسبة التكاليف ──
   const btn = document.getElementById('btn-import-from-pc');
-  if (!btn) return;
-  const pcProducts = (window.PC_STATE?.products?.length)
-    ? window.PC_STATE.products
-    : JSON.parse(localStorage.getItem(typeof projectProductCostsKey === 'function' ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default') : 'tw_product_costs') || '[]');
-  btn.style.display = pcProducts.length ? '' : 'none';
-  if (pcProducts.length) {
-    btn.textContent = `📥 استيراد من حاسبة التكاليف (${pcProducts.length})`;
+  if (btn) {
+    const pcProducts = (window.PC_STATE?.products?.length)
+      ? window.PC_STATE.products
+      : JSON.parse(localStorage.getItem(typeof projectProductCostsKey === 'function' ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default') : 'tw_product_costs') || '[]');
+    btn.style.display = pcProducts.length ? '' : 'none';
+    if (pcProducts.length) {
+      btn.textContent = `📥 استيراد من حاسبة التكاليف (${pcProducts.length})`;
+    }
+  }
+
+  // ── زر المنتجات المحفوظة (_PRODUCTS من المنيو / قاعدة البيانات) ──
+  const dbBtn = document.getElementById('btn-import-from-db');
+  if (dbBtn) {
+    const dbProds = window._PRODUCTS || [];
+    dbBtn.style.display = dbProds.length ? '' : 'none';
+    if (dbProds.length) {
+      dbBtn.textContent = `🍽 إعادة تحميل المنتجات (${dbProds.length})`;
+    }
   }
 }
 
+/**
+ * يستورد المنتجات من _PRODUCTS (قاعدة البيانات / المنيو) إلى prodsContainer
+ */
+function importFromDBProducts() {
+  const dbProds = window._PRODUCTS || [];
+  if (!dbProds.length) {
+    if (typeof toast === 'function') toast('لا توجد منتجات محفوظة — ارفع المنيو أولاً');
+    return;
+  }
+  const mapped = dbProds.map(p => ({
+    name:  p.name || '',
+    price: p.selling_price || p.price || 0,
+    cost:  p.cost || 0,
+    qty:   0,
+  }));
+  if (typeof showProductTable === 'function') showProductTable(mapped);
+  if (typeof toast === 'function') toast(`✅ تم تحميل ${mapped.length} منتج من المنتجات المحفوظة`);
+}
+
 window._updateImportBtn = _updateImportBtn;
+window.importFromDBProducts = importFromDBProducts;
 
 // expose to window
 window.runAnalysis = runAnalysis;

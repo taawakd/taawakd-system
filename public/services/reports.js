@@ -791,11 +791,32 @@ window.togglePeriod = togglePeriod;
 
 // ── تهيئة قسم المنتجات في نموذج التحليل ──────────────────────
 function initProdsSection() {
-  // أضف صفاً فارغاً أولياً إذا كان الحاوي فارغاً
   const c = document.getElementById('prodsContainer');
-  if (c && c.children.length === 0) addProdRow();
+  if (!c) return;
 
-  // أظهر / أخفِ زر الاستيراد بناءً على المنتجات المحفوظة في الحاسبة
+  // ── إذا كان الحاوي فارغاً وهناك منتجات محفوظة في _PRODUCTS — ملأها تلقائياً ──
+  const dbProducts = window._PRODUCTS || [];
+  if (c.children.length === 0 && dbProducts.length > 0) {
+    dbProducts.forEach(p => {
+      addProdRow();
+      const allRows = c.querySelectorAll('.prod-row');
+      const row = allRows[allRows.length - 1];
+      if (!row) return;
+      const ins = row.querySelectorAll('input');
+      ins[0].value = p.name || '';
+      // ضع القيمة كنص ثم شغّل حدث input لتنسيق الأرقام
+      const priceVal = Math.round(p.selling_price || p.price || 0);
+      const costVal  = Math.round(p.cost || 0);
+      ins[1].value = priceVal > 0 ? priceVal.toLocaleString('en') : '';
+      ins[2].value = costVal  > 0 ? costVal.toLocaleString('en')  : '';
+      ins[3].value = '';
+      if (priceVal > 0) calcRowMargin(ins[1]);
+    });
+  } else if (c.children.length === 0) {
+    addProdRow();
+  }
+
+  // أظهر / أخفِ أزرار الاستيراد
   if (typeof window._updateImportBtn === 'function') window._updateImportBtn();
 }
 window.initProdsSection = initProdsSection;

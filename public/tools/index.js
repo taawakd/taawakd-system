@@ -868,6 +868,16 @@ async function saveMenuProducts() {
     // ─ مزامنة BP_PRODUCTS من الكاش الجديد ───────────────────────────
     if (typeof renderBPProducts === 'function') renderBPProducts();
 
+    // ─ تحديث prodsContainer في نموذج التحليل بالمنتجات الجديدة ──────
+    const prodsC = document.getElementById('prodsContainer');
+    if (prodsC) {
+      prodsC.innerHTML = '';
+      if (typeof initProdsSection === 'function') initProdsSection();
+    }
+
+    // ─ تحديث زر الاستيراد ───────────────────────────────────────────
+    if (typeof window._updateImportBtn === 'function') window._updateImportBtn();
+
     const msg = '✅ تم حفظ ' + newProducts.length + ' منتج' +
       (dupCount > 0 ? ` (تجاهل ${dupCount} مكرر)` : '');
     toast(msg);
