@@ -20,7 +20,14 @@ async function loadBusinessProfile() {
       .select('*').eq('user_id', user.id).single();
     if (error || !data) return;
     window._businessProfile = data;
-    window.BP_PRODUCTS = data.products || [];
+
+    // ── تحميل المنتجات من جدول products الجديد أولاً ──────────────────
+    if (typeof loadProductsFromDB === 'function') {
+      await loadProductsFromDB(); // يُحدّث window._PRODUCTS و window.BP_PRODUCTS
+    } else {
+      window.BP_PRODUCTS = data.products || [];
+    }
+
     // set + تشغيل input event لتفعيل تنسيق الأرقام وتحديث الإجماليات
     const set = (id, val) => {
       const el = document.getElementById(id);

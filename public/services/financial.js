@@ -910,6 +910,14 @@ function getCFOContext() {
         const fixedCosts = (m.rent||0)+(m.salaries||0)+(m.marketing||0)+(m.utilities||0)+(m.other||0);
         const contribRatio = m.revenue > 0 ? (m.revenue - (m.cogs||0)) / m.revenue : 1;
         const breakEven = contribRatio > 0 ? Math.round(fixedCosts / contribRatio) : 0;
+
+        // المنتجات: يفضّل _PRODUCTS (جدول Supabase) على منتجات التقرير
+        const dbProducts  = (window._PRODUCTS || []).map(p => ({
+          name: p.name, price: p.selling_price, cost: p.cost, qty: 0, category: p.category,
+        }));
+        const repProducts = rep.products || [];
+        const products = dbProducts.length ? dbProducts : repProducts;
+
         return {
           bizName:       rep.bizName,
           bizType:       rep.bizType,
@@ -937,7 +945,7 @@ function getCFOContext() {
           score:         rep.scoreData?.total,
           period:        rep.reportPeriod || rep.period,
           alerts:        rep.alerts?.map(a => a.msg) || [],
-          products:      rep.products || []
+          products,
         };
       })(),
       previous: previousReports,
@@ -960,12 +968,15 @@ function buildCFOSystemPrompt(ctx) {
   const trend              = cfoContext.trend || {};
   const hasPreviousReports = previous && previous.length > 0;
 
-  // Build product line
+  // Build product line — يستخدم formatProductsForAI إذا كانت متاحة
   const prodsText = (latest.products || []).length
-    ? latest.products.map(p => {
-        const mg = p.price > 0 ? (((p.price - p.cost) / p.price) * 100).toFixed(0) : 0;
-        return `${p.name} (هامش ${mg}%, كمية ${p.qty})`;
-      }).join('، ')
+    ? (typeof formatProductsForAI === 'function'
+        ? formatProductsForAI(latest.products)
+        : latest.products.map(p => {
+            const sp = p.selling_price ?? p.price ?? 0;
+            const mg = sp > 0 ? (((sp - (p.cost||0)) / sp) * 100).toFixed(0) : 0;
+            return `${p.name} (هامش ${mg}%${p.qty ? ', كمية '+p.qty : ''}${p.category ? ', '+p.category : ''})`;
+          }).join('، '))
     : 'لا توجد بيانات منتجات';
 
   // Null-safe number formatter — shows '—' for missing/undefined values instead of 0

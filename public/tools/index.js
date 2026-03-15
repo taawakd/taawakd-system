@@ -755,6 +755,9 @@ async function _callMenuOCR(payload) {
   });
 }
 
+// قائمة تصنيفات المنتجات الشائعة
+const _MENU_CATEGORIES = ['','مقبلات','طاسات وشوربات','مشويات','رئيسية','سلطات','وجبات جانبية','مشروبات باردة','مشروبات ساخنة','عصائر','حلويات','إضافات','وجبات خاصة','أطفال','إفطار','غداء','عشاء','أخرى'];
+
 function _menuRenderTable(products) {
   const rows = document.getElementById('menu-products-rows');
   const cnt  = document.getElementById('menu-products-count');
@@ -762,26 +765,35 @@ function _menuRenderTable(products) {
 
   rows.innerHTML = '';
   products.forEach((p, i) => {
-    rows.appendChild(_menuCreateRow(p.name, p.price, i));
+    rows.appendChild(_menuCreateRow(p.name, p.price ?? p.selling_price ?? 0, p.cost ?? 0, p.category ?? ''));
   });
   if (cnt) cnt.textContent = products.length + ' منتج';
 
   _menuSetSection('table');
 }
 
-function _menuCreateRow(name, price, idx) {
+function _menuCreateRow(name, price, cost, category) {
   const row = document.createElement('div');
   row.className = 'menu-prod-row';
-  row.style.cssText = 'display:grid;grid-template-columns:1fr 90px 36px;gap:8px;align-items:center';
+  row.style.cssText = 'display:grid;grid-template-columns:1.8fr 75px 75px 100px 36px;gap:6px;align-items:center';
+
+  const inpStyle = 'background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:7px 8px;font-size:12px;width:100%;font-family:inherit;box-sizing:border-box';
+  const catOptions = _MENU_CATEGORIES.map(c =>
+    `<option value="${c}" ${c === (category||'') ? 'selected' : ''}>${c || '— تصنيف —'}</option>`
+  ).join('');
+
   row.innerHTML = `
     <input type="text" value="${_escapeHtml(name)}"
-           style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;color:#eee;font-size:13px;width:100%;font-family:inherit;direction:rtl"
-           placeholder="اسم المنتج">
-    <input type="number" value="${price || ''}"
-           style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;color:#d4af37;font-size:13px;width:100%;font-family:inherit;text-align:center"
-           placeholder="0" min="0">
+           style="${inpStyle};color:#eee;direction:rtl" placeholder="اسم المنتج">
+    <input type="number" value="${price > 0 ? price : ''}"
+           style="${inpStyle};color:#d4af37;text-align:center" placeholder="0" min="0">
+    <input type="number" value="${cost > 0 ? cost : ''}"
+           style="${inpStyle};color:#4caf82;text-align:center" placeholder="0" min="0">
+    <select style="${inpStyle};color:#999;cursor:pointer">
+      ${catOptions}
+    </select>
     <button onclick="this.closest('.menu-prod-row').remove(); _updateMenuCount()"
-            style="background:none;border:none;color:#555;font-size:16px;cursor:pointer;padding:4px;transition:color 0.2s"
+            style="background:none;border:none;color:#555;font-size:15px;cursor:pointer;padding:4px;transition:color 0.2s"
             onmouseover="this.style.color='#d95f5f'" onmouseout="this.style.color='#555'">🗑</button>
   `;
   return row;
@@ -800,10 +812,9 @@ function _updateMenuCount() {
 function addMenuProductRow() {
   const rows = document.getElementById('menu-products-rows');
   if (!rows) return;
-  const newRow = _menuCreateRow('', 0, rows.children.length);
+  const newRow = _menuCreateRow('', 0, 0, '');
   rows.appendChild(newRow);
   _updateMenuCount();
-  // التركيز على input الاسم
   newRow.querySelector('input')?.focus();
 }
 
@@ -811,22 +822,21 @@ async function saveMenuProducts() {
   const rowEls = document.querySelectorAll('.menu-prod-row');
   if (!rowEls.length) { toast('لا توجد منتجات للحفظ'); return; }
 
+  // ─ جمع البيانات من الجدول (name, selling_price, cost, category) ──
   const products = [];
-  let hasError = false;
   rowEls.forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const name  = inputs[0]?.value.trim();
-    const price = parseFloat(inputs[1]?.value) || 0;
-    if (name) {
-      products.push({ name, price, cost: 0 });
-    } else {
-      // سطر فارغ — تجاهله
-    }
+    const inputs  = row.querySelectorAll('input');
+    const selects = row.querySelectorAll('select');
+    const name          = inputs[0]?.value.trim();
+    const selling_price = parseFloat(inputs[1]?.value) || 0;
+    const cost          = parseFloat(inputs[2]?.value) || 0;
+    const category      = selects[0]?.value || '';
+    if (name) products.push({ name, selling_price, cost, category });
   });
 
   if (!products.length) { toast('أضف اسم منتج واحد على الأقل'); return; }
 
-  // ─ تفعيل حالة التحميل ───────────────────────────────────────────
+  // ─ تفعيل حالة التحميل ────────────────────────────────────────────
   const btn  = document.getElementById('menu-save-btn');
   const txt  = document.getElementById('menu-save-text');
   const spin = document.getElementById('menu-save-spin');
@@ -835,34 +845,32 @@ async function saveMenuProducts() {
   if (spin) spin.style.display = 'block';
 
   try {
-    // ─ الحفظ في BP_PRODUCTS ──────────────────────────────────────
-    // دمج مع القائمة الحالية (إضافة الجديد)
-    if (!window.BP_PRODUCTS) window.BP_PRODUCTS = [];
+    // ─ تجنب التكرار بالاسم ──────────────────────────────────────────
+    const existingNames = new Set((window._PRODUCTS || []).map(p => p.name.toLowerCase()));
+    const newProducts = products.filter(p => !existingNames.has(p.name.toLowerCase()));
+    const dupCount = products.length - newProducts.length;
 
-    // تجنب التكرار بناءً على الاسم
-    const existingNames = new Set(BP_PRODUCTS.map(p => p.name.toLowerCase()));
-    let addedCount = 0;
-    products.forEach(p => {
-      if (!existingNames.has(p.name.toLowerCase())) {
-        BP_PRODUCTS.push(p);
-        existingNames.add(p.name.toLowerCase());
-        addedCount++;
-      }
-    });
+    if (!newProducts.length) {
+      toast('⚠️ جميع المنتجات موجودة مسبقاً');
+      return;
+    }
 
-    // ─ حفظ في Supabase ──────────────────────────────────────────
-    if (window.sb) {
-      const { data: { user } } = await window.sb.auth.getUser();
-      if (user) {
-        await window.sb.from('business_profile')
-          .upsert({ user_id: user.id, products: BP_PRODUCTS }, { onConflict: 'user_id' });
+    // ─ الحفظ في جدول products في Supabase ───────────────────────────
+    if (typeof upsertProductsToDB === 'function') {
+      const { error } = await upsertProductsToDB(newProducts);
+      if (error) {
+        console.warn('upsertProductsToDB error:', error);
+        toast('❌ فشل الحفظ: ' + (error.message || 'خطأ غير معروف'));
+        return;
       }
     }
 
-    // ─ تحديث الجدول في الواجهة ──────────────────────────────────
+    // ─ مزامنة BP_PRODUCTS من الكاش الجديد ───────────────────────────
     if (typeof renderBPProducts === 'function') renderBPProducts();
 
-    toast('✅ تم حفظ ' + addedCount + ' منتج جديد' + (addedCount < products.length ? ' (تجاهل المكررات)' : ''));
+    const msg = '✅ تم حفظ ' + newProducts.length + ' منتج' +
+      (dupCount > 0 ? ` (تجاهل ${dupCount} مكرر)` : '');
+    toast(msg);
     closeMenuUpload();
 
   } catch (ex) {

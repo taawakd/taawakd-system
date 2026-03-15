@@ -374,10 +374,26 @@ async function pcSyncToDB() {
     if (!window.sb) return;
     const { data: { user } } = await window.sb.auth.getUser();
     if (!user) return;
+
+    // 1. حفظ البيانات التفصيلية (المكونات وغيرها) في business_profile
     await window.sb.from('business_profile').upsert(
       { user_id: user.id, product_costs: PC_STATE.products },
       { onConflict: 'user_id' }
     );
+
+    // 2. مزامنة selling_price + cost مع جدول products الجديد
+    if (typeof updateProductInDB === 'function' && window._PRODUCTS?.length) {
+      for (const p of PC_STATE.products) {
+        // البحث بالاسم في الجدول الجديد
+        const match = window._PRODUCTS.find(dp => dp.name.toLowerCase() === (p.name||'').toLowerCase());
+        if (match) {
+          await updateProductInDB(match.id, {
+            selling_price: p.salePrice   || match.selling_price,
+            cost:          p.trueCost    || match.cost,
+          });
+        }
+      }
+    }
   } catch(e) { console.warn('product-cost DB sync:', e); }
 }
 
@@ -387,11 +403,32 @@ async function pcLoadFromDB() {
     if (!window.sb) return;
     const { data: { user } } = await window.sb.auth.getUser();
     if (!user) return;
+
+    // 1. تحميل البيانات التفصيلية من business_profile
     const { data, error } = await window.sb.from('business_profile')
       .select('product_costs').eq('user_id', user.id).single();
     if (!error && Array.isArray(data?.product_costs) && data.product_costs.length) {
       PC_STATE.products = data.product_costs;
       localStorage.setItem(_pcStorageKey(), JSON.stringify(PC_STATE.products));
+    }
+
+    // 2. Pre-populate بالمنتجات من جدول products إذا لم تكن موجودة في PC_STATE
+    if (typeof loadProductsFromDB === 'function') {
+      const dbProds = await loadProductsFromDB();
+      if (dbProds.length && PC_STATE.products.length === 0) {
+        // تحويل products → PC_STATE format (بدون مكونات، فقط الأساسيات)
+        PC_STATE.products = dbProds.map(p => ({
+          id:          p.id,
+          name:        p.name,
+          salePrice:   p.selling_price,
+          trueCost:    p.cost,
+          type:        p.category || 'طعام',
+          ingredients: [],
+          opCosts:     {},
+          monthlySales: 0,
+        }));
+        localStorage.setItem(_pcStorageKey(), JSON.stringify(PC_STATE.products));
+      }
     }
   } catch(e) { console.warn('product-cost DB load:', e); }
 }
