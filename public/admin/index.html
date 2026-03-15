@@ -1148,7 +1148,7 @@ window.mobNavTo = function(tab) {
 window.adminSignOut = async function() {
   if (!window.sb) return;
   await window.sb.auth.signOut();
-  window.location.href = 'https://app.towkd.com/auth.html';
+  window.location.href = 'https://app.towkd.com/auth.html?redirect=admin';
 };
 
 // ── Auth Guard ────────────────────────────────────────────
@@ -1168,7 +1168,7 @@ window.adminSignOut = async function() {
 
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
-    window.location.href = 'https://app.towkd.com/auth.html';
+    window.location.href = 'https://app.towkd.com/auth.html?redirect=admin';
     return;
   }
 
@@ -1202,7 +1202,7 @@ window.adminSignOut = async function() {
   // Auto-refresh token
   sb.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
-      window.location.href = 'https://app.towkd.com/auth.html';
+      window.location.href = 'https://app.towkd.com/auth.html?redirect=admin';
     } else if (session) {
       window.__AUTH_TOKEN__ = session.access_token;
     }
