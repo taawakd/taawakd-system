@@ -1,3 +1,79 @@
+<!-- ════ ONBOARDING OVERLAY — يظهر عند أول دخول فقط ════ -->
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:99999;overflow-y:auto;padding:24px 16px 40px;box-sizing:border-box;">
+  <div style="background:#13131a;border:1px solid rgba(201,168,76,0.3);border-radius:20px;padding:32px;width:100%;max-width:560px;margin:0 auto;font-family:inherit;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:12px;">🎯</div>
+      <h2 style="color:#fff;font-size:22px;margin:0 0 8px;">مرحباً! لنُعدّ مشروعك</h2>
+      <p style="color:#888;font-size:14px;margin:0;">أدخل بيانات مشروعك مرة واحدة — النظام يبني عليها كل تحليل</p>
+    </div>
+
+    <!-- اسم المشروع + نوع النشاط -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div>
+        <label style="display:block;font-size:13px;color:#aaa;margin-bottom:6px;">اسم المشروع *</label>
+        <input class="input" id="ob-name" type="text" placeholder="مطعم الوليد" style="width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;color:#aaa;margin-bottom:6px;">نوع النشاط *</label>
+        <select class="input" id="ob-type" style="width:100%;box-sizing:border-box;">
+          <option value="">اختر النوع</option>
+          <option value="restaurant">🍽️ مطعم</option>
+          <option value="cafe">☕ مقهى / كافيه</option>
+          <option value="juice_kiosk">🥤 كيوسك عصائر</option>
+          <option value="bakery">🥐 مخبز / حلويات</option>
+          <option value="food_truck">🚚 فود ترك</option>
+          <option value="retail">🛍️ متجر تجزئة</option>
+          <option value="services">⚙️ خدمات</option>
+          <option value="barber">✂️ حلاقة وتجميل</option>
+          <option value="ecom">💻 تجارة إلكترونية</option>
+          <option value="other">📦 أخرى</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- المدينة -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;color:#aaa;margin-bottom:6px;">المدينة</label>
+      <input class="input" id="ob-city" type="text" placeholder="الرياض" style="width:100%;box-sizing:border-box;">
+    </div>
+
+    <!-- المصاريف الشهرية الثابتة -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:20px;">
+      <p style="color:#e8c76a;font-size:13px;font-weight:700;margin:0 0 12px;">📌 المصاريف الشهرية الثابتة (ر.س)</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">الإيجار</label>
+          <input class="input num-input" id="ob-rent" type="text" inputmode="numeric" placeholder="0" style="width:100%;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">الرواتب</label>
+          <input class="input num-input" id="ob-salaries" type="text" inputmode="numeric" placeholder="0" style="width:100%;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">الكهرباء والمياه</label>
+          <input class="input num-input" id="ob-utilities" type="text" inputmode="numeric" placeholder="0" style="width:100%;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">التسويق الثابت</label>
+          <input class="input num-input" id="ob-marketing" type="text" inputmode="numeric" placeholder="0" style="width:100%;box-sizing:border-box;">
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">مصاريف ثابتة أخرى</label>
+          <input class="input num-input" id="ob-other" type="text" inputmode="numeric" placeholder="0" style="width:100%;box-sizing:border-box;">
+        </div>
+      </div>
+    </div>
+
+    <div id="ob-error" style="display:none;color:#ef4444;font-size:13px;margin-bottom:12px;text-align:center;padding:8px;background:rgba(239,68,68,0.1);border-radius:8px;"></div>
+
+    <button onclick="saveOnboarding()" id="ob-save-btn"
+      style="display:block;width:100%;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;box-sizing:border-box;">
+      حفظ وبدء استخدام النظام ←
+    </button>
+    <p style="text-align:center;font-size:12px;color:#555;margin:12px 0 0;">يمكنك تعديل هذه البيانات لاحقاً من صفحة «ملف المشروع»</p>
+  </div>
+</div>
+
 <div class="page active" id="page-dashboard">
   <div class="page-header">
     <div class="page-title">
@@ -739,6 +815,8 @@
                 <option value="ecom">💻 تجارة إلكترونية</option>
                 <option value="other">📦 أخرى</option>
               </select></div>
+            <div class="form-group full"><label>المدينة</label>
+              <input class="input" id="bp-city" type="text" placeholder="الرياض"></div>
           </div>
         </div>
 
@@ -755,7 +833,9 @@
               <input class="input num-input" id="bp-utilities" type="text" inputmode="numeric" placeholder="0" min="0"></div>
             <div class="form-group"><label>الاشتراكات والتراخيص (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label>
               <input class="input num-input" id="bp-subscriptions" type="text" inputmode="numeric" placeholder="0" min="0"></div>
-            <div class="form-group full"><label>مصاريف ثابتة أخرى (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label>
+            <div class="form-group"><label>التسويق الثابت (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label>
+              <input class="input num-input" id="bp-marketing-fixed" type="text" inputmode="numeric" placeholder="0" min="0"></div>
+            <div class="form-group"><label>مصاريف ثابتة أخرى (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label>
               <input class="input num-input" id="bp-fixed-other" type="text" inputmode="numeric" placeholder="0" min="0"></div>
           </div>
           <div style="margin-top:12px;padding:10px;background:var(--bg-card);border-radius:8px;display:flex;justify-content:space-between">

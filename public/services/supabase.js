@@ -37,10 +37,12 @@ async function loadBusinessProfile() {
     };
     set('bp-name', data.biz_name);
     set('bp-type', data.biz_type);
+    set('bp-city', data.city);
     set('bp-rent', data.fixed_rent);
     set('bp-salaries', data.fixed_salaries);
     set('bp-utilities', data.fixed_utilities);
     set('bp-subscriptions', data.fixed_subscriptions);
+    set('bp-marketing-fixed', data.fixed_marketing);
     set('bp-fixed-other', data.fixed_other);
     set('bp-cogs', data.var_cogs_pct);
     set('bp-delivery', data.var_delivery_pct);
@@ -67,10 +69,12 @@ async function saveBusinessProfile() {
       const profile = {
         biz_name:            document.getElementById('bp-name')?.value?.trim() || '',
         biz_type:            document.getElementById('bp-type')?.value?.trim() || '',
+        city:                document.getElementById('bp-city')?.value?.trim() || '',
         fixed_rent:          g('bp-rent'),
         fixed_salaries:      g('bp-salaries'),
         fixed_utilities:     g('bp-utilities'),
         fixed_subscriptions: g('bp-subscriptions'),
+        fixed_marketing:     g('bp-marketing-fixed'),
         fixed_other:         g('bp-fixed-other'),
         var_cogs_pct:        g('bp-cogs'),
         var_delivery_pct:    g('bp-delivery'),
@@ -88,12 +92,14 @@ async function saveBusinessProfile() {
     const g = id => parseNum(document.getElementById(id)?.value || '');
     const profile = {
       user_id: user.id,
-      biz_name: document.getElementById('bp-name')?.value?.trim() || '',
-      biz_type: document.getElementById('bp-type')?.value?.trim() || '',
+      biz_name:            document.getElementById('bp-name')?.value?.trim() || '',
+      biz_type:            document.getElementById('bp-type')?.value?.trim() || '',
+      city:                document.getElementById('bp-city')?.value?.trim() || '',
       fixed_rent:          g('bp-rent'),
       fixed_salaries:      g('bp-salaries'),
       fixed_utilities:     g('bp-utilities'),
       fixed_subscriptions: g('bp-subscriptions'),
+      fixed_marketing:     g('bp-marketing-fixed'),
       fixed_other:         g('bp-fixed-other'),
       var_cogs_pct:        g('bp-cogs'),
       var_delivery_pct:    g('bp-delivery'),
@@ -114,3 +120,91 @@ async function saveBusinessProfile() {
   }
 }
 window.saveBusinessProfile = saveBusinessProfile;
+
+// ══════════════════════════════════════════
+// ONBOARDING — حفظ الإعداد الأولي
+// ══════════════════════════════════════════
+async function saveOnboarding() {
+  const errEl = document.getElementById('ob-error');
+  const btn   = document.getElementById('ob-save-btn');
+
+  // تحقق من الحقول الإلزامية
+  const name = document.getElementById('ob-name')?.value?.trim();
+  const type = document.getElementById('ob-type')?.value;
+  const showErr = (msg) => {
+    if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+  };
+  if (!name) { showErr('يرجى إدخال اسم المشروع'); return; }
+  if (!type) { showErr('يرجى اختيار نوع النشاط'); return; }
+  if (errEl) errEl.style.display = 'none';
+  if (btn) { btn.textContent = 'جاري الحفظ...'; btn.disabled = true; }
+
+  try {
+    if (!window.sb) throw new Error('الاتصال غير جاهز');
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (!user) throw new Error('يجب تسجيل الدخول أولاً');
+
+    const g = id => parseNum(document.getElementById(id)?.value || '');
+    const profile = {
+      user_id:             user.id,
+      biz_name:            name,
+      biz_type:            type,
+      city:                document.getElementById('ob-city')?.value?.trim() || '',
+      fixed_rent:          g('ob-rent'),
+      fixed_salaries:      g('ob-salaries'),
+      fixed_utilities:     g('ob-utilities'),
+      fixed_marketing:     g('ob-marketing'),
+      fixed_other:         g('ob-other'),
+      fixed_subscriptions: 0,
+      var_cogs_pct:        0,
+      var_delivery_pct:    0,
+      var_marketing_pct:   0,
+      var_other_pct:       0,
+      products:            [],
+    };
+
+    // upsert في business_profile
+    const { error } = await window.sb.from('business_profile')
+      .upsert(profile, { onConflict: 'user_id' });
+    if (error) throw error;
+
+    // تحديث onboarding_completed في profiles (اختياري — لا يوقف التطبيق إذا فشل)
+    try {
+      await window.sb.from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id);
+    } catch(_) {}
+
+    // تحديث الكاش العالمي
+    window._businessProfile = profile;
+    window.__ONBOARDING_NEEDED__ = false;
+
+    // ملء حقول page-profile بنفس القيم
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = (val !== null && val !== undefined) ? val : '';
+      el.dispatchEvent(new Event('input'));
+    };
+    set('bp-name',           profile.biz_name);
+    set('bp-type',           profile.biz_type);
+    set('bp-city',           profile.city);
+    set('bp-rent',           profile.fixed_rent);
+    set('bp-salaries',       profile.fixed_salaries);
+    set('bp-utilities',      profile.fixed_utilities);
+    set('bp-marketing-fixed',profile.fixed_marketing);
+    set('bp-fixed-other',    profile.fixed_other);
+    if (typeof calcBPFixed === 'function') calcBPFixed();
+
+    // إخفاء الـ overlay
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay) overlay.style.display = 'none';
+
+    toast('🎉 مرحباً! تم إعداد مشروعك بنجاح');
+  } catch(err) {
+    console.error(err);
+    if (errEl) { errEl.textContent = 'خطأ: ' + err.message; errEl.style.display = 'block'; }
+    if (btn) { btn.textContent = 'حفظ وبدء استخدام النظام ←'; btn.disabled = false; }
+  }
+}
+window.saveOnboarding = saveOnboarding;

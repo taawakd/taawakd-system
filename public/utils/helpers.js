@@ -82,6 +82,7 @@ function showPage(name, _fromHash) {
   }
 
   if(name==='dashboard') updateDashboard();
+  if(name==='analysis') _prefillFromBP();
   if(name==='reports') {
     if (!planAllows('save_reports')) { showUpgradeModal('سجل التقارير المحفوظة', 'pro'); return; }
     renderSavedReports();
@@ -208,3 +209,33 @@ function signOut() {
   _sb.auth.signOut().then(() => window.location.href = '/auth.html');
 }
 window.signOut = signOut;
+
+// ══════════════════════════════════════════
+// PRE-FILL — ملء نموذج التحليل من ملف المشروع
+// ══════════════════════════════════════════
+function _prefillFromBP() {
+  const bp = window._businessProfile;
+  if (!bp) return;
+
+  // يملأ الحقل فقط إذا كان فارغاً
+  const setIfEmpty = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el || el.value) return; // لا تُعيد الكتابة إذا كان ممتلئاً
+    const n = Number(val);
+    if (n > 0) {
+      el.value = Math.round(n).toLocaleString('en');
+      el.dispatchEvent(new Event('input'));
+    }
+  };
+
+  setIfEmpty('f-rent',      bp.fixed_rent);
+  setIfEmpty('f-sal',       bp.fixed_salaries);
+  setIfEmpty('f-utilities', bp.fixed_utilities);
+
+  // نوع النشاط (select)
+  if (bp.biz_type) {
+    const typeEl = document.getElementById('f-type');
+    if (typeEl && !typeEl.value) typeEl.value = bp.biz_type;
+  }
+}
+window._prefillFromBP = _prefillFromBP;

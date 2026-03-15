@@ -955,11 +955,39 @@ function getCFOContext() {
 }
 
 function buildCFOSystemPrompt(ctx) {
+  // مُنسِّق أرقام آمن للـ BP (يُظهر — للقيمة 0 أو null)
+  const _fmtBP = v => (v != null && !isNaN(Number(v)) && Number(v) !== 0)
+    ? Number(v).toLocaleString('en')
+    : '—';
+
   if (!ctx) {
-    return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية.
+    const bp = window._businessProfile;
+    if (!bp || !bp.biz_name) {
+      return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية.
 لا تتوفر بيانات مشروع محددة حالياً، لكن يمكنك الإجابة على أي سؤال مالي أو تجاري.
 تحدث بالعربية دائماً. اذهب مباشرة للإجابة بدون مقدمات أو خاتمات. كن موجزاً (3-5 جمل).
 إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال التجارية (كالطبخ أو الرياضة)، قل باختصار أن اختصاصك في الاستشارات المالية والتجارية فقط.`;
+    }
+    // لا يوجد تقارير لكن يوجد ملف مشروع — استخدم بياناته
+    const totalFixed = (Number(bp.fixed_rent)||0) + (Number(bp.fixed_salaries)||0)
+      + (Number(bp.fixed_utilities)||0) + (Number(bp.fixed_marketing)||0)
+      + (Number(bp.fixed_subscriptions)||0) + (Number(bp.fixed_other)||0);
+    return `أنت AI CFO لمشروع "${bp.biz_name}" — مستشار مالي متخصص للمشاريع السعودية الصغيرة والمتوسطة.
+
+══ ملف المشروع (البيانات الأساسية) ══
+- الاسم: ${bp.biz_name}
+- النشاط: ${bp.biz_type || '—'}
+- المدينة: ${bp.city || '—'}
+- الإيجار: ${_fmtBP(bp.fixed_rent)} ر.س/شهر
+- الرواتب: ${_fmtBP(bp.fixed_salaries)} ر.س/شهر
+- الكهرباء والمياه: ${_fmtBP(bp.fixed_utilities)} ر.س/شهر
+- التسويق الثابت: ${_fmtBP(bp.fixed_marketing)} ر.س/شهر
+- الاشتراكات: ${_fmtBP(bp.fixed_subscriptions)} ر.س/شهر
+- مصاريف أخرى: ${_fmtBP(bp.fixed_other)} ر.س/شهر
+- إجمالي التكاليف الثابتة: ${totalFixed > 0 ? totalFixed.toLocaleString('en') : '—'} ر.س/شهر
+
+⚠️ لم يتم إجراء أي تحليل مالي بعد — أجب بناءً على البيانات الأساسية أعلاه واطرح أسئلة توضيحية إذا لزم.
+تحدث بالعربية دائماً. اذهب مباشرة للإجابة. إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال، قل باختصار أن اختصاصك في الاستشارات المالية فقط.`;
   }
 
   const { cfoContext } = ctx;

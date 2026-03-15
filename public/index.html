@@ -670,6 +670,13 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     }
   } catch(e) { window.__USER_PLAN__ = 'free'; }
 
+  // ── فحص إتمام الإعداد الأولي (Onboarding) ──────────────────────────
+  try {
+    const { data: bpCheck } = await sb.from('business_profile')
+      .select('user_id').eq('user_id', session.user.id).maybeSingle();
+    window.__ONBOARDING_NEEDED__ = !bpCheck;
+  } catch(e) { window.__ONBOARDING_NEEDED__ = false; }
+
   // ── إظهار عناصر الواجهة بعد تأكد تحميل sidebar.html ──────────────
   // نستخدم setTimeout لضمان أن initApp() قد أدرج sidebar.html في DOM
   setTimeout(() => {
@@ -694,6 +701,16 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       const navAdminSec = document.getElementById('nav-admin-section');
       if (navAdmin) navAdmin.style.display = '';
       if (navAdminSec) navAdminSec.style.display = '';
+    }
+
+    // إظهار شاشة الإعداد الأولي إذا لم يكن للمستخدم ملف مشروع
+    if (window.__ONBOARDING_NEEDED__) {
+      const obOverlay = document.getElementById('onboarding-overlay');
+      if (obOverlay) {
+        obOverlay.style.display = 'flex';
+        obOverlay.style.flexDirection = 'column';
+        if (typeof initNumInputs === 'function') initNumInputs();
+      }
     }
 
     // أطلق حدث جاهزية الملف الشخصي ليلتقطه app.js إذا احتاج
