@@ -137,9 +137,14 @@ async function switchProject(id) {
   if (typeof _clearDashboard === 'function') _clearDashboard();
   const reportsGrid = document.getElementById('savedReportsGrid');
   if (reportsGrid) reportsGrid.innerHTML = '';
-  // مسح صفحة النتائج
-  const resultsPage = document.getElementById('page-results');
-  if (resultsPage) resultsPage.innerHTML = '<div style="padding:60px;text-align:center;color:var(--text-muted);">أجرِ تحليلاً لمشروعك لرؤية النتائج</div>';
+  // ⚠️ لا نمسح page-results بالكامل — renderResults() تحتاج بنيتها الداخلية
+  // بدلاً من ذلك نُخفي محتواها ونُظهر رسالة فارغة حتى يُجري المستخدم تحليلاً
+  const resultKpis = document.getElementById('resultKpis');
+  if (resultKpis) resultKpis.innerHTML = '';
+  const resultTitle = document.getElementById('resultTitle');
+  if (resultTitle) resultTitle.textContent = '';
+  const resultMeta = document.getElementById('resultMeta');
+  if (resultMeta) resultMeta.textContent = '';
 
   // ── ③ مسح حقول نموذج التحليل (الإيرادات، المصاريف… إلخ) ──────────
   const _analysisFields = [

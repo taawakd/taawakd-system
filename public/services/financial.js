@@ -138,7 +138,9 @@ async function runAnalysis() {
 
   try {
     const token = window.__AUTH_TOKEN__;
-    if (token) {
+    const _projId = window.__CURRENT_PROJECT_ID__ || 'default';
+    // المشاريع الإضافية (غير الافتراضية) تُحفظ في localStorage فقط — لا Supabase
+    if (token && _projId === 'default') {
       const { data: { user } } = await window.sb.auth.getUser();
       if (user) {
         const basePayload = {
@@ -167,7 +169,7 @@ async function runAnalysis() {
         }
         // ملاحظة: زيادة analyses_used تتم من الـ API مباشرة — لا نكررها هنا
       }
-    }
+    } // end: default project only
   } catch(saveErr) { console.error('[Tawakkad] Supabase save exception:', saveErr); }
 
   if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
