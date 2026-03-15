@@ -432,10 +432,10 @@
     /* ── PRICING ── */
     #pricing { background: var(--bg); }
     .pricing-grid {
-      display: grid; grid-template-columns: repeat(3,1fr);
-      gap: 24px; margin-top: 56px; align-items: stretch;
+      display: grid; grid-template-columns: repeat(2,1fr);
+      gap: 28px; margin-top: 56px; align-items: stretch; max-width: 780px; margin-left: auto; margin-right: auto;
     }
-    @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; } }
+    @media (max-width: 760px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
     .pricing-card {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 22px; padding: 36px; display: flex;
@@ -911,62 +911,44 @@
       </p>
     </div>
     <div class="pricing-grid">
-      <!-- Free -->
+      <!-- Free / Trial -->
       <div class="pricing-card reveal">
-        <div class="plan-name">مجاني</div>
-        <div class="plan-desc">جرّب المنصة وابدأ بتحليل مشروعك</div>
+        <div class="plan-name">مجاني تجريبي</div>
+        <div class="plan-desc">جرّب المنصة واكتشف قيمتها بدون أي التزام</div>
         <div class="plan-price free-price">0</div>
-        <div class="plan-period">ريال سعودي</div>
+        <div class="plan-period">ريال سعودي · فترة تجريبية لا تتجدد</div>
         <div class="plan-divider"></div>
         <ul class="plan-features">
-          <li class="active"><span class="check">✓</span> 2 تحليلات شهرياً</li>
+          <li class="active"><span class="check">✓</span> 3 تحليلات تجريبية (لا تتجدد)</li>
           <li class="active"><span class="check">✓</span> مؤشر صحة المشروع</li>
           <li class="active"><span class="check">✓</span> تقرير أساسي</li>
+          <li class="active"><span class="check">✓</span> حاسبة تكلفة المنتج</li>
           <li class="active"><span class="check">✓</span> AI CFO محدود (3 أسئلة)</li>
           <li><span class="cross">✕</span> <span>توقعات ذكية</span></li>
-          <li><span class="cross">✕</span> <span>مقارنة القطاع</span></li>
+          <li><span class="cross">✕</span> <span>مقارنة السوق</span></li>
         </ul>
         <a href="https://app.towkd.com/auth.html" class="plan-cta">ابدأ مجاناً</a>
       </div>
 
-      <!-- Pro -->
+      <!-- Paid / Full -->
       <div class="pricing-card featured reveal reveal-delay-1">
-        <div class="featured-badge">الأكثر طلباً</div>
-        <div class="plan-name" style="color:var(--gold2)">احترافي</div>
+        <div class="featured-badge">⭐ جميع المميزات</div>
+        <div class="plan-name" style="color:var(--gold2)">مدفوع</div>
         <div class="plan-desc">للمشاريع النشطة التي تريد وضوحاً مالياً كاملاً</div>
         <div class="plan-price">79 <span>ر.س</span></div>
         <div class="plan-period">شهرياً · يُجدد تلقائياً</div>
         <div class="plan-divider"></div>
         <ul class="plan-features">
-          <li class="active"><span class="check">✓</span> 8 تحليلات شهرياً</li>
+          <li class="active"><span class="check">✓</span> تحليلات غير محدودة</li>
           <li class="active"><span class="check">✓</span> مؤشر صحة المشروع</li>
           <li class="active"><span class="check">✓</span> تقارير مالية متقدمة</li>
           <li class="active"><span class="check">✓</span> AI CFO كامل</li>
-          <li class="active"><span class="check">✓</span> توقعات الإيرادات</li>
-          <li class="active"><span class="check">✓</span> مقارنة السوق</li>
-          <li class="active"><span class="check">✓</span> تقارير PDF</li>
-          <li class="active"><span class="check">✓</span> حفظ التقارير</li>
+          <li class="active"><span class="check">✓</span> توقعات الإيرادات الذكية</li>
+          <li class="active"><span class="check">✓</span> مقارنة السوق والفترات</li>
+          <li class="active"><span class="check">✓</span> تصدير تقارير PDF</li>
+          <li class="active"><span class="check">✓</span> حفظ التقارير + دعم واتساب</li>
         </ul>
-        <a href="https://app.towkd.com/auth.html" class="plan-cta featured-cta">ابدأ الخطة الاحترافية</a>
-      </div>
-
-      <!-- Enterprise -->
-      <div class="pricing-card reveal reveal-delay-2">
-        <div class="plan-name">مؤسسي</div>
-        <div class="plan-desc">للشركات والمكاتب المالية والمستشارين</div>
-        <div class="plan-price">199 <span>ر.س</span></div>
-        <div class="plan-period">شهرياً · يُجدد تلقائياً</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li class="active"><span class="check">✓</span> 30 تحليلاً شهرياً</li>
-          <li class="active"><span class="check">✓</span> إدارة عدة مشاريع</li>
-          <li class="active"><span class="check">✓</span> إدارة فريق</li>
-          <li class="active"><span class="check">✓</span> لوحة تحكم متقدمة</li>
-          <li class="active"><span class="check">✓</span> تقارير احترافية</li>
-          <li class="active"><span class="check">✓</span> دعم أولوية</li>
-          <li class="active"><span class="check">✓</span> تكامل محاسبي</li>
-        </ul>
-        <a href="https://app.towkd.com/auth.html" class="plan-cta">تواصل معنا</a>
+        <a href="https://app.towkd.com/auth.html" class="plan-cta featured-cta">اشترك الآن ←</a>
       </div>
     </div>
   </div>
@@ -1134,7 +1116,7 @@
         <p class="legal-lead">نهدف في توكّد إلى توفير تجربة دفع شفافة وعادلة لجميع مستخدمينا.</p>
 
         <h4 class="legal-h4">خطط الاشتراك والأسعار</h4>
-        <p>تتوفر ثلاث خطط اشتراك: <strong>المجانية</strong> (0 ريال · تحليلان شهرياً)، <strong>الاحترافية</strong> (79 ريال/شهر · 8 تحليلات)، <strong>المؤسسية</strong> (199 ريال/شهر · 30 تحليلاً + إدارة مشاريع متعددة). جميع الأسعار بالريال السعودي وتشمل ضريبة القيمة المضافة.</p>
+        <p>تتوفر خطتان للاشتراك: <strong>المجانية التجريبية</strong> (0 ريال · 3 تحليلات لا تتجدد)، <strong>المدفوعة</strong> (79 ريال/شهر · تحليلات غير محدودة + جميع المميزات). جميع الأسعار بالريال السعودي وتشمل ضريبة القيمة المضافة.</p>
 
         <h4 class="legal-h4">آلية الدفع</h4>
         <p>تُقبل وسائل الدفع الإلكترونية المعتمدة عبر بوابات دفع آمنة. يُجدَّد الاشتراك تلقائياً في نهاية كل دورة فوترة ما لم يتم إلغاؤه قبل موعد التجديد.</p>
