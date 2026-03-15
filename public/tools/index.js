@@ -458,17 +458,31 @@ function renderBPProducts() {
     '</tbody></table>';
 }
 
-function addBPProduct() {
+async function addBPProduct() {
   const name  = document.getElementById('bp-prod-name')?.value.trim();
   const cost  = parseFloat(document.getElementById('bp-prod-cost')?.value) || 0;
   const price = parseFloat(document.getElementById('bp-prod-price')?.value) || 0;
-  if (!name) { toast('أدخل اسم المنتج'); return; }
+  if (!name)    { toast('أدخل اسم المنتج'); return; }
   if (price <= 0) { toast('أدخل سعر البيع'); return; }
+
+  // تجنب التكرار
+  const inBP = BP_PRODUCTS.some(p => p.name.toLowerCase() === name.toLowerCase());
+  const inDB = (window._PRODUCTS || []).some(p => p.name.toLowerCase() === name.toLowerCase());
+  if (inBP || inDB) { toast('⚠️ المنتج موجود مسبقاً'); return; }
+
   BP_PRODUCTS.push({ name, cost, price });
   document.getElementById('bp-prod-name').value  = '';
   document.getElementById('bp-prod-cost').value  = '';
   document.getElementById('bp-prod-price').value = '';
   renderBPProducts();
+
+  // حفظ فوري في Supabase ليبقى بعد التنقل
+  if (typeof upsertProductsToDB === 'function') {
+    try {
+      await upsertProductsToDB([{ name, selling_price: price, cost, category: '' }]);
+      if (typeof loadProductsFromDB === 'function') await loadProductsFromDB();
+    } catch(e) { console.warn('addBPProduct save error:', e); }
+  }
 }
 
 function removeBPProduct(i) {
@@ -512,21 +526,37 @@ function importBPProducts(input) {
 
       const parseN = v => { const n = parseFloat(String(v||'').replace(/[,،\s]/g,'')); return isNaN(n) ? 0 : n; };
 
-      let added = 0;
+      const newProds = [];
       data.slice(1).forEach(row => {
         const name  = String(row[nameIdx]||'').trim();
-        const cost  = costIdx >= 0 ? parseN(row[costIdx])  : 0;
+        const cost  = costIdx >= 0 ? parseN(row[costIdx]) : 0;
         const price = parseN(row[priceIdx]);
-        if (name && price > 0) { BP_PRODUCTS.push({name, cost, price}); added++; }
+        if (!name || price <= 0) return;
+        const inBP = BP_PRODUCTS.some(p => p.name.toLowerCase() === name.toLowerCase());
+        const inDB = (window._PRODUCTS||[]).some(p => p.name.toLowerCase() === name.toLowerCase());
+        if (!inBP && !inDB) newProds.push({ name, cost, price });
       });
 
-      if (added === 0) {
+      if (!newProds.length) {
         toast('⚠️ لم يتم إضافة أي منتج — تأكد أن الملف يحتوي أعمدة اسم وسعر');
         input.value=''; return;
       }
+
+      newProds.forEach(p => BP_PRODUCTS.push(p));
       renderBPProducts();
       input.value = '';
-      toast('✅ تم استيراد ' + added + ' منتج');
+      toast('✅ تم استيراد ' + newProds.length + ' منتج — جاري الحفظ...');
+
+      // حفظ في Supabase ليبقى بعد التنقل
+      if (typeof upsertProductsToDB === 'function') {
+        const dbProds = newProds.map(p => ({ name: p.name, selling_price: p.price, cost: p.cost, category: '' }));
+        upsertProductsToDB(dbProds).then(async ({ error }) => {
+          if (!error && typeof loadProductsFromDB === 'function') {
+            await loadProductsFromDB();
+            renderBPProducts();
+          }
+        }).catch(e => console.warn('importBPProducts save error:', e));
+      }
     } catch(err) {
       toast('❌ خطأ في قراءة الملف: ' + err.message);
       input.value = '';
@@ -631,32 +661,47 @@ function _bpOcrUpdateCount() {
   if (cnt) cnt.textContent = document.querySelectorAll('.bp-ocr-row').length + ' منتج';
 }
 
-function _confirmBPOcrProducts() {
+async function _confirmBPOcrProducts() {
   const rowEls = document.querySelectorAll('.bp-ocr-row');
   if (!rowEls.length) { toast('لا توجد منتجات'); return; }
 
-  let added = 0;
+  // ─── جمع المنتجات الجديدة من الجدول ────────────────────────────────
+  const toAdd = [];
   rowEls.forEach(row => {
     const inputs = row.querySelectorAll('input');
     const name  = inputs[0]?.value.trim();
     const price = parseFloat(inputs[1]?.value) || 0;
     const cost  = parseFloat(inputs[2]?.value) || 0;
     if (!name) return;
-    // تجنب التكرار
-    const exists = BP_PRODUCTS.some(p => p.name.toLowerCase() === name.toLowerCase());
-    if (!exists) {
-      BP_PRODUCTS.push({ name, selling_price: price, cost, category: '' });
-      added++;
-    }
+    // تجنب التكرار مع BP_PRODUCTS و _PRODUCTS
+    const inBP = BP_PRODUCTS.some(p => p.name.toLowerCase() === name.toLowerCase());
+    const inDB = (window._PRODUCTS || []).some(p => p.name.toLowerCase() === name.toLowerCase());
+    if (!inBP && !inDB) toAdd.push({ name, price, cost });
   });
 
-  renderBPProducts();
   _bpOcrSetState('hidden');
-  const input = document.getElementById('bp-products-file');
-  if (input) input.value = '';
+  const fileInput = document.getElementById('bp-products-file');
+  if (fileInput) fileInput.value = '';
 
-  if (added > 0) toast(`✅ تمت إضافة ${added} منتج لملف المشروع`);
-  else toast('⚠️ جميع المنتجات موجودة مسبقاً');
+  if (!toAdd.length) { toast('⚠️ جميع المنتجات موجودة مسبقاً'); return; }
+
+  // ─── Bug fix: استخدم 'price' وليس 'selling_price' ليتوافق مع renderBPProducts ─
+  toAdd.forEach(p => BP_PRODUCTS.push({ name: p.name, price: p.price, cost: p.cost }));
+  renderBPProducts();
+
+  // ─── الحفظ في Supabase products table لتستمر بعد التنقل ─────────────
+  if (typeof upsertProductsToDB === 'function') {
+    try {
+      const dbProds = toAdd.map(p => ({ name: p.name, selling_price: p.price, cost: p.cost, category: '' }));
+      const { error } = await upsertProductsToDB(dbProds);
+      if (!error && typeof loadProductsFromDB === 'function') {
+        await loadProductsFromDB();   // تحديث الكاش العالمي _PRODUCTS
+        renderBPProducts();           // إعادة الرسم بالبيانات المحدّثة
+      }
+    } catch(e) { console.warn('_confirmBPOcrProducts save error:', e); }
+  }
+
+  toast(`✅ تمت إضافة ${toAdd.length} منتج وحُفظت`);
 }
 window._confirmBPOcrProducts = _confirmBPOcrProducts;
 
