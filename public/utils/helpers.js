@@ -132,14 +132,15 @@ window.addEventListener('tw:appReady', function() {
 // ══════════════════════════════════════════
 
 // تعريف الميزات المتاحة لكل خطة
+// pro و enterprise يُعاملان كـ paid للتوافق مع الحسابات القديمة
+const _PAID_FEATURES = ['analysis', 'health_score', 'basic_report', 'cfo_limited', 'cfo_full',
+  'advanced_report', 'forecast', 'market_compare', 'pdf_export',
+  'save_reports', 'compare_reports'];
 const PLAN_FEATURES = {
   free:       ['analysis', 'health_score', 'basic_report', 'cfo_limited'],
-  pro:        ['analysis', 'health_score', 'basic_report', 'cfo_limited', 'cfo_full',
-               'advanced_report', 'forecast', 'market_compare', 'pdf_export',
-               'save_reports', 'compare_reports'],
-  enterprise: ['analysis', 'health_score', 'basic_report', 'cfo_limited', 'cfo_full',
-               'advanced_report', 'forecast', 'market_compare', 'pdf_export',
-               'save_reports', 'compare_reports', 'multi_project', 'team', 'advanced_dashboard'],
+  paid:       _PAID_FEATURES,
+  pro:        _PAID_FEATURES,        // توافق مع الخطط القديمة
+  enterprise: _PAID_FEATURES,        // توافق مع الخطط القديمة
 };
 
 function planAllows(feature) {
@@ -150,13 +151,11 @@ window.planAllows = planAllows;
 
 // ── عرض نافذة الترقية ──────────────────────────────────────
 function showUpgradeModal(featureName, requiredPlan) {
-  requiredPlan = requiredPlan || 'pro';
-  const planLabel   = requiredPlan === 'enterprise' ? 'المؤسسي'  : 'الاحترافي';
-  const planPrice   = requiredPlan === 'enterprise' ? '199'       : '79';
-  const planFeatures = requiredPlan === 'enterprise'
-    ? ['تحليلات غير محدودة','إدارة عدة مشاريع','إدارة فريق','لوحة تحكم متقدمة','تقارير احترافية','دعم أولوية']
-    : ['12 تحليل شهري','مؤشر صحة المشروع','تقارير مالية متقدمة','AI CFO كامل',
-       'توقعات الإيرادات','مقارنة السوق','تقارير PDF','حفظ التقارير'];
+  // خطة واحدة مدفوعة فقط
+  const planLabel    = 'المدفوعة';
+  const planPrice    = '79';
+  const planFeatures = ['تحليلات غير محدودة','مؤشر صحة المشروع','تقارير مالية متقدمة','AI CFO كامل',
+     'توقعات الإيرادات','مقارنة السوق','تقارير PDF','حفظ التقارير'];
 
   const existing = document.getElementById('upgradeModalOverlay');
   if (existing) existing.remove();

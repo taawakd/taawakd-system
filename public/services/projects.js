@@ -5,7 +5,8 @@
 // CONSTANTS
 // ═══════════════════════════════════════
 
-const MAX_PROJECTS_PER_PLAN = { free: 1, pro: 1, enterprise: 3 };
+// كل حساب لديه مشروع واحد فقط بغض النظر عن الخطة
+const MAX_PROJECTS_PER_PLAN = { free: 1, paid: 1, pro: 1, enterprise: 1 };
 
 // ═══════════════════════════════════════
 // HELPERS
@@ -288,12 +289,9 @@ function renderProjectSelector() {
   const el = document.getElementById('projectSelector');
   if (!el) return;
 
-  const plan = window.__USER_PLAN__ || 'free';
-  if (plan !== 'enterprise') {
-    el.style.display = 'none';
-    return;
-  }
-  el.style.display = '';
+  // كل الحسابات لديها مشروع واحد فقط — نُخفي اختيار المشروع دائماً
+  el.style.display = 'none';
+  return;
 
   const projects = getProjects();
   const activeId = getActiveProjectId();

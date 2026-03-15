@@ -6,11 +6,12 @@ const WHATSAPP_NUMBER = '966XXXXXXXXX'; // ← غيّر هذا الرقم
 
 const PLAN_LABELS = {
   free:       'الخطة المجانية',
-  pro:        'الخطة الاحترافية',
-  enterprise: 'الخطة المؤسسية',
+  paid:       'الخطة المدفوعة',
+  pro:        'الخطة المدفوعة',        // توافق مع الحسابات القديمة
+  enterprise: 'الخطة المدفوعة',        // توافق مع الحسابات القديمة
 };
 
-const PLAN_LIMITS = { free: 3, pro: 12, enterprise: null };
+const PLAN_LIMITS = { free: 3, paid: null, pro: null, enterprise: null };
 
 // ── Load & render profile ──────────────────────────────────
 window.loadUserProfile = async function () {
@@ -71,7 +72,8 @@ window.loadUserProfile = async function () {
 
     if (planEl) {
       planEl.textContent = PLAN_LABELS[plan] || plan;
-      planEl.style.color = plan === 'enterprise' ? '#b06cf0' : plan === 'pro' ? '#5b8fcc' : 'var(--gold)';
+      const isPaid = plan === 'paid' || plan === 'pro' || plan === 'enterprise';
+      planEl.style.color = isPaid ? '#5b8fcc' : 'var(--gold)';
     }
 
     // Expiry date & days remaining
@@ -86,9 +88,10 @@ window.loadUserProfile = async function () {
         daysEl.style.color = days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--warn)' : 'var(--green)';
       }
     } else {
-      if (expiryEl) expiryEl.textContent = plan === 'free' ? 'مجاني دائماً' : 'غير محدد';
-      if (daysEl)   daysEl.textContent   = plan === 'free' ? '∞' : '—';
-      if (daysEl && plan === 'free') daysEl.style.color = 'var(--gray2)';
+      const isFree = plan === 'free';
+      if (expiryEl) expiryEl.textContent = isFree ? 'فترة تجريبية' : 'غير محدد';
+      if (daysEl)   daysEl.textContent   = isFree ? '—' : '—';
+      if (daysEl && isFree) daysEl.style.color = 'var(--gray2)';
     }
 
     // ── Usage bar (free & pro only) ──
@@ -162,13 +165,17 @@ window.saveUserProfile = async function () {
 };
 
 // ── Plans Page ─────────────────────────────────────────────
-const _PLAN_LABELS_MAP = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
+const _PLAN_LABELS_MAP = {
+  free: 'الخطة المجانية',
+  paid: 'الخطة المدفوعة',
+  pro:  'الخطة المدفوعة',        // توافق مع الحسابات القديمة
+  enterprise: 'الخطة المدفوعة',  // توافق مع الحسابات القديمة
+};
 
-// قيم الخطط الافتراضية — مصدر الحقيقة الوحيد (تُحدَّث من لوحة الإدارة عبر DB)
+// قيم الخطط الافتراضية — خطتان فقط: مجانية ومدفوعة
 const _DEFAULT_PLANS = {
-  free:       { price: 0,   limit: 2,  label: 'مجاني' },
-  pro:        { price: 79,  limit: 8,  label: 'احترافي' },
-  enterprise: { price: 199, limit: 30, label: 'مؤسسي' },
+  free: { price: 0,  limit: 3,    label: 'مجاني' },
+  paid: { price: 79, limit: -1,   label: 'مدفوع' },
 };
 
 window.initPlansPage = async function () {
@@ -201,16 +208,15 @@ window.initPlansPage = async function () {
   }
 
   // ── 3. تحديث السعر وحد التحليلات في كل بطاقة ───────────────
-  ['free', 'pro', 'enterprise'].forEach(pid => {
+  ['free', 'paid'].forEach(pid => {
     const pd = plansData[pid];
     if (!pd) return;
     const amountEl = document.querySelector(`#plan-card-${pid} .plans-amount`);
     const limitLi  = document.querySelector(`#plan-card-${pid} .plans-features li:first-child`);
     if (amountEl) amountEl.textContent = pd.price > 0 ? pd.price : '0';
     if (limitLi) {
-      if (pid === 'free') limitLi.textContent = `✅ حتى ${pd.limit} تحليلات شهرياً`;
-      else if (pd.limit === -1) limitLi.textContent = '✅ تحليلات غير محدودة';
-      else limitLi.textContent = `✅ حتى ${pd.limit} تحليل شهرياً`;
+      if (pid === 'free') limitLi.textContent = `✅ حتى ${pd.limit} تحليلات تجريبية (لا تتجدد)`;
+      else limitLi.textContent = '✅ تحليلات غير محدودة';
     }
   });
 
@@ -218,42 +224,40 @@ window.initPlansPage = async function () {
   const badge = document.getElementById('plans-current-badge');
   if (badge) badge.textContent = _PLAN_LABELS_MAP[plan] || plan;
 
-  // ── 5. تمييز البطاقة الحالية ─────────────────────────────────
-  ['free','pro','enterprise'].forEach(p => {
+  // ── 5. تمييز البطاقة الحالية (نعامل pro/enterprise كـ paid) ───
+  const displayPlan = (plan === 'pro' || plan === 'enterprise') ? 'paid' : plan;
+  ['free', 'paid'].forEach(p => {
     const card = document.getElementById('plan-card-' + p);
     const btn  = document.getElementById('plan-btn-' + p);
     if (!card || !btn) return;
-    if (p === plan) {
+    if (p === displayPlan) {
       card.style.borderColor = 'var(--gold-b)';
       btn.disabled = true;
       btn.textContent = '✅ خطتك الحالية';
       btn.className = 'plans-btn plans-btn-ghost';
     } else {
       btn.disabled = false;
-      if (p === 'free')       { btn.textContent = '⬇️ تخفيض الخطة'; btn.className = 'plans-btn plans-btn-ghost'; }
-      if (p === 'pro')        { btn.textContent = '⚡ اشترك الآن';   btn.className = 'plans-btn plans-btn-primary'; }
-      if (p === 'enterprise') { btn.textContent = '🏢 تواصل معنا';   btn.className = 'plans-btn plans-btn-enterprise'; }
+      if (p === 'free') { btn.textContent = '⬇️ تخفيض الخطة'; btn.className = 'plans-btn plans-btn-ghost'; }
+      if (p === 'paid') { btn.textContent = '⚡ اشترك الآن';   btn.className = 'plans-btn plans-btn-primary'; }
     }
   });
 };
 
 window.selectPlan = function (plan) {
-  const current = window.__USER_PLAN__ || 'free';
-  if (plan === current) return;
-
-  if (plan === 'enterprise') {
-    // Open WhatsApp / contact
-    window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent('أريد الاشتراك في الخطة المؤسسية لـ توكّد'), '_blank');
-    return;
-  }
+  const current    = window.__USER_PLAN__ || 'free';
+  const displayCur = (current === 'pro' || current === 'enterprise') ? 'paid' : current;
+  if (plan === displayCur) return;
 
   if (plan === 'free') {
     if (typeof toast === 'function') toast('📬 تواصل معنا على واتساب لتعديل خطتك');
     return;
   }
 
-  // Pro plan — سيتم ربطه بنظام الدفع لاحقاً
-  if (typeof toast === 'function') toast('🔄 سيتم توجيهك لبوابة الدفع قريباً…');
+  if (plan === 'paid') {
+    // توجيه لواتساب أو بوابة الدفع
+    window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent('أريد الاشتراك في الخطة المدفوعة لـ توكّد'), '_blank');
+    return;
+  }
 };
 
 // ── Helpers ────────────────────────────────────────────────

@@ -348,12 +348,12 @@ export default async function handler(req, res) {
         (plans || []).forEach(p => { planPriceMap[p.id] = p.price_monthly || 0; });
         const monthlyRevenue = (paidProfiles || []).reduce((s, p) => s + (planPriceMap[p.plan] || 0), 0);
 
-        // 4. Plan distribution
+        // 4. Plan distribution — خطتان فقط: مجانية ومدفوعة
         const { data: planProfiles } = await supabase.from('profiles').select('plan');
-        const planDist = { free: 0, pro: 0, enterprise: 0 };
+        const planDist = { free: 0, paid: 0 };
         (planProfiles || []).forEach(p => {
-          if (p.plan === 'pro') planDist.pro++;
-          else if (p.plan === 'enterprise') planDist.enterprise++;
+          // pro و enterprise يُعدّان كخطة مدفوعة
+          if (p.plan === 'paid' || p.plan === 'pro' || p.plan === 'enterprise') planDist.paid++;
           else planDist.free++;
         });
 

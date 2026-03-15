@@ -50,12 +50,14 @@ export default async function handler(req, res) {
   const plan = profile?.plan || 'free';
   const isCFOReq = req.body?._type === 'cfo';
 
-  // حدود التحليلات لكل خطة — يجب أن تتطابق مع قيم لوحة الادارة
-  const PLAN_LIMITS = { free: 2, pro: 8, enterprise: 30 };
-  const planLimit   = PLAN_LIMITS[plan] ?? 2;
+  // حدود التحليلات لكل خطة — الخطة المجانية محدودة ولا تتجدد / المدفوعة غير محدودة
+  // pro و enterprise يُعاملان كـ paid للتوافق مع الحسابات القديمة
+  const isPaidPlan = plan === 'paid' || plan === 'pro' || plan === 'enterprise';
+  const PLAN_LIMITS = { free: 3, paid: 9999, pro: 9999, enterprise: 9999 };
+  const planLimit   = PLAN_LIMITS[plan] ?? 3;
 
-  // إعادة تعيين عداد الخطط المدفوعة شهرياً (pro و enterprise)
-  if ((plan === 'pro' || plan === 'enterprise') && !isCFOReq) {
+  // إعادة تعيين عداد الخطط المدفوعة شهرياً
+  if (isPaidPlan && !isCFOReq) {
     const resetAt = profile?.analyses_reset_at ? new Date(profile.analyses_reset_at) : null;
     const now     = new Date();
     if (!resetAt || (now - resetAt) >= 30 * 24 * 60 * 60 * 1000) {
@@ -66,13 +68,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // فحص الحد لجميع الخطط (بما فيها enterprise) ما عدا طلبات CFO
-  if (!isCFOReq && (profile?.analyses_used || 0) >= planLimit) {
-    const planLabels = { free: 'المجانية', pro: 'الاحترافية', enterprise: 'المؤسسية' };
-    const planLabel  = planLabels[plan] || plan;
-    const msg = plan === 'free'
-      ? `وصلت لحد ${planLimit} تحليلات في الخطة ${planLabel} — قم بالترقية للاستمرار`
-      : `وصلت لحد ${planLimit} تحليل شهري في الخطة ${planLabel} — يُعاد التعيين كل 30 يوماً`;
+  // فحص الحد (الخطة المجانية فقط هي المحدودة) ما عدا طلبات CFO
+  if (!isCFOReq && !isPaidPlan && (profile?.analyses_used || 0) >= planLimit) {
+    const msg = `وصلت لحد ${planLimit} تحليلات في الخطة المجانية التجريبية — قم بالترقية للاستمرار`;
     return res.status(403).json({
       error: msg,
       limit_reached: true,

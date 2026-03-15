@@ -229,9 +229,9 @@ function _renderAdminDashCharts(userGrowth, dailyReports, planDist) {
   if (plEl) new Chart(plEl, {
     type: 'doughnut',
     data: {
-      labels: ['مجاني', 'احترافي', 'مؤسسي'],
-      datasets: [{ data: [planDist.free, planDist.pro, planDist.enterprise],
-        backgroundColor: ['rgba(107,114,128,0.7)', 'rgba(76,175,130,0.8)', 'rgba(201,168,76,0.9)'],
+      labels: ['مجاني', 'مدفوع'],
+      datasets: [{ data: [planDist.free, planDist.paid ?? ((planDist.pro||0) + (planDist.enterprise||0))],
+        backgroundColor: ['rgba(107,114,128,0.7)', 'rgba(201,168,76,0.9)'],
         borderWidth: 0 }]
     },
     options: {
@@ -299,8 +299,7 @@ async function renderAdminUsers(page = 1) {
 }
 
 function getPlanBadge(plan) {
-  if (plan === 'enterprise') return badge('مؤسسي', 'gold');
-  if (plan === 'pro')        return badge('احترافي', 'green');
+  if (plan === 'paid' || plan === 'pro' || plan === 'enterprise') return badge('مدفوع', 'green');
   return badge('مجاني', 'gray');
 }
 
@@ -665,7 +664,7 @@ window.openPlanModal = async function(planId) {
   form.innerHTML = `
     <div class="form-group">
       <label>معرف الخطة (لا يتغير)</label>
-      <input id="pm-id" class="input" value="${plan.id}" ${planId ? 'readonly' : ''} placeholder="free / pro / enterprise">
+      <input id="pm-id" class="input" value="${plan.id}" ${planId ? 'readonly' : ''} placeholder="free / paid">
     </div>
     <div class="form-group">
       <label>الاسم بالإنجليزية</label>

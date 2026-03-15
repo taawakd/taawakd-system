@@ -1458,68 +1458,48 @@
     <span id="plans-current-badge" style="font-size:13px;font-weight:700;color:var(--gold)">—</span>
   </div>
 
-  <!-- بطاقات الخطط -->
-  <div id="plans-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:0 auto">
+  <!-- بطاقات الخطط — خطتان فقط -->
+  <div id="plans-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:680px;margin:0 auto">
 
-    <!-- ── مجاني ── -->
+    <!-- ── مجاني (تجريبي) ── -->
     <div class="plans-card" id="plan-card-free">
       <div class="plans-card-header">
-        <div class="plans-badge plans-badge-free">مجاني</div>
-        <div class="plans-price"><span class="plans-amount">0</span><span class="plans-currency"> ريال</span><span class="plans-period">/شهر</span></div>
-        <div class="plans-plan-id">Free</div>
+        <div class="plans-badge plans-badge-free">تجريبي</div>
+        <div class="plans-price"><span class="plans-amount">0</span><span class="plans-currency"> ريال</span><span class="plans-period"></span></div>
+        <div class="plans-plan-id">مجاني</div>
       </div>
       <ul class="plans-features">
-        <li>✅ حتى 2 تحليلات شهرياً</li>
+        <li>✅ حتى 3 تحليلات تجريبية (لا تتجدد)</li>
         <li>✅ لوحة التحكم الأساسية</li>
-        <li>✅ التقارير المحفوظة</li>
         <li>✅ حاسبة تكلفة المنتج</li>
+        <li>✅ رفع المنيو واستخراج المنتجات</li>
         <li class="plans-feat-off">⬜ مقارنة السوق</li>
         <li class="plans-feat-off">⬜ مقارنة الفترات</li>
-        <li class="plans-feat-off">⬜ AI CFO</li>
+        <li class="plans-feat-off">⬜ AI CFO الكامل</li>
         <li class="plans-feat-off">⬜ التوقعات الذكية</li>
       </ul>
       <button class="plans-btn plans-btn-ghost" id="plan-btn-free" onclick="selectPlan('free')">الخطة الحالية</button>
     </div>
 
-    <!-- ── احترافي (موصى به) ── -->
-    <div class="plans-card plans-card-featured" id="plan-card-pro">
-      <div class="plans-recommended-badge">⭐ الأكثر شيوعاً</div>
+    <!-- ── مدفوع (جميع المميزات) ── -->
+    <div class="plans-card plans-card-featured" id="plan-card-paid">
+      <div class="plans-recommended-badge">⭐ جميع المميزات</div>
       <div class="plans-card-header">
-        <div class="plans-badge plans-badge-pro">احترافي</div>
+        <div class="plans-badge plans-badge-pro">مدفوع</div>
         <div class="plans-price"><span class="plans-amount">79</span><span class="plans-currency"> ريال</span><span class="plans-period">/شهر</span></div>
-        <div class="plans-plan-id">Pro</div>
+        <div class="plans-plan-id">Paid</div>
       </div>
       <ul class="plans-features">
-        <li>✅ حتى 8 تحليلات شهرياً</li>
-        <li>✅ جميع ميزات المجاني</li>
-        <li>✅ مقارنة السوق</li>
-        <li>✅ مقارنة الفترات</li>
+        <li>✅ تحليلات غير محدودة</li>
+        <li>✅ جميع ميزات النظام كاملة</li>
+        <li>✅ مقارنة السوق والفترات</li>
         <li>✅ AI CFO — مستشار ذكاء اصطناعي</li>
         <li>✅ التوقعات الذكية</li>
         <li>✅ مستشار الصحة المالية</li>
-        <li class="plans-feat-off">⬜ مشاريع متعددة (حتى 3)</li>
-      </ul>
-      <button class="plans-btn plans-btn-primary" id="plan-btn-pro" onclick="selectPlan('pro')">⚡ اشترك الآن</button>
-    </div>
-
-    <!-- ── مؤسسي ── -->
-    <div class="plans-card" id="plan-card-enterprise" style="border-color:rgba(176,108,240,0.3)">
-      <div class="plans-card-header">
-        <div class="plans-badge plans-badge-enterprise">مؤسسي</div>
-        <div class="plans-price"><span class="plans-amount">199</span><span class="plans-currency"> ريال</span><span class="plans-period">/شهر</span></div>
-        <div class="plans-plan-id">Enterprise</div>
-      </div>
-      <ul class="plans-features">
-        <li>✅ حتى 30 تحليلاً شهرياً</li>
-        <li>✅ جميع ميزات الاحترافي</li>
-        <li>✅ إدارة حتى 3 مشاريع</li>
-        <li>✅ تقارير مخصصة</li>
+        <li>✅ حفظ التقارير وتصدير PDF</li>
         <li>✅ دعم مباشر على واتساب</li>
-        <li>✅ أولوية في الميزات الجديدة</li>
-        <li>✅ تكامل API</li>
-        <li>✅ تقارير PDF احترافية</li>
       </ul>
-      <button class="plans-btn plans-btn-enterprise" id="plan-btn-enterprise" onclick="selectPlan('enterprise')">🏢 تواصل معنا</button>
+      <button class="plans-btn plans-btn-primary" id="plan-btn-paid" onclick="selectPlan('paid')">⚡ اشترك الآن</button>
     </div>
 
   </div>
