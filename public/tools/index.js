@@ -549,6 +549,169 @@ window.removeBPProduct = removeBPProduct;
 window.importBPProducts = importBPProducts;
 
 // ══════════════════════════════════════════════════════════════════
+// رفع المنيو في ملف المشروع — صورة / PDF / Excel (موجّه تلقائي)
+// ══════════════════════════════════════════════════════════════════
+
+function importBPMenuAuto(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = ''; // reset لقبول نفس الملف مجدداً
+
+  const imageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  if (imageTypes.includes(file.type) || file.type === 'application/pdf') {
+    _importBPMenuImage(file);
+  } else {
+    // Excel / CSV → السلوك القديم
+    importBPProducts({ files: [file] });
+  }
+}
+window.importBPMenuAuto = importBPMenuAuto;
+
+// ─── أدوات داخلية لـ OCR في صفحة الملف ─────────────────────────
+
+function _bpOcrSetState(state) {
+  // state: 'loading' | 'table' | 'error' | 'hidden'
+  const preview  = document.getElementById('bp-ocr-preview');
+  const loading  = document.getElementById('bp-ocr-loading');
+  const tableW   = document.getElementById('bp-ocr-table-wrap');
+  const errEl    = document.getElementById('bp-ocr-error');
+  if (!preview) return;
+
+  preview.style.display  = state === 'hidden' ? 'none' : 'block';
+  if (loading) loading.style.display  = state === 'loading' ? 'block' : 'none';
+  if (tableW)  tableW.style.display   = state === 'table'   ? 'block' : 'none';
+  if (errEl)   errEl.style.display    = state === 'error'   ? 'block' : 'none';
+}
+
+function _bpOcrSetMsg(msg) {
+  const el = document.getElementById('bp-ocr-loading-msg');
+  if (el) el.textContent = msg;
+}
+
+function _bpOcrShowError(msg) {
+  _bpOcrSetState('error');
+  const el = document.getElementById('bp-ocr-error');
+  if (el) el.textContent = '⚠️ ' + msg;
+}
+
+function _bpOcrRenderTable(products) {
+  const rows = document.getElementById('bp-ocr-rows');
+  const cnt  = document.getElementById('bp-ocr-count');
+  if (!rows) return;
+
+  const inpStyle = 'background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:6px 8px;font-size:12px;width:100%;font-family:inherit;box-sizing:border-box;color:#eee';
+
+  rows.innerHTML = '';
+  products.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'bp-ocr-row';
+    row.style.cssText = 'display:grid;grid-template-columns:1.8fr 72px 72px 36px;gap:6px;align-items:center';
+    const price = p.price ?? p.selling_price ?? 0;
+    const cost  = p.cost ?? 0;
+    row.innerHTML = `
+      <input type="text" value="${_escapeHtml(p.name || '')}" placeholder="اسم المنتج"
+             style="${inpStyle};direction:rtl">
+      <input type="number" value="${price > 0 ? price : ''}" placeholder="0" min="0"
+             style="${inpStyle};color:#d4af37;text-align:center">
+      <input type="number" value="${cost > 0 ? cost : ''}" placeholder="0" min="0"
+             style="${inpStyle};color:#4caf82;text-align:center">
+      <button onclick="this.closest('.bp-ocr-row').remove();_bpOcrUpdateCount()"
+              style="background:none;border:none;color:#555;font-size:14px;cursor:pointer;padding:4px;transition:color 0.2s"
+              onmouseover="this.style.color='#d95f5f'" onmouseout="this.style.color='#555'">🗑</button>
+    `;
+    rows.appendChild(row);
+  });
+
+  if (cnt) cnt.textContent = products.length + ' منتج';
+  _bpOcrSetState('table');
+}
+
+function _bpOcrUpdateCount() {
+  const cnt = document.getElementById('bp-ocr-count');
+  if (cnt) cnt.textContent = document.querySelectorAll('.bp-ocr-row').length + ' منتج';
+}
+
+function _confirmBPOcrProducts() {
+  const rowEls = document.querySelectorAll('.bp-ocr-row');
+  if (!rowEls.length) { toast('لا توجد منتجات'); return; }
+
+  let added = 0;
+  rowEls.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const name  = inputs[0]?.value.trim();
+    const price = parseFloat(inputs[1]?.value) || 0;
+    const cost  = parseFloat(inputs[2]?.value) || 0;
+    if (!name) return;
+    // تجنب التكرار
+    const exists = BP_PRODUCTS.some(p => p.name.toLowerCase() === name.toLowerCase());
+    if (!exists) {
+      BP_PRODUCTS.push({ name, selling_price: price, cost, category: '' });
+      added++;
+    }
+  });
+
+  renderBPProducts();
+  _bpOcrSetState('hidden');
+  const input = document.getElementById('bp-products-file');
+  if (input) input.value = '';
+
+  if (added > 0) toast(`✅ تمت إضافة ${added} منتج لملف المشروع`);
+  else toast('⚠️ جميع المنتجات موجودة مسبقاً');
+}
+window._confirmBPOcrProducts = _confirmBPOcrProducts;
+
+function _cancelBPOcr() {
+  _bpOcrSetState('hidden');
+  const input = document.getElementById('bp-products-file');
+  if (input) input.value = '';
+}
+window._cancelBPOcr = _cancelBPOcr;
+
+async function _importBPMenuImage(file) {
+  _bpOcrSetState('loading');
+  _bpOcrSetMsg('جاري قراءة الملف...');
+
+  try {
+    let response;
+
+    if (file.type === 'application/pdf') {
+      _bpOcrSetMsg('جاري استخراج النص من PDF...');
+      const extractedText = await _extractPdfText(file);
+      if (!extractedText || extractedText.trim().length < 20) {
+        _bpOcrShowError('لم يُعثر على نص في PDF. تأكد أنه ليس ملفاً ممسوحاً ضوئياً.');
+        return;
+      }
+      _bpOcrSetMsg('جاري تحليل المنيو بالذكاء الاصطناعي...');
+      response = await _callMenuOCR({ extractedText });
+    } else {
+      _bpOcrSetMsg('جاري إرسال الصورة للتحليل...');
+      const { base64, mimeType } = await _fileToBase64(file);
+      response = await _callMenuOCR({ fileBase64: base64, mimeType });
+    }
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      _bpOcrShowError(errData.error || 'فشل تحليل الملف — حاول مرة أخرى.');
+      return;
+    }
+
+    const data = await response.json();
+    const products = data.products || [];
+
+    if (!products.length) {
+      _bpOcrShowError('لم يُعثر على منتجات في هذا الملف.');
+      return;
+    }
+
+    _bpOcrRenderTable(products);
+
+  } catch(ex) {
+    console.error('BP OCR error:', ex);
+    _bpOcrShowError('خطأ غير متوقع: ' + (ex.message || 'تحقق من الاتصال'));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
 // رفع المنيو — Menu OCR Feature
 // ══════════════════════════════════════════════════════════════════
 

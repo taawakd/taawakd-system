@@ -883,11 +883,51 @@
           <button onclick="addBPProduct()" style="background:var(--gold);color:#000;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700;font-size:16px;height:42px">+</button>
         </div>
 
-        <!-- أو رفع Excel -->
-        <div style="border:1px dashed #333;border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;cursor:pointer" onclick="document.getElementById('bp-products-file').click()">
-          <div style="font-size:20px">📎</div>
-          <div style="font-size:12px;color:var(--gray)">أو ارفع ملف Excel بالمنتجات</div>
-          <input type="file" id="bp-products-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importBPProducts(this)">
+        <!-- رفع ملف (Excel أو صورة المنيو أو PDF) -->
+        <div style="border:1px dashed #333;border-radius:8px;padding:12px;text-align:center;margin-bottom:12px;cursor:pointer;transition:border-color 0.2s"
+             onclick="document.getElementById('bp-products-file').click()"
+             onmouseover="this.style.borderColor='#c9a84c'" onmouseout="this.style.borderColor='#333'">
+          <div style="font-size:22px;margin-bottom:4px">📷</div>
+          <div style="font-size:13px;color:#eee;font-weight:600;margin-bottom:2px">ارفع المنيو أو ملف Excel</div>
+          <div style="font-size:11px;color:var(--gray)">PNG · JPG · PDF · XLSX · CSV</div>
+          <input type="file" id="bp-products-file"
+                 accept=".xlsx,.xls,.csv,.png,.jpg,.jpeg,.pdf,image/*"
+                 style="display:none" onchange="importBPMenuAuto(this)">
+        </div>
+
+        <!-- معاينة نتائج OCR (تظهر بعد رفع صورة/PDF) -->
+        <div id="bp-ocr-preview" style="display:none;margin-bottom:12px;">
+          <!-- حالة التحميل -->
+          <div id="bp-ocr-loading" style="display:none;text-align:center;padding:24px 10px;color:var(--gray)">
+            <div style="font-size:28px;margin-bottom:8px">🔍</div>
+            <div id="bp-ocr-loading-msg" style="font-size:13px">جاري تحليل المنيو...</div>
+          </div>
+          <!-- جدول النتائج القابل للتعديل -->
+          <div id="bp-ocr-table-wrap" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:12px;color:#e8c76a;font-weight:700;">✅ راجع وعدّل قبل الإضافة</span>
+              <span id="bp-ocr-count" style="font-size:11px;color:var(--gray);"></span>
+            </div>
+            <div style="display:grid;grid-template-columns:1.8fr 72px 72px 36px;gap:6px;padding:0 2px;margin-bottom:4px;">
+              <span style="font-size:10px;color:var(--gray);">اسم المنتج</span>
+              <span style="font-size:10px;color:#d4af37;text-align:center;">سعر البيع</span>
+              <span style="font-size:10px;color:#4caf82;text-align:center;">التكلفة</span>
+              <span></span>
+            </div>
+            <div id="bp-ocr-rows" style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+            <div style="margin-top:10px;display:flex;gap:8px;">
+              <button onclick="_confirmBPOcrProducts()"
+                style="flex:1;background:linear-gradient(135deg,#4caf82,#2d8a5e);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                ✅ إضافة المنتجات لملف المشروع
+              </button>
+              <button onclick="_cancelBPOcr()"
+                style="background:none;border:1px solid #333;color:var(--gray);border-radius:8px;padding:10px 14px;cursor:pointer;font-size:12px;">
+                إلغاء
+              </button>
+            </div>
+          </div>
+          <!-- رسالة خطأ -->
+          <div id="bp-ocr-error" style="display:none;color:#ef4444;font-size:12px;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;text-align:center;"></div>
         </div>
 
         <!-- جدول المنتجات -->
