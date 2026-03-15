@@ -547,3 +547,338 @@ window.renderBPProducts = renderBPProducts;
 window.addBPProduct = addBPProduct;
 window.removeBPProduct = removeBPProduct;
 window.importBPProducts = importBPProducts;
+
+// ══════════════════════════════════════════════════════════════════
+// رفع المنيو — Menu OCR Feature
+// ══════════════════════════════════════════════════════════════════
+
+function openMenuUpload() {
+  const modal = document.getElementById('menu-upload-modal');
+  if (!modal) return;
+  // إعادة تعيين الحالة
+  _menuResetState();
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMenuUpload() {
+  const modal = document.getElementById('menu-upload-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+  // إعادة تعيين input الملف
+  const inp = document.getElementById('menu-file-input');
+  if (inp) inp.value = '';
+}
+
+function _menuResetState() {
+  _menuSetSection('drop');
+  const fn = document.getElementById('menu-file-name');
+  if (fn) { fn.textContent = ''; fn.style.display = 'none'; }
+  const err = document.getElementById('menu-error');
+  if (err) { err.textContent = ''; err.style.display = 'none'; }
+  const rows = document.getElementById('menu-products-rows');
+  if (rows) rows.innerHTML = '';
+  const wrap = document.getElementById('menu-table-wrap');
+  if (wrap) wrap.style.display = 'none';
+  const cnt = document.getElementById('menu-products-count');
+  if (cnt) cnt.textContent = '';
+  const icon = document.getElementById('menu-drop-icon');
+  if (icon) icon.textContent = '📁';
+  const dz = document.getElementById('menu-drop-zone');
+  if (dz) dz.style.borderColor = '#333';
+}
+
+function _menuSetSection(section) {
+  // section: 'drop' | 'loading' | 'table'
+  const loading = document.getElementById('menu-loading');
+  const wrap = document.getElementById('menu-table-wrap');
+  const dz = document.getElementById('menu-drop-zone');
+  const fn = document.getElementById('menu-file-name');
+  if (loading) loading.style.display = section === 'loading' ? 'block' : 'none';
+  if (wrap)    wrap.style.display    = section === 'table'   ? 'block' : 'none';
+  if (dz)      dz.style.display      = section === 'drop'    ? 'block' : 'none';
+  if (fn && section === 'drop') { fn.style.display = 'none'; }
+}
+
+function _menuShowError(msg) {
+  _menuSetSection('drop');
+  const err = document.getElementById('menu-error');
+  if (err) { err.textContent = '⚠️ ' + msg; err.style.display = 'block'; }
+}
+
+function handleMenuDrop(e) {
+  e.preventDefault();
+  const dz = document.getElementById('menu-drop-zone');
+  if (dz) dz.style.borderColor = '#333';
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+  _processMenuFile(file);
+}
+
+function handleMenuFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  _processMenuFile(file);
+}
+
+async function _processMenuFile(file) {
+  const err = document.getElementById('menu-error');
+  if (err) { err.textContent = ''; err.style.display = 'none'; }
+
+  // ─ التحقق من نوع الملف ──────────────────────────────────────────
+  const validTypes = ['image/png','image/jpeg','image/jpg','application/pdf'];
+  if (!validTypes.includes(file.type)) {
+    _menuShowError('نوع الملف غير مدعوم. يُرجى رفع PNG أو JPG أو PDF فقط.');
+    return;
+  }
+
+  // ─ التحقق من الحجم (10MB) ───────────────────────────────────────
+  if (file.size > 10 * 1024 * 1024) {
+    _menuShowError('حجم الملف كبير جداً. الحجم الأقصى 10MB.');
+    return;
+  }
+
+  // ─ عرض اسم الملف ────────────────────────────────────────────────
+  const fn = document.getElementById('menu-file-name');
+  if (fn) { fn.textContent = '📎 ' + file.name; fn.style.display = 'block'; }
+
+  // ─ إخفاء منطقة الرفع وإظهار التحميل ────────────────────────────
+  _menuSetSection('loading');
+  _menuSetLoadingMsg('جاري قراءة الملف...');
+
+  try {
+    let response;
+
+    if (file.type === 'application/pdf') {
+      // ─ استخراج النص من PDF على جهة العميل ──────────────────────
+      _menuSetLoadingMsg('جاري استخراج النص من PDF...');
+      const extractedText = await _extractPdfText(file);
+      if (!extractedText || extractedText.trim().length < 20) {
+        _menuShowError('لم يتم العثور على نص في ملف PDF. تأكد أنه ليس ملفاً ممسوحاً ضوئياً.');
+        return;
+      }
+      _menuSetLoadingMsg('جاري تحليل المنيو بالذكاء الاصطناعي...');
+      response = await _callMenuOCR({ extractedText });
+    } else {
+      // ─ صورة: تحويل إلى base64 ────────────────────────────────────
+      _menuSetLoadingMsg('جاري إرسال الصورة للتحليل...');
+      const { base64, mimeType } = await _fileToBase64(file);
+      response = await _callMenuOCR({ fileBase64: base64, mimeType });
+    }
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      _menuShowError(errData.error || 'فشل تحليل الملف. حاول مرة أخرى.');
+      return;
+    }
+
+    const data = await response.json();
+    const products = data.products || [];
+
+    if (!products.length) {
+      _menuShowError('لم يتم العثور على منتجات في هذا الملف.');
+      return;
+    }
+
+    // ─ عرض الجدول القابل للتعديل ─────────────────────────────────
+    _menuRenderTable(products);
+
+  } catch (ex) {
+    console.error('Menu OCR error:', ex);
+    _menuShowError('حدث خطأ غير متوقع: ' + (ex.message || 'تحقق من الاتصال بالإنترنت'));
+  }
+}
+
+function _menuSetLoadingMsg(msg) {
+  const el = document.getElementById('menu-loading-msg');
+  if (el) el.textContent = msg;
+}
+
+async function _extractPdfText(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        if (typeof pdfjsLib === 'undefined') {
+          // fallback: إرجاع نص فارغ إذا لم تكن المكتبة موجودة
+          resolve('');
+          return;
+        }
+        const typedArray = new Uint8Array(e.target.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        resolve(fullText);
+      } catch (ex) {
+        console.warn('PDF text extraction failed:', ex);
+        resolve('');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function _fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result; // data:image/png;base64,XXXX
+      const base64 = dataUrl.split(',')[1];
+      resolve({ base64, mimeType: file.type });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function _callMenuOCR(payload) {
+  // __AUTH_TOKEN__ يُعيَّن عند تسجيل الدخول (مثل ai-cfo.js و admin.js)
+  let authToken = window.__AUTH_TOKEN__;
+  if (!authToken && window.sb) {
+    try {
+      const { data } = await window.sb.auth.getSession();
+      authToken = data?.session?.access_token;
+    } catch (_) {}
+  }
+
+  return fetch('/api/menu-ocr', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { 'Authorization': 'Bearer ' + authToken } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+function _menuRenderTable(products) {
+  const rows = document.getElementById('menu-products-rows');
+  const cnt  = document.getElementById('menu-products-count');
+  if (!rows) return;
+
+  rows.innerHTML = '';
+  products.forEach((p, i) => {
+    rows.appendChild(_menuCreateRow(p.name, p.price, i));
+  });
+  if (cnt) cnt.textContent = products.length + ' منتج';
+
+  _menuSetSection('table');
+}
+
+function _menuCreateRow(name, price, idx) {
+  const row = document.createElement('div');
+  row.className = 'menu-prod-row';
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 90px 36px;gap:8px;align-items:center';
+  row.innerHTML = `
+    <input type="text" value="${_escapeHtml(name)}"
+           style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;color:#eee;font-size:13px;width:100%;font-family:inherit;direction:rtl"
+           placeholder="اسم المنتج">
+    <input type="number" value="${price || ''}"
+           style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px;color:#d4af37;font-size:13px;width:100%;font-family:inherit;text-align:center"
+           placeholder="0" min="0">
+    <button onclick="this.closest('.menu-prod-row').remove(); _updateMenuCount()"
+            style="background:none;border:none;color:#555;font-size:16px;cursor:pointer;padding:4px;transition:color 0.2s"
+            onmouseover="this.style.color='#d95f5f'" onmouseout="this.style.color='#555'">🗑</button>
+  `;
+  return row;
+}
+
+function _escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _updateMenuCount() {
+  const rows = document.querySelectorAll('.menu-prod-row');
+  const cnt  = document.getElementById('menu-products-count');
+  if (cnt) cnt.textContent = rows.length + ' منتج';
+}
+
+function addMenuProductRow() {
+  const rows = document.getElementById('menu-products-rows');
+  if (!rows) return;
+  const newRow = _menuCreateRow('', 0, rows.children.length);
+  rows.appendChild(newRow);
+  _updateMenuCount();
+  // التركيز على input الاسم
+  newRow.querySelector('input')?.focus();
+}
+
+async function saveMenuProducts() {
+  const rowEls = document.querySelectorAll('.menu-prod-row');
+  if (!rowEls.length) { toast('لا توجد منتجات للحفظ'); return; }
+
+  const products = [];
+  let hasError = false;
+  rowEls.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const name  = inputs[0]?.value.trim();
+    const price = parseFloat(inputs[1]?.value) || 0;
+    if (name) {
+      products.push({ name, price, cost: 0 });
+    } else {
+      // سطر فارغ — تجاهله
+    }
+  });
+
+  if (!products.length) { toast('أضف اسم منتج واحد على الأقل'); return; }
+
+  // ─ تفعيل حالة التحميل ───────────────────────────────────────────
+  const btn  = document.getElementById('menu-save-btn');
+  const txt  = document.getElementById('menu-save-text');
+  const spin = document.getElementById('menu-save-spin');
+  if (btn)  btn.disabled  = true;
+  if (txt)  txt.style.display = 'none';
+  if (spin) spin.style.display = 'block';
+
+  try {
+    // ─ الحفظ في BP_PRODUCTS ──────────────────────────────────────
+    // دمج مع القائمة الحالية (إضافة الجديد)
+    if (!window.BP_PRODUCTS) window.BP_PRODUCTS = [];
+
+    // تجنب التكرار بناءً على الاسم
+    const existingNames = new Set(BP_PRODUCTS.map(p => p.name.toLowerCase()));
+    let addedCount = 0;
+    products.forEach(p => {
+      if (!existingNames.has(p.name.toLowerCase())) {
+        BP_PRODUCTS.push(p);
+        existingNames.add(p.name.toLowerCase());
+        addedCount++;
+      }
+    });
+
+    // ─ حفظ في Supabase ──────────────────────────────────────────
+    if (window.sb) {
+      const { data: { user } } = await window.sb.auth.getUser();
+      if (user) {
+        await window.sb.from('business_profile')
+          .upsert({ user_id: user.id, products: BP_PRODUCTS }, { onConflict: 'user_id' });
+      }
+    }
+
+    // ─ تحديث الجدول في الواجهة ──────────────────────────────────
+    if (typeof renderBPProducts === 'function') renderBPProducts();
+
+    toast('✅ تم حفظ ' + addedCount + ' منتج جديد' + (addedCount < products.length ? ' (تجاهل المكررات)' : ''));
+    closeMenuUpload();
+
+  } catch (ex) {
+    console.error('saveMenuProducts error:', ex);
+    toast('❌ فشل الحفظ: ' + (ex.message || 'حاول مرة أخرى'));
+  } finally {
+    if (btn)  btn.disabled  = false;
+    if (txt)  txt.style.display = 'inline';
+    if (spin) spin.style.display = 'none';
+  }
+}
+
+window.openMenuUpload     = openMenuUpload;
+window.closeMenuUpload    = closeMenuUpload;
+window.handleMenuDrop     = handleMenuDrop;
+window.handleMenuFile     = handleMenuFile;
+window.addMenuProductRow  = addMenuProductRow;
+window.saveMenuProducts   = saveMenuProducts;
+window._updateMenuCount   = _updateMenuCount;
