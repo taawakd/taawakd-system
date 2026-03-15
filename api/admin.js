@@ -427,6 +427,128 @@ export default async function handler(req, res) {
         });
       }
 
+      // ── Market Insights — بيانات مجمّعة فقط، لا بيانات فردية ────────
+      case 'getMarketInsights': {
+        const { bizType, periodFilter, dateRange, sizeCategory } = payload;
+
+        // استعلام مجمّع من جدول reports — حقول فقط بدون بيانات مشروع أو مستخدم
+        let query = supabase
+          .from('reports')
+          .select('biz_type, revenue, total_expenses, net_profit, net_margin, health_score, created_at, period');
+
+        // فلتر نوع النشاط
+        if (bizType && bizType !== 'all') {
+          query = query.eq('biz_type', bizType);
+        }
+
+        // فلتر الفترة (شهري / سنوي ...)
+        if (periodFilter && periodFilter !== 'all') {
+          query = query.eq('period', periodFilter);
+        }
+
+        // فلتر النطاق الزمني للتقارير
+        if (dateRange && dateRange !== 'all') {
+          const daysMap = { '30': 30, '90': 90, '180': 180, '365': 365 };
+          const days = daysMap[dateRange] || 365;
+          const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+          query = query.gte('created_at', since);
+        }
+
+        const { data: rows, error: insErr } = await query.limit(5000);
+        if (insErr) throw insErr;
+
+        // فلتر حجم المشروع بناءً على الإيرادات
+        let filtered = rows || [];
+        if (sizeCategory && sizeCategory !== 'all') {
+          filtered = filtered.filter(r => {
+            const rev = r.revenue || 0;
+            if (sizeCategory === 'small')  return rev < 50000;
+            if (sizeCategory === 'medium') return rev >= 50000 && rev < 200000;
+            if (sizeCategory === 'large')  return rev >= 200000;
+            return true;
+          });
+        }
+
+        const count = filtered.length;
+
+        // عدد غير كافٍ للمتوسطات — يجب 3 على الأقل للخصوصية
+        if (count < 3) {
+          return res.json({ count, insufficient: true });
+        }
+
+        // ── حسابات المتوسطات (مجمّعة فقط) ──
+        const avg  = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+        const med  = arr => { if (!arr.length) return 0; const s = [...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+
+        const revenues = filtered.map(r => r.revenue       || 0);
+        const expenses = filtered.map(r => r.total_expenses || 0);
+        const profits  = filtered.map(r => r.net_profit     || 0);
+        const margins  = filtered.filter(r => r.net_margin  != null).map(r => +r.net_margin);
+        const scores   = filtered.filter(r => r.health_score!= null).map(r => +r.health_score);
+
+        // توزيع حسب نوع النشاط (لوضع "الكل")
+        const byType = {};
+        filtered.forEach(r => {
+          const t = r.biz_type || 'أخرى';
+          if (!byType[t]) byType[t] = { count:0, revenues:[], margins:[], scores:[] };
+          byType[t].count++;
+          byType[t].revenues.push(r.revenue || 0);
+          byType[t].margins.push(r.net_margin || 0);
+          byType[t].scores.push(r.health_score || 0);
+        });
+        const typeDistribution = Object.entries(byType)
+          .map(([type, d]) => ({
+            type,
+            count:      d.count,
+            avgRevenue: Math.round(avg(d.revenues)),
+            avgMargin:  +avg(d.margins).toFixed(1),
+            avgScore:   Math.round(avg(d.scores)),
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 8);
+
+        // اتجاه شهري (آخر 6 أشهر)
+        const monthMap = {};
+        filtered.forEach(r => {
+          if (!r.created_at) return;
+          const mo = r.created_at.substring(0, 7);
+          if (!monthMap[mo]) monthMap[mo] = { revenues:[], profits:[] };
+          monthMap[mo].revenues.push(r.revenue   || 0);
+          monthMap[mo].profits.push(r.net_profit || 0);
+        });
+        const monthlyTrend = Object.entries(monthMap)
+          .sort(([a],[b]) => a.localeCompare(b))
+          .slice(-6)
+          .map(([month, d]) => ({
+            month,
+            avgRevenue: Math.round(avg(d.revenues)),
+            avgProfit:  Math.round(avg(d.profits)),
+          }));
+
+        // توزيع هامش الربح في buckets (لا بيانات فردية)
+        const marginBuckets = { 'أقل من 0%':0, '0–10%':0, '10–20%':0, '20–30%':0, 'أكثر من 30%':0 };
+        margins.forEach(m => {
+          if (m < 0)       marginBuckets['أقل من 0%']++;
+          else if (m < 10) marginBuckets['0–10%']++;
+          else if (m < 20) marginBuckets['10–20%']++;
+          else if (m < 30) marginBuckets['20–30%']++;
+          else             marginBuckets['أكثر من 30%']++;
+        });
+
+        return res.json({
+          count,
+          avgRevenue:     Math.round(avg(revenues)),
+          medRevenue:     Math.round(med(revenues)),
+          avgExpenses:    Math.round(avg(expenses)),
+          avgNetProfit:   Math.round(avg(profits)),
+          avgMargin:      +avg(margins).toFixed(1),
+          avgHealthScore: Math.round(avg(scores)),
+          typeDistribution,
+          monthlyTrend,
+          marginBuckets,
+        });
+      }
+
       default:
         return res.status(400).json({ error: `إجراء غير معروف: ${action}` });
     }

@@ -767,3 +767,274 @@ async function renderAdminLogs(page = 1, type = _adminLogsType) {
 }
 
 window.renderAdminLogs = renderAdminLogs;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. MARKET INSIGHTS
+// ═══════════════════════════════════════════════════════════════════════════
+let _insightsChart = null;
+let _trendChart    = null;
+
+function renderAdminInsights() {
+  const container = document.getElementById('ins-results');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+      <div style="font-size:48px;margin-bottom:16px">🏪</div>
+      <div style="font-size:18px;font-weight:600;color:var(--text-main);margin-bottom:8px">اختر قطاعاً وابدأ التحليل</div>
+      <div style="font-size:14px">اختر القطاع والفترة الزمنية ثم اضغط <strong>تحليل السوق</strong> لعرض المتوسطات المجمّعة</div>
+    </div>`;
+}
+
+window.runInsightsAnalysis = async function() {
+  const container = document.getElementById('ins-results');
+  if (!container) return;
+
+  // ── Read filters ────────────────────────────────────────────────────────
+  const bizType    = document.getElementById('ins-biz-type')?.value   || 'all';
+  const period     = document.getElementById('ins-period')?.value     || 'all';
+  const dateRange  = document.getElementById('ins-date-range')?.value || '365';
+  const sizeCategory = document.getElementById('ins-size')?.value     || 'all';
+
+  // ── Loading state ───────────────────────────────────────────────────────
+  container.innerHTML = `
+    <div style="text-align:center;padding:60px;color:var(--text-muted)">
+      <div class="loading-spinner" style="margin:0 auto 16px"></div>
+      <div>جارٍ تحليل بيانات السوق…</div>
+    </div>`;
+
+  // ── Destroy old charts ──────────────────────────────────────────────────
+  if (_insightsChart) { _insightsChart.destroy(); _insightsChart = null; }
+  if (_trendChart)    { _trendChart.destroy();    _trendChart    = null; }
+
+  // ── Fetch ───────────────────────────────────────────────────────────────
+  const data = await adminFetch('getMarketInsights', { bizType, periodFilter: period, dateRange, sizeCategory });
+  if (!data) return;
+
+  if (data.insufficient) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px;color:var(--text-muted)">
+        <div style="font-size:36px;margin-bottom:12px">📭</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text-main);margin-bottom:8px">بيانات غير كافية</div>
+        <div style="font-size:13px">عدد السجلات (${data.count || 0}) أقل من الحد الأدنى المطلوب لحماية خصوصية المستخدمين.</div>
+      </div>`;
+    return;
+  }
+
+  const fmt     = n => typeof n === 'number' ? n.toLocaleString('ar-SA', { maximumFractionDigits: 0 }) : '—';
+  const fmtPct  = n => typeof n === 'number' ? n.toFixed(1) + '%' : '—';
+  const SAR     = 'ر.س';
+
+  const bizLabels = {
+    all: 'جميع القطاعات', restaurant: 'مطاعم', cafe: 'مقاهي',
+    cloud_kitchen: 'مطابخ سحابية', retail: 'تجزئة', services: 'خدمات'
+  };
+  const sectorLabel = bizLabels[bizType] || bizType;
+  const periodLabel = period === 'all' ? 'كل الفترات' : period === 'monthly' ? 'شهري' : 'سنوي';
+
+  // ── Health score color ──────────────────────────────────────────────────
+  const hs = data.avgHealthScore || 0;
+  const hsColor = hs >= 75 ? 'var(--green)' : hs >= 50 ? 'var(--gold)' : 'var(--red)';
+  const hsLabel = hs >= 75 ? 'جيد' : hs >= 50 ? 'متوسط' : 'ضعيف';
+
+  // ── Margin color ───────────────────────────────────────────────────────
+  const mg = data.avgMargin || 0;
+  const mgColor = mg >= 20 ? 'var(--green)' : mg >= 10 ? 'var(--gold)' : 'var(--red)';
+
+  container.innerHTML = `
+    <!-- Sample size badge -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+      <div style="background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--gold);font-weight:600">
+        📊 تم حساب المتوسطات من <strong>${fmt(data.count)}</strong> ${sectorLabel === 'جميع القطاعات' ? 'مشروع' : 'مشروع ' + sectorLabel}
+      </div>
+      <div style="font-size:12px;color:var(--text-muted)">${periodLabel} · آخر ${dateRange} يوم</div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="adm-kpi-grid" style="margin-bottom:28px">
+      <div class="adm-kpi-card adm-kpi-gold">
+        <div class="adm-kpi-label">💰 متوسط الإيرادات</div>
+        <div class="adm-kpi-value">${fmt(data.avgRevenue)}</div>
+        <div class="adm-kpi-sub">الوسيط: ${fmt(data.medRevenue)} ${SAR}</div>
+      </div>
+      <div class="adm-kpi-card adm-kpi-blue">
+        <div class="adm-kpi-label">📤 متوسط المصاريف</div>
+        <div class="adm-kpi-value">${fmt(data.avgExpenses)}</div>
+        <div class="adm-kpi-sub">${SAR}</div>
+      </div>
+      <div class="adm-kpi-card ${data.avgNetProfit >= 0 ? 'adm-kpi-green' : 'adm-kpi-accent'}">
+        <div class="adm-kpi-label">📈 متوسط صافي الربح</div>
+        <div class="adm-kpi-value" style="color:${data.avgNetProfit >= 0 ? 'var(--green)' : 'var(--red)'}">
+          ${data.avgNetProfit >= 0 ? '+' : ''}${fmt(data.avgNetProfit)}
+        </div>
+        <div class="adm-kpi-sub">${SAR}</div>
+      </div>
+      <div class="adm-kpi-card" style="--accent-color:${mgColor}">
+        <div class="adm-kpi-label">🎯 متوسط هامش الربح</div>
+        <div class="adm-kpi-value" style="color:${mgColor}">${fmtPct(data.avgMargin)}</div>
+        <div class="adm-kpi-sub">من إجمالي الإيرادات</div>
+      </div>
+      <div class="adm-kpi-card" style="--accent-color:${hsColor}">
+        <div class="adm-kpi-label">🏥 متوسط نقاط الصحة</div>
+        <div class="adm-kpi-value" style="color:${hsColor}">${hs.toFixed(1)}</div>
+        <div class="adm-kpi-sub">${hsLabel} / 100</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+      <!-- Bar chart: Revenue / Expenses / Profit -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <span>📊 مقارنة المتوسطات المالية</span>
+        </div>
+        <div class="table-card-body" style="padding:20px">
+          <canvas id="ins-bar-chart" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Monthly trend -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <span>📅 الاتجاه الشهري (آخر 6 أشهر)</span>
+        </div>
+        <div class="table-card-body" style="padding:20px">
+          <canvas id="ins-trend-chart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Margin buckets + Type distribution -->
+    <div style="display:grid;grid-template-columns:1fr ${bizType === 'all' ? '1fr' : ''};gap:20px">
+      <!-- Margin buckets -->
+      <div class="table-card">
+        <div class="table-card-header"><span>📐 توزيع هامش الربح</span></div>
+        <div class="table-card-body" style="padding:20px">
+          <div id="ins-margin-buckets"></div>
+        </div>
+      </div>
+
+      ${bizType === 'all' ? `
+      <!-- Type distribution -->
+      <div class="table-card">
+        <div class="table-card-header"><span>🏷 توزيع القطاعات</span></div>
+        <div class="table-card-body" style="padding:20px">
+          <div id="ins-type-dist"></div>
+        </div>
+      </div>` : ''}
+    </div>
+  `;
+
+  // ── Bar chart ────────────────────────────────────────────────────────────
+  const barCtx = document.getElementById('ins-bar-chart')?.getContext('2d');
+  if (barCtx && window.Chart) {
+    _insightsChart = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: ['الإيرادات', 'المصاريف', 'صافي الربح'],
+        datasets: [{
+          data: [data.avgRevenue, data.avgExpenses, data.avgNetProfit],
+          backgroundColor: [
+            'rgba(212,175,55,0.75)',
+            'rgba(100,130,200,0.75)',
+            data.avgNetProfit >= 0 ? 'rgba(72,187,120,0.75)' : 'rgba(245,101,101,0.75)'
+          ],
+          borderColor: ['#d4af37','#6482c8', data.avgNetProfit >= 0 ? '#48bb78' : '#f56565'],
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color:'#aaa', font:{ family:'Tajawal' } }, grid:{ color:'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color:'#aaa', font:{ family:'Tajawal' }, callback: v => v.toLocaleString('ar-SA') }, grid:{ color:'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  // ── Trend chart ──────────────────────────────────────────────────────────
+  const trendCtx = document.getElementById('ins-trend-chart')?.getContext('2d');
+  if (trendCtx && window.Chart && data.monthlyTrend?.length) {
+    const labels  = data.monthlyTrend.map(m => m.month);
+    const profits = data.monthlyTrend.map(m => m.avgNetProfit);
+    _trendChart = new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'متوسط صافي الربح',
+          data: profits,
+          borderColor: '#d4af37',
+          backgroundColor: 'rgba(212,175,55,0.12)',
+          borderWidth: 2,
+          pointBackgroundColor: '#d4af37',
+          pointRadius: 4,
+          tension: 0.35,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color:'#aaa', font:{ family:'Tajawal', size:11 } }, grid:{ color:'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color:'#aaa', font:{ family:'Tajawal' }, callback: v => v.toLocaleString('ar-SA') }, grid:{ color:'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  // ── Margin buckets ───────────────────────────────────────────────────────
+  const mbEl = document.getElementById('ins-margin-buckets');
+  if (mbEl && data.marginBuckets) {
+    const total = Object.values(data.marginBuckets).reduce((a, b) => a + b, 0) || 1;
+    const bucketLabels = {
+      negative:  { label: 'خسارة (< 0%)',     color: 'var(--red)' },
+      low:       { label: 'منخفض (0–10%)',     color: 'var(--text-muted)' },
+      moderate:  { label: 'متوسط (10–20%)',    color: 'var(--gold)' },
+      good:      { label: 'جيد (20–35%)',      color: 'var(--green)' },
+      excellent: { label: 'ممتاز (> 35%)',     color: '#a78bfa' }
+    };
+    mbEl.innerHTML = Object.entries(bucketLabels).map(([key, { label, color }]) => {
+      const count = data.marginBuckets[key] || 0;
+      const pct   = ((count / total) * 100).toFixed(1);
+      return `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:${color}">${label}</span>
+            <span style="color:var(--text-muted)">${count} مشروع (${pct}%)</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden">
+            <div style="background:${color};width:${pct}%;height:100%;border-radius:4px;transition:width 0.6s ease"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Type distribution ────────────────────────────────────────────────────
+  if (bizType === 'all') {
+    const tdEl = document.getElementById('ins-type-dist');
+    if (tdEl && data.typeDistribution?.length) {
+      const maxCount = data.typeDistribution[0]?.count || 1;
+      tdEl.innerHTML = data.typeDistribution.map(t => {
+        const pct = ((t.count / maxCount) * 100).toFixed(1);
+        return `
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+              <span style="color:var(--text-main)">${bizLabels[t.type] || t.type}</span>
+              <span style="color:var(--text-muted)">${fmt(t.count)} مشروع</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden">
+              <div style="background:var(--gold);width:${pct}%;height:100%;border-radius:4px;opacity:0.8;transition:width 0.6s ease"></div>
+            </div>
+          </div>`;
+      }).join('');
+    } else if (tdEl) {
+      tdEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">لا توجد بيانات كافية</p>';
+    }
+  }
+};
+
+window.renderAdminInsights = renderAdminInsights;

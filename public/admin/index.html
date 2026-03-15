@@ -709,6 +709,10 @@ select.input option { background:#1a1a1a; }
         <span class="nav-icon">🗂</span> السجلات
       </div>
 
+      <div class="nav-item" id="snav-insights" onclick="adminNavTo('insights')">
+        <span class="nav-icon">🏪</span> تحليلات السوق
+      </div>
+
       <div class="sb-section" style="margin-top:16px">روابط سريعة</div>
       <div class="nav-item" onclick="window.open('https://app.towkd.com','_blank')">
         <span class="nav-icon">🚀</span> التطبيق
@@ -836,6 +840,89 @@ select.input option { background:#1a1a1a; }
         </div>
       </div>
 
+      <!-- ── Market Insights ── -->
+      <div class="admin-section hidden" id="asec-insights">
+
+        <!-- Filter Bar -->
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 22px;margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span>🔍</span> فلاتر التحليل
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;align-items:end;">
+
+            <div>
+              <label style="font-size:11px;color:var(--gray2);display:block;margin-bottom:6px;">القطاع / النشاط</label>
+              <select class="input" id="ins-biz-type">
+                <option value="all">🌐 جميع القطاعات</option>
+                <optgroup label="الطعام والمشروبات">
+                  <option value="مطعم">🍽 مطعم</option>
+                  <option value="مقهى">☕ مقهى</option>
+                  <option value="مطبخ سحابي">📦 مطبخ سحابي</option>
+                  <option value="مخبز">🥐 مخبز</option>
+                  <option value="كيوسك">🥤 كيوسك</option>
+                </optgroup>
+                <optgroup label="التجزئة والتجارة">
+                  <option value="متجر">🛍 متجر تجزئة</option>
+                  <option value="تجارة إلكترونية">💻 تجارة إلكترونية</option>
+                </optgroup>
+                <optgroup label="الخدمات">
+                  <option value="حلاقة وتجميل">✂️ حلاقة وتجميل</option>
+                  <option value="خدمات">🔧 خدمات عامة</option>
+                  <option value="أخرى">📋 أخرى</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:11px;color:var(--gray2);display:block;margin-bottom:6px;">الفترة</label>
+              <select class="input" id="ins-period">
+                <option value="all">كل الفترات</option>
+                <option value="شهري">شهري</option>
+                <option value="سنوي">سنوي</option>
+                <option value="ربع سنوي">ربع سنوي</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:11px;color:var(--gray2);display:block;margin-bottom:6px;">نطاق البيانات</label>
+              <select class="input" id="ins-date-range">
+                <option value="all">كل الوقت</option>
+                <option value="30">آخر 30 يوم</option>
+                <option value="90">آخر 3 أشهر</option>
+                <option value="180">آخر 6 أشهر</option>
+                <option value="365">آخر سنة</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:11px;color:var(--gray2);display:block;margin-bottom:6px;">حجم المشروع</label>
+              <select class="input" id="ins-size">
+                <option value="all">جميع الأحجام</option>
+                <option value="small">صغير (أقل من 50 ألف)</option>
+                <option value="medium">متوسط (50k – 200k)</option>
+                <option value="large">كبير (أكثر من 200 ألف)</option>
+              </select>
+            </div>
+
+            <div>
+              <button class="btn-primary" onclick="runInsightsAnalysis()" id="ins-run-btn" style="width:100%;justify-content:center;">
+                <span>📊</span> تحليل السوق
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="ins-results">
+          <div style="text-align:center;padding:60px 20px;color:var(--gray);">
+            <div style="font-size:40px;margin-bottom:16px;opacity:.4;">🏪</div>
+            <p style="font-size:14px;margin-bottom:6px;">اختر القطاع وابدأ التحليل</p>
+            <p style="font-size:12px;color:var(--gray);">جميع البيانات مجمّعة — لا تُعرض أي بيانات فردية</p>
+          </div>
+        </div>
+
+      </div>
+
       <!-- ── Logs ── -->
       <div class="admin-section hidden" id="asec-logs">
         <div class="table-card">
@@ -917,12 +1004,13 @@ window.toast = function(msg, dur=3000) {
 
 // ── Sidebar Navigation ─────────────────────────────────────
 const ADMIN_TABS = {
-  overview: { icon:'📊', title:'نظرة عامة',     sub:'إحصائيات وأداء النظام بشكل عام' },
-  users:    { icon:'👥', title:'المستخدمون',     sub:'إدارة حسابات وصلاحيات المستخدمين' },
-  reports:  { icon:'📄', title:'التقارير',       sub:'جميع تقارير التحليل المالي في النظام' },
-  usage:    { icon:'📈', title:'الاستخدام',      sub:'تحليلات الاستخدام والأداء التشغيلي' },
-  plans:    { icon:'💎', title:'الخطط والأسعار', sub:'إدارة خطط الاشتراك والتسعير' },
-  logs:     { icon:'🗂', title:'السجلات',        sub:'سجلات النشاط والأحداث والأخطاء' },
+  overview: { icon:'📊', title:'نظرة عامة',       sub:'إحصائيات وأداء النظام بشكل عام' },
+  users:    { icon:'👥', title:'المستخدمون',       sub:'إدارة حسابات وصلاحيات المستخدمين' },
+  reports:  { icon:'📄', title:'التقارير',         sub:'جميع تقارير التحليل المالي في النظام' },
+  usage:    { icon:'📈', title:'الاستخدام',        sub:'تحليلات الاستخدام والأداء التشغيلي' },
+  plans:    { icon:'💎', title:'الخطط والأسعار',   sub:'إدارة خطط الاشتراك والتسعير' },
+  insights: { icon:'🏪', title:'تحليلات السوق',    sub:'متوسطات السوق المجمّعة من بيانات المستخدمين' },
+  logs:     { icon:'🗂', title:'السجلات',          sub:'سجلات النشاط والأحداث والأخطاء' },
 };
 
 window.adminNavTo = function(tab) {
@@ -951,6 +1039,7 @@ window.adminNavTo = function(tab) {
   if (tab === 'reports')   renderAdminReports(1);
   if (tab === 'usage')     renderAdminUsage();
   if (tab === 'plans')     renderAdminPlans();
+  if (tab === 'insights')  renderAdminInsights();
   if (tab === 'logs')      renderAdminLogs(1, 'all');
 };
 
