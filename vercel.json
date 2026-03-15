@@ -19,9 +19,10 @@
   ],
   "rewrites": [
 
-    { "source": "/api/config.js", "destination": "/api/config.js" },
-    { "source": "/api/analyze",   "destination": "/api/analyze.js" },
-    { "source": "/api/admin",     "destination": "/api/admin.js" },
+    { "source": "/api/config.js",  "destination": "/api/config.js" },
+    { "source": "/api/analyze",    "destination": "/api/analyze.js" },
+    { "source": "/api/admin",      "destination": "/api/admin.js" },
+    { "source": "/api/menu-ocr",   "destination": "/api/menu-ocr.js" },
 
     {
       "source": "/",
