@@ -819,9 +819,29 @@ function initProdsSection() {
   const c = document.getElementById('prodsContainer');
   if (!c) return;
 
-  // ── إذا كان الحاوي فارغاً وهناك منتجات محفوظة في _PRODUCTS — ملأها تلقائياً ──
-  const dbProducts = window._PRODUCTS || [];
-  const validDBProds = dbProducts.filter(p => (p.selling_price || p.price) > 0);
+  // ── إذا كان الحاوي فارغاً وهناك منتجات محفوظة — ملأها تلقائياً ──
+  // دمج _PRODUCTS (جدول Supabase) + BP_PRODUCTS (الكاش القديم) لضمان ظهور جميع المنتجات
+  const dbProdsRaw = window._PRODUCTS   || [];
+  const bpProdsRaw = window.BP_PRODUCTS || [];
+
+  const mergedMap = new Map();
+  dbProdsRaw.forEach(p => {
+    const key = (p.name || '').toLowerCase().trim();
+    if (!key) return;
+    mergedMap.set(key, { name: p.name, selling_price: p.selling_price || p.price || 0, cost: p.cost || 0 });
+  });
+  bpProdsRaw.forEach(p => {
+    const key = (p.name || '').toLowerCase().trim();
+    if (!key) return;
+    const ex = mergedMap.get(key);
+    if (!ex) {
+      mergedMap.set(key, { name: p.name, selling_price: p.price || p.selling_price || 0, cost: p.cost || 0 });
+    } else if (ex.selling_price === 0 && (p.price || p.selling_price || 0) > 0) {
+      mergedMap.set(key, { ...ex, selling_price: p.price || p.selling_price });
+    }
+  });
+
+  const validDBProds = [...mergedMap.values()]; // كل المنتجات بدون فلتر السعر
 
   if (c.children.length === 0 && validDBProds.length > 0) {
     // جلب بيانات المبيعات الشهرية من حاسبة التكاليف (إن توفّرت)

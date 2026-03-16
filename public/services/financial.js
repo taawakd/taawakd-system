@@ -1213,11 +1213,40 @@ function _updateImportBtn() {
  * يستورد المنتجات من _PRODUCTS (قاعدة البيانات / المنيو) إلى prodsContainer
  */
 function importFromDBProducts() {
-  const dbProds = window._PRODUCTS || [];
-  if (!dbProds.length) {
+  // ─── دمج المصدرين: جدول products (_PRODUCTS) + BP_PRODUCTS (القديم / الكاش) ─
+  const dbProds = window._PRODUCTS   || [];
+  const bpProds = window.BP_PRODUCTS || [];
+
+  if (!dbProds.length && !bpProds.length) {
     if (typeof toast === 'function') toast('لا توجد منتجات محفوظة — ارفع المنيو أولاً');
     return;
   }
+
+  // بناء map موحّد بالاسم (case-insensitive) يأخذ أفضل سعر من أي مصدر
+  const mergedMap = new Map();
+  // 1. أضف من _PRODUCTS أولاً (المصدر الرئيسي)
+  dbProds.forEach(p => {
+    const key = (p.name || '').toLowerCase().trim();
+    if (!key) return;
+    mergedMap.set(key, {
+      name:  p.name,
+      price: p.selling_price || p.price || 0,
+      cost:  p.cost || 0,
+    });
+  });
+  // 2. أضف/حسّن من BP_PRODUCTS (الكاش القديم أو منتجات لم تُحفظ في الجدول)
+  bpProds.forEach(p => {
+    const key = (p.name || '').toLowerCase().trim();
+    if (!key) return;
+    const ex = mergedMap.get(key);
+    if (!ex) {
+      // منتج موجود في BP فقط — أضفه
+      mergedMap.set(key, { name: p.name, price: p.price || p.selling_price || 0, cost: p.cost || 0 });
+    } else if (ex.price === 0 && (p.price || p.selling_price || 0) > 0) {
+      // جدول DB لديه سعر 0 لكن BP لديه سعر — استخدم سعر BP
+      mergedMap.set(key, { ...ex, price: p.price || p.selling_price });
+    }
+  });
 
   // ─── جلب بيانات المبيعات الشهرية من حاسبة التكاليف (إن توفّرت) ────────
   const pcProds = window.PC_STATE?.products?.length
@@ -1236,18 +1265,12 @@ function importFromDBProducts() {
     return match?.monthlySales || 0;
   };
 
-  // ─── ترجمة المنتجات مع تجاهل منتجات بلا سعر ────────────────────────────
+  // ─── ترجمة المنتجات — تجاهل فقط التي بلا سعر في كلا المصدرين ───────────
   const mapped = [];
   let zeroPrice = 0;
-  dbProds.forEach(p => {
-    const price = p.selling_price || p.price || 0;
-    if (!price) { zeroPrice++; return; }          // تجاهل منتج بلا سعر
-    mapped.push({
-      name:  p.name || '',
-      price,
-      cost:  p.cost || 0,
-      qty:   findPCQty(p.name),                   // من حاسبة التكاليف أو 0
-    });
+  mergedMap.forEach(p => {
+    if (!p.price) { zeroPrice++; return; }
+    mapped.push({ name: p.name, price: p.price, cost: p.cost, qty: findPCQty(p.name) });
   });
 
   if (!mapped.length) {
