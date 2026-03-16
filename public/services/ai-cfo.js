@@ -54,16 +54,17 @@ async function sendCFO(quickMsg) {
       `متصل بـ ${ctx.bizName} — هامش الربح ${ctx.netMargin}% — مؤشر الصحة ${ctx.healthScore}/100`;
   }
 
+  // ── التحقق من التوكن قبل البدء — خارج try لتجنب التنقل داخل طلب نشط ──
+  if (!window.__AUTH_TOKEN__) {
+    removeTyping(typingId);
+    appendCFOMessage('ai', '⚠️ انتهت جلستك — يرجى تسجيل الدخول مجدداً.');
+    document.getElementById('cfoSendBtn').disabled = false;
+    input.focus();
+    return;
+  }
+
   try {
-    // ✅ إصلاح 401: تأكد من وجود التوكن قبل الإرسال
-    // التوكن محفوظ من onAuthStateChange — نستخدمه مباشرة
-    if (!window.__AUTH_TOKEN__) { window.location.href = '/auth.html'; return; }
-
     const systemPrompt = buildCFOSystemPrompt(ctx);
-
-    // ── debug: confirm context and prompt before sending ──
-    console.log('CFO CONTEXT:', ctx);
-    console.log('CFO FINAL PROMPT:', systemPrompt);
 
     // System prompt as messages[0] so it is guaranteed to be the first
     // entry in the array sent to OpenAI — no reliance on server-side
@@ -86,8 +87,32 @@ async function sendCFO(quickMsg) {
       body: JSON.stringify(payload)
     });
 
+    // ── التحقق من حالة الاستجابة قبل قراءة JSON ──
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`API error ${resp.status}: ${errText.slice(0, 120)}`);
+    }
+
+    // ── التحقق من Content-Type قبل تحليل JSON ──
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const raw = await resp.text().catch(() => '');
+      throw new Error(`Unexpected response type (${contentType}): ${raw.slice(0, 120)}`);
+    }
+
     const data = await resp.json();
-    const reply = data.content?.map(i => i.text || '').join('') || 'عذراً، حدث خطأ. حاول مجدداً.';
+
+    // ── فحص حد الخطة ──
+    if (data.limit_reached) {
+      removeTyping(typingId);
+      appendCFOMessage('ai',
+        `🔒 **وصلت لحد استخدام AI CFO هذا الشهر.**\n\nقم بالترقية للحصول على وصول كامل بدون قيود.`);
+      if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO كامل', 'pro');
+      return;
+    }
+
+    const reply = data.content?.map(i => i.text || '').join('').trim()
+      || 'عذراً، لم يصل رد من المستشار. حاول مرة أخرى.';
 
     // Add to history
     CFO_HISTORY.push({ role: 'assistant', content: reply });
@@ -96,8 +121,9 @@ async function sendCFO(quickMsg) {
     appendCFOMessage('ai', reply);
 
   } catch(e) {
+    console.error('AI CFO error:', e);
     removeTyping(typingId);
-    appendCFOMessage('ai', '⚠️ تعذّر الاتصال. تأكد من الإنترنت وحاول مجدداً.');
+    appendCFOMessage('ai', '⚠️ تعذّر الاتصال بالمستشار المالي — تأكد من الإنترنت وحاول مرة أخرى.');
   } finally {
     document.getElementById('cfoSendBtn').disabled = false;
     input.focus();
@@ -177,6 +203,8 @@ async function generateActionPlan() {
 }`;
 
   try {
+    if (!window.__AUTH_TOKEN__) throw new Error('no auth token');
+
     const resp = await fetch('/api/analyze', {
       method: 'POST',
       headers: {
@@ -188,12 +216,31 @@ async function generateActionPlan() {
         messages: [{ role: 'user', content: prompt }]
       })
     });
+
+    if (!resp.ok) throw new Error(`Action plan API error: ${resp.status}`);
+
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) throw new Error('non-JSON response');
+
     const data = await resp.json();
     let text = data.content?.map(i=>i.text||'').join('') || '';
     text = text.replace(/```json|```/g,'').trim();
-    const plan = JSON.parse(text);
+
+    // JSON.parse منفصل في try/catch خاص لتفادي انهيار الصفحة
+    let plan;
+    try {
+      plan = JSON.parse(text);
+    } catch(jsonErr) {
+      console.error('Action plan JSON parse error:', jsonErr, '\nRaw text:', text);
+      renderActionPlan(defaultActionPlan(rep));
+      return;
+    }
+
+    if (!plan?.weeks?.length) throw new Error('empty or invalid plan structure');
     renderActionPlan(plan.weeks);
+
   } catch(e) {
+    console.error('generateActionPlan error:', e);
     renderActionPlan(defaultActionPlan(rep));
   }
 }
