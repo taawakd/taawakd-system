@@ -939,6 +939,21 @@ function getCFOContext() {
         const repProducts = rep.products || [];
         const products = dbProducts.length ? dbProducts : repProducts;
 
+        // ── جمع بنود التكاليف مع ?? 0 لضمان عدم ظهور — في التقارير القديمة ──
+        // التقارير المحفوظة قبل إضافة utilities/utilitiesPct قد تحتوي undefined
+        const _cogs      = m.cogs       ?? 0;
+        const _rent      = m.rent       ?? 0;
+        const _salaries  = m.salaries   ?? 0;
+        const _marketing = m.marketing  ?? 0;
+        const _utilities = m.utilities  ?? 0;
+        const _other     = m.other      ?? 0;
+        // إجمالي المصاريف التشغيلية الأساسية (6 بنود بدون عمولة توصيل)
+        const _baseTotalExp = _cogs + _rent + _salaries + _marketing + _utilities + _other;
+        // نسبة كل بند من إجمالي المصاريف (وليس من الإيرادات)
+        const _ep = (v) => _baseTotalExp > 0
+          ? parseFloat((v / _baseTotalExp * 100).toFixed(1))
+          : 0;
+
         return {
           bizName:       rep.bizName,
           bizType:       rep.bizType,
@@ -946,21 +961,22 @@ function getCFOContext() {
           profit:        m.netProfit,
           margin:        m.netMargin,
           grossMargin:   m.grossMargin,
-          totalExpenses: m.totalExpenses,
-          // أرقام ريال فعلية لكل بند (ليس فقط النسب)
-          rent:          m.rent,
-          salaries:      m.salaries,
-          cogs:          m.cogs,
-          marketing:     m.marketing,
-          utilities:     m.utilities,
-          other:         m.other,
-          // نسب مئوية
-          rentPct:       m.rentPct,
-          salPct:        m.salPct,
-          cogsPct:       m.cogsPct,
-          mktPct:        m.mktPct,
-          utilitiesPct:  m.utilitiesPct,
-          otherPct:      m.otherPct,
+          totalExpenses: m.totalExpenses ?? _baseTotalExp,
+          baseTotalExp:  _baseTotalExp,
+          // أرقام ريال فعلية — مضمونة لا تكون undefined
+          cogs:          _cogs,
+          rent:          _rent,
+          salaries:      _salaries,
+          marketing:     _marketing,
+          utilities:     _utilities,
+          other:         _other,
+          // نسب كل بند من إجمالي المصاريف (expensePct = expense / totalExpenses)
+          cogsPct:       _ep(_cogs),
+          rentPct:       _ep(_rent),
+          salPct:        _ep(_salaries),
+          mktPct:        _ep(_marketing),
+          utilitiesPct:  _ep(_utilities),
+          otherPct:      _ep(_other),
           // نقطة التعادل محسوبة مسبقاً
           fixedCosts:    fixedCosts,
           contribRatio:  parseFloat((contribRatio * 100).toFixed(1)),
@@ -1172,14 +1188,14 @@ ${basicLines}\n`;
 - هامش إجمالي: ${latest.grossMargin ?? '—'}%
 - المصاريف الكلية: ${fmtN(latest.totalExpenses)} ريال
 
-══ تفاصيل المصاريف (جميع البنود — أرقام فعلية) ══
-- تكلفة البضاعة / الإنتاج: ${fmtN(latest.cogs)} ريال (${latest.cogsPct ?? '—'}%)
-- الإيجار:                  ${fmtN(latest.rent)} ريال (${latest.rentPct ?? '—'}%)
-- الرواتب:                  ${fmtN(latest.salaries)} ريال (${latest.salPct ?? '—'}%)
-- التسويق والإعلان:         ${fmtN(latest.marketing)} ريال (${latest.mktPct ?? '—'}%)
-- الكهرباء والمياه:         ${fmtN(latest.utilities)} ريال (${latest.utilitiesPct ?? '—'}%)
-- مصاريف أخرى:              ${fmtN(latest.other)} ريال (${latest.otherPct ?? '—'}%)
-[التحقق: ${fmtN(latest.cogs)} + ${fmtN(latest.rent)} + ${fmtN(latest.salaries)} + ${fmtN(latest.marketing)} + ${fmtN(latest.utilities)} + ${fmtN(latest.other)} = إجمالي المصاريف التشغيلية ${fmtN(latest.totalExpenses)} ريال]
+══ تفاصيل المصاريف (جميع البنود — النسبة من إجمالي المصاريف) ══
+- تكلفة البضاعة / الإنتاج: ${fmtN(latest.cogs)} ريال (${latest.cogsPct}% من المصاريف)
+- الإيجار:                  ${fmtN(latest.rent)} ريال (${latest.rentPct}% من المصاريف)
+- الرواتب:                  ${fmtN(latest.salaries)} ريال (${latest.salPct}% من المصاريف)
+- التسويق والإعلان:         ${fmtN(latest.marketing)} ريال (${latest.mktPct}% من المصاريف)
+- الكهرباء والمياه:         ${fmtN(latest.utilities)} ريال (${latest.utilitiesPct}% من المصاريف)
+- مصاريف أخرى:              ${fmtN(latest.other)} ريال (${latest.otherPct}% من المصاريف)
+[تحقق: ${fmtN(latest.cogs)} + ${fmtN(latest.rent)} + ${fmtN(latest.salaries)} + ${fmtN(latest.marketing)} + ${fmtN(latest.utilities)} + ${fmtN(latest.other)} = ${fmtN(latest.baseTotalExp)} ريال (إجمالي المصاريف الأساسية)]
 
 ${latest.delTotal ? `══ تطبيقات التوصيل ══
 - إجمالي مبيعات التطبيقات: ${fmtN(latest.delTotal)} ريال
