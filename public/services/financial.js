@@ -51,8 +51,10 @@ async function runAnalysis() {
   const grossMargin = parseFloat(pct(revenue-cogs, revenue));
   const rentPct = parseFloat(pct(rent,revenue));
   const salPct = parseFloat(pct(salaries,revenue));
-  const cogsPct = parseFloat(pct(cogs,revenue));
-  const mktPct = parseFloat(pct(marketing,revenue));
+  const cogsPct      = parseFloat(pct(cogs,revenue));
+  const mktPct       = parseFloat(pct(marketing,revenue));
+  const utilitiesPct = parseFloat(pct(utilities,revenue));
+  const otherPct     = parseFloat(pct(other,revenue));
 
   const bizName = document.getElementById('f-name').value || 'مشروعك';
   const bizType = document.getElementById('f-type').value || 'غير محدد';
@@ -65,7 +67,7 @@ async function runAnalysis() {
   // ✅ إصلاح 1: استخدام sectorKey المعرّف بدلاً من resolvedSectorKey غير المعرّف
   const bench = BENCHMARKS[sectorKey];
 
-  const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct,
+  const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, utilitiesPct, otherPct,
     delTotal, delNet, delOrders, delCommission, delCommPct, delAvgOrder, hasDelivery };
   const scoreData = calcScore({ netMargin, grossMargin, rentPct, salPct, cogsPct });
   const alerts = generateAlerts({ ...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct }, sectorKey);
@@ -957,6 +959,8 @@ function getCFOContext() {
           salPct:        m.salPct,
           cogsPct:       m.cogsPct,
           mktPct:        m.mktPct,
+          utilitiesPct:  m.utilitiesPct,
+          otherPct:      m.otherPct,
           // نقطة التعادل محسوبة مسبقاً
           fixedCosts:    fixedCosts,
           contribRatio:  parseFloat((contribRatio * 100).toFixed(1)),
@@ -1168,13 +1172,14 @@ ${basicLines}\n`;
 - هامش إجمالي: ${latest.grossMargin ?? '—'}%
 - المصاريف الكلية: ${fmtN(latest.totalExpenses)} ريال
 
-══ تفاصيل المصاريف (أرقام فعلية) ══
-- تكلفة البضاعة: ${fmtN(latest.cogs)} ريال (${latest.cogsPct ?? '—'}%)
-- الإيجار: ${fmtN(latest.rent)} ريال (${latest.rentPct ?? '—'}%)
-- الرواتب: ${fmtN(latest.salaries)} ريال (${latest.salPct ?? '—'}%)
-- التسويق: ${fmtN(latest.marketing)} ريال (${latest.mktPct ?? '—'}%)
-- الكهرباء والمياه: ${fmtN(latest.utilities)} ريال
-- مصاريف أخرى: ${fmtN(latest.other)} ريال
+══ تفاصيل المصاريف (جميع البنود — أرقام فعلية) ══
+- تكلفة البضاعة / الإنتاج: ${fmtN(latest.cogs)} ريال (${latest.cogsPct ?? '—'}%)
+- الإيجار:                  ${fmtN(latest.rent)} ريال (${latest.rentPct ?? '—'}%)
+- الرواتب:                  ${fmtN(latest.salaries)} ريال (${latest.salPct ?? '—'}%)
+- التسويق والإعلان:         ${fmtN(latest.marketing)} ريال (${latest.mktPct ?? '—'}%)
+- الكهرباء والمياه:         ${fmtN(latest.utilities)} ريال (${latest.utilitiesPct ?? '—'}%)
+- مصاريف أخرى:              ${fmtN(latest.other)} ريال (${latest.otherPct ?? '—'}%)
+[التحقق: ${fmtN(latest.cogs)} + ${fmtN(latest.rent)} + ${fmtN(latest.salaries)} + ${fmtN(latest.marketing)} + ${fmtN(latest.utilities)} + ${fmtN(latest.other)} = إجمالي المصاريف التشغيلية ${fmtN(latest.totalExpenses)} ريال]
 
 ${latest.delTotal ? `══ تطبيقات التوصيل ══
 - إجمالي مبيعات التطبيقات: ${fmtN(latest.delTotal)} ريال
