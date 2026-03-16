@@ -1024,20 +1024,66 @@ function buildCFOSystemPrompt(ctx) {
   const trend              = cfoContext.trend || {};
   const hasPreviousReports = previous && previous.length > 0;
 
-  // Build product line — يستخدم formatProductsForAI إذا كانت متاحة
-  const prodsText = (latest.products || []).length
-    ? (typeof formatProductsForAI === 'function'
-        ? formatProductsForAI(latest.products)
-        : latest.products.map(p => {
-            const sp = p.selling_price ?? p.price ?? 0;
-            const mg = sp > 0 ? (((sp - (p.cost||0)) / sp) * 100).toFixed(0) : 0;
-            return `${p.name} (هامش ${mg}%${p.qty ? ', كمية '+p.qty : ''}${p.category ? ', '+p.category : ''})`;
-          }).join('، '))
-    : 'لا توجد بيانات منتجات';
-
   // Null-safe number formatter — shows '—' for missing/undefined values instead of 0
   // Prevents the model seeing "إيرادات 0 ر" for old reports with no data
   const fmtN = v => (v != null && !isNaN(Number(v))) ? Number(v).toLocaleString('en') : '—';
+
+  // ══ بناء قسم المنتجات التفصيلي من PC_STATE ══
+  // PC_STATE هو المصدر الأغنى: يحتوي على تكلفة المكونات + التشغيل + الهامش الحقيقي
+  const pcProds = (window.PC_STATE?.products || []).filter(p => p && p.name);
+  const latestProds = latest.products || [];
+
+  let prodsSection = '';
+
+  if (pcProds.length > 0) {
+    // بناء قسم تفصيلي من PC_STATE
+    const pcLines = pcProds.map(p => {
+      const salePrice   = parseFloat(p.salePrice || p.suggestedPrice || 0);
+      const ingCost     = (p.ingredients || []).reduce((s, i) => s + parseFloat(i.total || (i.qty * i.unitCost) || 0), 0);
+      const trueCost    = parseFloat(p.trueCost || ingCost || 0);
+      const opPerUnit   = Math.max(0, trueCost - ingCost);
+      const profitPerUnit = salePrice - trueCost;
+      const margin      = salePrice > 0 ? (profitPerUnit / salePrice * 100).toFixed(1) : 0;
+      const monthlySales = parseInt(p.monthlySales || 0, 10);
+      const monthlyProfit = profitPerUnit * monthlySales;
+
+      let line = `• ${p.name} — سعر البيع: ${fmtN(salePrice)} ر`;
+      if (ingCost > 0)      line += ` | تكلفة المكونات: ${fmtN(ingCost.toFixed(2))} ر`;
+      if (opPerUnit > 0)    line += ` | التكلفة التشغيلية/وحدة: ${fmtN(opPerUnit.toFixed(2))} ر`;
+      if (trueCost > 0)     line += ` | التكلفة الكاملة: ${fmtN(trueCost.toFixed(2))} ر`;
+      line += ` | ربح/وحدة: ${fmtN(profitPerUnit.toFixed(2))} ر | هامش: ${margin}%`;
+      if (monthlySales > 0) line += ` | مبيعات شهرية: ${monthlySales} وحدة | ربح شهري: ${fmtN(monthlyProfit.toFixed(0))} ر`;
+      return line;
+    }).join('\n');
+
+    prodsSection = `\n══ بيانات المنتجات الحالية ══
+[تعليمات صارمة: عند السؤال عن تسعير أو ربحية أي منتج بالاسم، استخدم أرقامه من هذا القسم حصراً. لا تطلب بيانات إضافية من المستخدم إذا كان المنتج موجوداً هنا.]
+${pcLines}\n`;
+
+    // إضافة المنتجات الموجودة في latest.products فقط (غير موجودة في PC_STATE)
+    const pcNames = new Set(pcProds.map(p => (p.name||'').trim().toLowerCase()));
+    const extraProds = latestProds.filter(p => !pcNames.has((p.name||'').trim().toLowerCase()));
+    if (extraProds.length > 0) {
+      const extraLines = extraProds.map(p => {
+        const sp = parseFloat(p.selling_price ?? p.price ?? 0);
+        const mg = sp > 0 ? (((sp - (p.cost||0)) / sp) * 100).toFixed(0) : 0;
+        return `• ${p.name} — سعر: ${fmtN(sp)} ر | هامش: ${mg}%`;
+      }).join('\n');
+      prodsSection += `(منتجات إضافية بيانات أساسية فقط)\n${extraLines}\n`;
+    }
+
+  } else if (latestProds.length > 0) {
+    // لا يوجد PC_STATE — نستخدم البيانات الأساسية
+    const basicLines = latestProds.map(p => {
+      const sp = parseFloat(p.selling_price ?? p.price ?? 0);
+      const mg = sp > 0 ? (((sp - (p.cost||0)) / sp) * 100).toFixed(0) : 0;
+      return `• ${p.name} — سعر: ${fmtN(sp)} ر | هامش: ${mg}%${p.category ? ' | ' + p.category : ''}`;
+    }).join('\n');
+    prodsSection = `\n══ بيانات المنتجات ══
+${basicLines}\n`;
+  } else {
+    prodsSection = ''; // لا توجد بيانات منتجات — لا نضيف قسماً فارغاً
+  }
 
   // Build previous-reports comparison table with concrete numbers
   const prevText = previous.length
@@ -1092,8 +1138,8 @@ ${latest.delTotal ? `══ تطبيقات التوصيل ══
 [تعليمات صارمة: عند سؤالك عن نقطة التعادل، استخدم هذه الأرقام فقط. لا تعيد الحساب ولا تستخدم أرقاماً مختلفة.]
 
 - مؤشر الصحة: ${latest.score ?? '—'}/100
-- المنتجات: ${prodsText}
 - التنبيهات: ${latest.alerts?.join(' | ') || 'لا توجد'}
+${prodsSection}
 
 ══ التقارير السابقة — أرقام فعلية من قاعدة البيانات ══
 [تعليمات الاستخدام: استخدم الأرقام التالية فقط ولا تستخدم أمثلة افتراضية. إذا كانت قيمة "—" فهي غير متوفرة ولا تستبدلها بأرقام.]
