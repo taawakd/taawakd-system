@@ -314,6 +314,47 @@
           </div>
         </div>
       </div>
+
+      <!-- ══ مبيعات تطبيقات التوصيل ══ -->
+      <div class="card">
+        <div class="card-title" style="color:var(--gold)">🛵 مبيعات تطبيقات التوصيل</div>
+        <p style="font-size:12px;color:var(--gray);margin:0 0 12px 0">اختياري — أدخل هذه البيانات إذا كنت تستخدم هنقرستيشن أو جاهز أو غيرها</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="form-group">
+            <label>إجمالي مبيعات التطبيقات</label>
+            <input class="input" id="f-del-total" type="number" placeholder="0" min="0" oninput="calcDeliveryApps();liveCalc()">
+          </div>
+          <div class="form-group">
+            <label>صافي المبلغ المستلم</label>
+            <input class="input" id="f-del-net" type="number" placeholder="0" min="0" oninput="calcDeliveryApps();liveCalc()">
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label>عدد الطلبات من التطبيقات</label>
+            <input class="input" id="f-del-orders" type="number" placeholder="0" min="0" oninput="calcDeliveryApps()">
+          </div>
+        </div>
+        <!-- نتائج تلقائية -->
+        <div id="del-results" style="display:none;margin-top:10px;background:var(--s3);border-radius:10px;padding:12px 14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+            <div>
+              <div style="font-size:11px;color:var(--gray);margin-bottom:4px">عمولة التطبيقات</div>
+              <div id="del-commission" style="font-size:14px;font-weight:700;color:var(--red)">—</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--gray);margin-bottom:4px">نسبة العمولة</div>
+              <div id="del-commission-pct" style="font-size:14px;font-weight:700;color:var(--warn)">—</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--gray);margin-bottom:4px">متوسط الطلب</div>
+              <div id="del-avg-order" style="font-size:14px;font-weight:700;color:var(--gold)">—</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--gray);text-align:center">
+            ✅ تم إضافة عمولة التطبيقات تلقائياً ضمن حسابات التكاليف
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px;position:sticky;top:24px;">

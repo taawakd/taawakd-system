@@ -4,12 +4,36 @@
 // reports.js — الحسابات، الرسوم، السيناريوهات، التقارير
 // ============================================================
 
+// ══════════════════════════════════════════
+// حسابات تطبيقات التوصيل (تلقائية)
+// ══════════════════════════════════════════
+function calcDeliveryApps() {
+  const delTotal  = getN('f-del-total');
+  const delNet    = getN('f-del-net');
+  const delOrders = getN('f-del-orders');
+  const resultsEl = document.getElementById('del-results');
+  if (!resultsEl) return;
+  if (!delTotal) { resultsEl.style.display = 'none'; return; }
+  resultsEl.style.display = 'block';
+  const commission = Math.max(0, delTotal - delNet);
+  const commPct    = delTotal > 0 ? (commission / delTotal * 100).toFixed(1) : 0;
+  const avgOrder   = delOrders > 0 ? Math.round(delTotal / delOrders) : 0;
+  const setEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  setEl('del-commission',     commission > 0 ? fmt(commission) + ' ﷼' : '—');
+  setEl('del-commission-pct', delTotal > 0   ? commPct + '%'           : '—');
+  setEl('del-avg-order',      avgOrder > 0   ? fmt(avgOrder) + ' ﷼'   : '—');
+}
+
 function liveCalc() {
 // ✅ getN / fmt / pct تأتي من helpers.js
 
   const rev  = getN('f-rev');
   const cogs = getN('f-cogs');
-  const exp  = cogs+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
+  // عمولة تطبيقات التوصيل — تُضاف كتكلفة إضافية تلقائياً
+  const delTotal     = getN('f-del-total');
+  const delNet       = getN('f-del-net');
+  const delCommission = delTotal > 0 ? Math.max(0, delTotal - delNet) : 0;
+  const exp  = cogs+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other')+delCommission;
   const profit = rev - exp;
   const margin = pct(profit, rev);
   // نقطة التعادل = التكاليف الثابتة ÷ نسبة هامش المساهمة
@@ -782,6 +806,7 @@ function switchChart(mode) {
 // ══════════════════════════════════════════
 
 window.liveCalc = liveCalc;
+window.calcDeliveryApps = calcDeliveryApps;
 window.renderBenchmarkPage = renderBenchmarkPage;
 window.switchChart = switchChart;
 window.applyCustomChart = applyCustomChart;

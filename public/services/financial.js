@@ -37,7 +37,15 @@ async function runAnalysis() {
 
   const cogs=getN('f-cogs'), rent=getN('f-rent'), salaries=getN('f-sal');
   const marketing=getN('f-mkt'), other=getN('f-other'), utilities=getN('f-utilities');
-  const totalExpenses = cogs+rent+salaries+marketing+other+utilities;
+  // ── تطبيقات التوصيل ──
+  const delTotal   = getN('f-del-total');
+  const delNet     = getN('f-del-net');
+  const delOrders  = getN('f-del-orders');
+  const delCommission = delTotal > 0 ? Math.max(0, delTotal - delNet) : 0;
+  const delCommPct    = delTotal > 0 ? parseFloat(pct(delCommission, delTotal)) : 0;
+  const delAvgOrder   = delOrders > 0 ? Math.round(delTotal / delOrders) : 0;
+  const hasDelivery   = delTotal > 0;
+  const totalExpenses = cogs+rent+salaries+marketing+other+utilities+delCommission;
   const netProfit = revenue-totalExpenses;
   const netMargin = parseFloat(pct(netProfit,revenue));
   const grossMargin = parseFloat(pct(revenue-cogs, revenue));
@@ -57,7 +65,8 @@ async function runAnalysis() {
   // ✅ إصلاح 1: استخدام sectorKey المعرّف بدلاً من resolvedSectorKey غير المعرّف
   const bench = BENCHMARKS[sectorKey];
 
-  const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
+  const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct,
+    delTotal, delNet, delOrders, delCommission, delCommPct, delAvgOrder, hasDelivery };
   const scoreData = calcScore({ netMargin, grossMargin, rentPct, salPct, cogsPct });
   const alerts = generateAlerts({ ...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct }, sectorKey);
   const scenarios = buildScenarios({ revenue, totalExpenses, netProfit, cogs, salaries, rent });
@@ -87,6 +96,16 @@ async function runAnalysis() {
     health_score: scoreData ? scoreData.total : null,
     products: productsText || null,
     notes: notes || null,
+    ...(hasDelivery ? {
+      delivery_apps: {
+        total_sales: delTotal,
+        net_received: delNet,
+        orders_count: delOrders,
+        commission_amount: delCommission,
+        commission_percent: delCommPct,
+        avg_order_value: delAvgOrder
+      }
+    } : {}),
     request: 'حلل بيانات المشروع وأعطني التشخيص ونقاط القوة والمشاكل وأفضل 3 إجراءات لتحسين الربح مع أرقام محددة'
   }, null, 2);
 
@@ -946,6 +965,15 @@ function getCFOContext() {
           period:        rep.reportPeriod || rep.period,
           alerts:        rep.alerts?.map(a => a.msg) || [],
           products,
+          // تطبيقات التوصيل
+          ...(m.hasDelivery ? {
+            delTotal:      m.delTotal,
+            delNet:        m.delNet,
+            delOrders:     m.delOrders,
+            delCommission: m.delCommission,
+            delCommPct:    m.delCommPct,
+            delAvgOrder:   m.delAvgOrder,
+          } : {}),
         };
       })(),
       previous: previousReports,
@@ -1052,7 +1080,12 @@ function buildCFOSystemPrompt(ctx) {
 - الكهرباء والمياه: ${fmtN(latest.utilities)} ريال
 - مصاريف أخرى: ${fmtN(latest.other)} ريال
 
-══ نقطة التعادل (محسوبة) ══
+${latest.delTotal ? `══ تطبيقات التوصيل ══
+- إجمالي مبيعات التطبيقات: ${fmtN(latest.delTotal)} ريال
+- صافي المبلغ المستلم: ${fmtN(latest.delNet)} ريال
+- عمولة التطبيقات: ${fmtN(latest.delCommission)} ريال (${latest.delCommPct}% من مبيعات التطبيقات)
+- عدد الطلبات: ${latest.delOrders || '—'} | متوسط قيمة الطلب: ${fmtN(latest.delAvgOrder)} ريال
+` : ''}══ نقطة التعادل (محسوبة) ══
 - التكاليف الثابتة = إيجار + رواتب + تسويق + كهرباء + أخرى = ${fmtN(latest.fixedCosts)} ريال
 - نسبة هامش المساهمة = (إيرادات − تكلفة البضاعة) ÷ إيرادات = ${latest.contribRatio ?? '—'}%
 - نقطة التعادل = ${fmtN(latest.breakEven)} ريال
