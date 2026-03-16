@@ -1048,6 +1048,18 @@ function buildCFOSystemPrompt(ctx) {
   if (_fromStorage.length > _fromState.length && window.PC_STATE) {
     window.PC_STATE.products = _fromStorage;
   }
+
+  // ═══════════════════════════════════════════════════
+  // 🔍 DIAGNOSTIC LOG #2 — داخل buildCFOSystemPrompt
+  // ═══════════════════════════════════════════════════
+  console.log('%c[CFO DIAG #2] داخل buildCFOSystemPrompt', 'color:#0f0;font-weight:bold');
+  console.log('%c[CFO DIAG #2] _pcKey (مفتاح localStorage):', 'color:#0f0', _pcKey);
+  console.log('%c[CFO DIAG #2] _fromState (PC_STATE.products):', 'color:#0f0', _fromState);
+  console.log('%c[CFO DIAG #2] _fromStorage (localStorage مباشرة):', 'color:#0f0', _fromStorage);
+  console.log('%c[CFO DIAG #2] pcProds (المصدر المختار):', 'color:#0f0', pcProds);
+  console.log('%c[CFO DIAG #2] عدد المنتجات المرسلة للـ AI:', 'color:#0f0;font-weight:bold', pcProds.length);
+  // ═══════════════════════════════════════════════════
+
   const latestProds = latest.products || [];
 
   let prodsSection = '';

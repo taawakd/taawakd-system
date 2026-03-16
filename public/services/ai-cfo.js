@@ -51,6 +51,21 @@ async function sendCFO(quickMsg) {
     try { await pcLoadFromDB(); } catch(e) { /* استمر حتى لو فشل التحميل */ }
   }
 
+  // ═══════════════════════════════════════════════════
+  // 🔍 DIAGNOSTIC LOG #1 — حالة PC_STATE قبل بناء الـ prompt
+  // ═══════════════════════════════════════════════════
+  console.log('%c[CFO DIAG #1] window.PC_STATE', 'color:#f90;font-weight:bold', window.PC_STATE);
+  console.log('%c[CFO DIAG #1] window.PC_STATE?.products', 'color:#f90;font-weight:bold', window.PC_STATE?.products);
+  console.log('%c[CFO DIAG #1] عدد المنتجات في PC_STATE:', 'color:#f90;font-weight:bold', window.PC_STATE?.products?.length ?? 'غير موجود');
+  console.log('%c[CFO DIAG #1] __CURRENT_PROJECT_ID__:', 'color:#f90;font-weight:bold', window.__CURRENT_PROJECT_ID__);
+  const _diagKey = typeof projectProductCostsKey === 'function'
+    ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default')
+    : 'tw_product_costs';
+  console.log('%c[CFO DIAG #1] مفتاح localStorage المستخدم:', 'color:#f90;font-weight:bold', _diagKey);
+  console.log('%c[CFO DIAG #1] محتوى localStorage بهذا المفتاح:', 'color:#f90;font-weight:bold',
+    JSON.parse(localStorage.getItem(_diagKey) || '[]'));
+  // ═══════════════════════════════════════════════════
+
   const ctx = getCFOContext();
 
   // Update context bar
@@ -71,6 +86,14 @@ async function sendCFO(quickMsg) {
 
   try {
     const systemPrompt = buildCFOSystemPrompt(ctx);
+
+    // ═══════════════════════════════════════════════════
+    // 🔍 DIAGNOSTIC LOG #3 — الـ system prompt النهائي قبل الإرسال
+    // ═══════════════════════════════════════════════════
+    console.log('%c[CFO DIAG #3] CFO SYSTEM PROMPT (كامل):', 'color:#0cf;font-weight:bold', systemPrompt);
+    const hasProdsSection = systemPrompt.includes('بيانات المنتجات');
+    console.log('%c[CFO DIAG #3] هل يحتوي الـ prompt على قسم المنتجات؟', 'color:#0cf;font-weight:bold', hasProdsSection);
+    // ═══════════════════════════════════════════════════
 
     // System prompt as messages[0] so it is guaranteed to be the first
     // entry in the array sent to OpenAI — no reliance on server-side
