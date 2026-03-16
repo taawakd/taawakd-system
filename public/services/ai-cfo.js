@@ -86,7 +86,29 @@ async function sendCFO(quickMsg) {
   }
 
   try {
-    const systemPrompt = buildCFOSystemPrompt(ctx);
+    let systemPrompt = buildCFOSystemPrompt(ctx);
+
+    // ── مطابقة اسم المنتج في رسالة المستخدم ──────────────────────────────
+    // نبحث عن أي منتج من PC_STATE يظهر اسمه (أو جزء منه) داخل سؤال المستخدم
+    // وإذا وجدنا تطابقاً نُضيف سطراً صريحاً في أعلى الـ system prompt
+    const _pcProdsForMatch = (window.PC_STATE?.products || []).filter(p => p && p.name);
+    if (_pcProdsForMatch.length > 0) {
+      const _msgLower = msg.trim().toLowerCase();
+      // نرتب المنتجات من الأطول اسماً للأقصر حتى نطابق الأكثر تحديداً أولاً
+      const _sorted = [..._pcProdsForMatch].sort((a, b) => b.name.length - a.name.length);
+      const _matched = _sorted.find(p => {
+        const nameLower = p.name.trim().toLowerCase();
+        if (_msgLower.includes(nameLower)) return true;
+        // مطابقة جزئية: إذا كان الاسم مكوناً من كلمتين أو أكثر، نطابق أي كلمة رئيسية (أكثر من 3 أحرف)
+        const words = nameLower.split(/\s+/).filter(w => w.length > 3);
+        return words.length > 0 && words.every(w => _msgLower.includes(w));
+      });
+      if (_matched) {
+        systemPrompt = `[تنبيه للنموذج: المنتج المقصود في سؤال المستخدم هو "${_matched.name}" — استخدم بياناته من قسم "بيانات المنتجات الحالية" مباشرة للإجابة.]\n\n` + systemPrompt;
+        console.log('[CFO] منتج مطابق اكتُشف:', _matched.name);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     // ═══════════════════════════════════════════════════
     // 🔍 DIAGNOSTIC LOG #3 — الـ system prompt النهائي قبل الإرسال
