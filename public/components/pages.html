@@ -1451,10 +1451,16 @@
   </div><!-- /pc-printable -->
 
   <!-- ── أزرار الإجراءات ── -->
-  <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:4px;margin-bottom:40px;flex-wrap:wrap">
-    <div id="pc-save-status" style="color:var(--gray);font-size:13px;align-self:center"></div>
-    <button onclick="saveProductCost()" class="btn-primary" style="padding:12px 24px;font-size:14px">💾 حفظ المنتج</button>
-    <button onclick="exportProductCostPDF()" style="background:var(--s2);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:12px 24px;font-size:14px;cursor:pointer;font-weight:600">📄 تنزيل PDF</button>
+  <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:4px;margin-bottom:40px;flex-wrap:wrap;align-items:center">
+    <div id="pc-save-status" style="color:var(--gray);font-size:12px;align-self:center"></div>
+    <!-- زر الحفظ والانتقال — الزر الرئيسي لإدخال منتجات متعددة بسرعة -->
+    <button onclick="saveAndNextProduct()" title="Ctrl + Enter"
+      style="background:linear-gradient(135deg,#4caf82,#2d8a5e);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:8px;">
+      ⚡ حفظ والمنتج التالي
+      <span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;font-weight:400">Ctrl+↵</span>
+    </button>
+    <button onclick="saveProductCost()" class="btn-primary" style="padding:12px 22px;font-size:14px">💾 حفظ</button>
+    <button onclick="exportProductCostPDF()" style="background:var(--s2);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:12px 22px;font-size:14px;cursor:pointer;font-weight:600">📄 PDF</button>
   </div>
 
 </div><!-- /page-costcalc -->

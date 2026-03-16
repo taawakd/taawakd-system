@@ -780,20 +780,165 @@ async function exportProductCostPDF() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ربط التكاليف التشغيلية بـ business_profile (مصدر واحد للحقيقة)
+// ══════════════════════════════════════════════════════════════════
+
+/** تعبئة حقول التكاليف التشغيلية من _businessProfile عند فتح الصفحة */
+function _pcFillFromBP() {
+  const bp = window._businessProfile;
+  if (!bp) return;
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const n = Number(val) || 0;
+    el.value = n > 0 ? Math.round(n).toLocaleString('en') : '';
+    el.dispatchEvent(new Event('input'));
+  };
+
+  // الحقول المخزنة في business_profile  →  حقول الحاسبة
+  setVal('pc-rent',      bp.fixed_rent);
+  setVal('pc-salaries',  bp.fixed_salaries);
+  setVal('pc-elec',      bp.fixed_utilities);    // كهرباء + مياه مجمّعة
+  setVal('pc-marketing', bp.fixed_marketing);
+  setVal('pc-op-other',  bp.fixed_other);
+}
+
+/** حفظ التكاليف التشغيلية المعدَّلة في business_profile (debounced 1.5s) */
+let _pcBPSaveTimer = null;
+function _pcSaveToBP() {
+  clearTimeout(_pcBPSaveTimer);
+  _pcBPSaveTimer = setTimeout(async () => {
+    if (!window.sb || !window._businessProfile) return;
+    try {
+      const { data: { user } } = await window.sb.auth.getUser();
+      if (!user) return;
+
+      const g = id => parseNum(document.getElementById(id)?.value || '');
+      const updates = {
+        user_id:         user.id,
+        fixed_rent:      g('pc-rent'),
+        fixed_salaries:  g('pc-salaries'),
+        fixed_utilities: g('pc-elec'),
+        fixed_marketing: g('pc-marketing'),
+        fixed_other:     g('pc-op-other'),
+      };
+
+      const { error } = await window.sb.from('business_profile')
+        .upsert(updates, { onConflict: 'user_id' });
+
+      if (!error) {
+        // تحديث الكاش العالمي ليتزامن مع التغيير
+        Object.assign(window._businessProfile, {
+          fixed_rent:      updates.fixed_rent,
+          fixed_salaries:  updates.fixed_salaries,
+          fixed_utilities: updates.fixed_utilities,
+          fixed_marketing: updates.fixed_marketing,
+          fixed_other:     updates.fixed_other,
+        });
+        // تحديث الحقول المطابقة في صفحة ملف المشروع (إذا كانت ظاهرة)
+        const syncProfile = (bpId, val) => {
+          const el = document.getElementById(bpId);
+          if (el && document.getElementById('page-profile')?.classList.contains('active')) {
+            el.value = val > 0 ? Math.round(val).toLocaleString('en') : '';
+            el.dispatchEvent(new Event('input'));
+          }
+        };
+        syncProfile('bp-rent',           updates.fixed_rent);
+        syncProfile('bp-salaries',       updates.fixed_salaries);
+        syncProfile('bp-utilities',      updates.fixed_utilities);
+        syncProfile('bp-marketing-fixed',updates.fixed_marketing);
+        syncProfile('bp-fixed-other',    updates.fixed_other);
+      }
+    } catch(e) { console.warn('_pcSaveToBP error:', e); }
+  }, 1500);
+}
+
 // ── تهيئة الصفحة عند الدخول إليها ─────────────────────────────
 function initProductCostPage() {
   // أضف مكوّناً افتراضياً إذا كان الجدول فارغاً
   const container = document.getElementById('pc-ingredients');
   if (container && container.children.length === 0) addIngredient();
 
-  // احسب القيم الحالية
+  // ① تعبئة التكاليف من ملف المشروع
+  if (window._businessProfile) {
+    _pcFillFromBP();
+  } else if (typeof loadBusinessProfile === 'function') {
+    // إذا لم يُحمَّل بعد (زيارة مباشرة للصفحة) — حمّله ثم عبّئ
+    loadBusinessProfile().then(() => { _pcFillFromBP(); calcProductCost(); });
+  }
+
+  // ② ربط حقول التكاليف التشغيلية بـ _pcSaveToBP (مصدر واحد للحقيقة)
+  const opIds = ['pc-rent','pc-salaries','pc-elec','pc-water','pc-internet',
+                 'pc-maintenance','pc-marketing','pc-op-other'];
+  opIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._pcLinkedToBP) {
+      el._pcLinkedToBP = true; // علامة لمنع ربط مزدوج
+      el.addEventListener('change', _pcSaveToBP);
+    }
+  });
+
+  // ③ احسب القيم الحالية
   calcProductCost();
 
-  // اعرض المقارنة المحفوظة
+  // ④ اعرض المقارنة المحفوظة
   renderProductComparison();
 
-  // حاول التحميل من Supabase (ثم حدّث المقارنة)
+  // ⑤ حاول التحميل من Supabase (ثم حدّث المقارنة)
   pcLoadFromDB().then(() => renderProductComparison());
+
+  // ⑥ اختصار لوحة المفاتيح Ctrl+Enter → حفظ والانتقال للتالي
+  if (!window._pcKeyHandlerAdded) {
+    window._pcKeyHandlerAdded = true;
+    document.addEventListener('keydown', function(e) {
+      const page = document.getElementById('page-costcalc');
+      if (!page || !page.classList.contains('active')) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        saveAndNextProduct();
+      }
+    });
+  }
+}
+
+// ── حفظ والانتقال للمنتج التالي ────────────────────────────────
+function saveAndNextProduct() {
+  const name = document.getElementById('pc-name')?.value?.trim();
+  if (!name) {
+    toast('أدخل اسم المنتج أولاً');
+    document.getElementById('pc-name')?.focus();
+    return;
+  }
+
+  // حفظ المنتج الحالي
+  saveProductCost();
+
+  // مهلة قصيرة لإتمام الحفظ قبل تنظيف الحقول
+  setTimeout(() => {
+    // ─ مسح حقول المنتج فقط (التكاليف التشغيلية تبقى) ──────────────
+    ['pc-name', 'pc-price', 'pc-suggested-price', 'pc-monthly-sales', 'pc-daily-sales']
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
+      });
+
+    // ─ مسح المكونات — أبقِ صفاً واحداً فارغاً جاهزاً ───────────────
+    const ingContainer = document.getElementById('pc-ingredients');
+    if (ingContainer) {
+      ingContainer.innerHTML = '';
+      addIngredient();
+    }
+
+    // ─ إعادة الحساب بالتكاليف التشغيلية المحفوظة ────────────────────
+    calcProductCost();
+
+    // ─ ضع المؤشر في حقل اسم المنتج للبدء مباشرة ─────────────────────
+    document.getElementById('pc-name')?.focus();
+
+    toast('✅ تم حفظ المنتج — أدخل المنتج التالي');
+  }, 80);
 }
 
 // ── التصدير للـ window ──────────────────────────────────────────
@@ -807,4 +952,7 @@ window.deleteProductCost  = deleteProductCost;
 window.updateTargetMargin = updateTargetMargin;
 window.calcUnitsForProfit = calcUnitsForProfit;
 window.exportProductCostPDF = exportProductCostPDF;
+window.saveAndNextProduct   = saveAndNextProduct;
+window._pcFillFromBP        = _pcFillFromBP;
+window.initProductCostPage  = initProductCostPage;
 window.initProductCostPage  = initProductCostPage;
