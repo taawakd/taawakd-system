@@ -796,8 +796,24 @@ function initProdsSection() {
 
   // ── إذا كان الحاوي فارغاً وهناك منتجات محفوظة في _PRODUCTS — ملأها تلقائياً ──
   const dbProducts = window._PRODUCTS || [];
-  if (c.children.length === 0 && dbProducts.length > 0) {
-    dbProducts.forEach(p => {
+  const validDBProds = dbProducts.filter(p => (p.selling_price || p.price) > 0);
+
+  if (c.children.length === 0 && validDBProds.length > 0) {
+    // جلب بيانات المبيعات الشهرية من حاسبة التكاليف (إن توفّرت)
+    const pcProds = (() => {
+      try {
+        const key = typeof projectProductCostsKey === 'function'
+          ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default')
+          : 'tw_product_costs';
+        return JSON.parse(localStorage.getItem(key) || '[]');
+      } catch { return []; }
+    })();
+    const findPCQty = name => {
+      const m = pcProds.find(p => p.name && p.name.toLowerCase() === (name||'').toLowerCase());
+      return m?.monthlySales || 0;
+    };
+
+    validDBProds.forEach(p => {
       addProdRow();
       const allRows = c.querySelectorAll('.prod-row');
       const row = allRows[allRows.length - 1];
@@ -807,9 +823,10 @@ function initProdsSection() {
       // ضع القيمة كنص ثم شغّل حدث input لتنسيق الأرقام
       const priceVal = Math.round(p.selling_price || p.price || 0);
       const costVal  = Math.round(p.cost || 0);
+      const qtyVal   = findPCQty(p.name);
       ins[1].value = priceVal > 0 ? priceVal.toLocaleString('en') : '';
       ins[2].value = costVal  > 0 ? costVal.toLocaleString('en')  : '';
-      ins[3].value = '';
+      ins[3].value = qtyVal   > 0 ? qtyVal.toLocaleString('en')   : '';
       if (priceVal > 0) calcRowMargin(ins[1]);
     });
   } else if (c.children.length === 0) {

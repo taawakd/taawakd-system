@@ -1185,14 +1185,49 @@ function importFromDBProducts() {
     if (typeof toast === 'function') toast('لا توجد منتجات محفوظة — ارفع المنيو أولاً');
     return;
   }
-  const mapped = dbProds.map(p => ({
-    name:  p.name || '',
-    price: p.selling_price || p.price || 0,
-    cost:  p.cost || 0,
-    qty:   0,
-  }));
+
+  // ─── جلب بيانات المبيعات الشهرية من حاسبة التكاليف (إن توفّرت) ────────
+  const pcProds = window.PC_STATE?.products?.length
+    ? window.PC_STATE.products
+    : (() => {
+        try {
+          const key = typeof projectProductCostsKey === 'function'
+            ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default')
+            : 'tw_product_costs';
+          return JSON.parse(localStorage.getItem(key) || '[]');
+        } catch { return []; }
+      })();
+
+  const findPCQty = name => {
+    const match = pcProds.find(p => p.name && p.name.toLowerCase() === (name||'').toLowerCase());
+    return match?.monthlySales || 0;
+  };
+
+  // ─── ترجمة المنتجات مع تجاهل منتجات بلا سعر ────────────────────────────
+  const mapped = [];
+  let zeroPrice = 0;
+  dbProds.forEach(p => {
+    const price = p.selling_price || p.price || 0;
+    if (!price) { zeroPrice++; return; }          // تجاهل منتج بلا سعر
+    mapped.push({
+      name:  p.name || '',
+      price,
+      cost:  p.cost || 0,
+      qty:   findPCQty(p.name),                   // من حاسبة التكاليف أو 0
+    });
+  });
+
+  if (!mapped.length) {
+    if (typeof toast === 'function') toast('⚠️ جميع المنتجات تفتقر لسعر البيع — أضف الأسعار في صفحة المشروع');
+    return;
+  }
+
   if (typeof showProductTable === 'function') showProductTable(mapped);
-  if (typeof toast === 'function') toast(`✅ تم تحميل ${mapped.length} منتج من المنتجات المحفوظة`);
+
+  const msg = zeroPrice > 0
+    ? `✅ تم تحميل ${mapped.length} منتج — تم تجاهل ${zeroPrice} منتج بلا سعر`
+    : `✅ تم تحميل ${mapped.length} منتج من المنتجات المحفوظة`;
+  if (typeof toast === 'function') toast(msg);
 }
 
 window._updateImportBtn = _updateImportBtn;

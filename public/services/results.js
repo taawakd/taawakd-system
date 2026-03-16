@@ -132,7 +132,7 @@ function renderResults(report) {
 
       const suggEl = document.createElement('div');
       suggEl.style.cssText = 'font-size:11px;color:var(--gray);margin-top:2px;';
-      suggEl.textContent = suggestion;                 // ← textContent (was innerHTML)
+      suggEl.innerHTML = suggestion;                   // ← innerHTML (suggestion contains SAR SVG)
 
       const barWrap = document.createElement('div');
       barWrap.className = 'prod-an-bar';
