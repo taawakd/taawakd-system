@@ -124,6 +124,13 @@ label{font-size:12px;font-weight:600;color:var(--gray);letter-spacing:0.3px;}
 .input::placeholder{color:rgba(255,255,255,0.18);}
 select.input option{background:#1a1a1a;}
 textarea.input{resize:vertical;min-height:80px;}
+/* ── Dark theme: month picker icon & number spinners ── */
+input[type=month]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:0.7;cursor:pointer;}
+input[type=month]::-webkit-calendar-picker-indicator:hover{opacity:1;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{filter:invert(1);opacity:0.5;}
+input[type=number]::-webkit-inner-spin-button:hover,
+input[type=number]::-webkit-outer-spin-button:hover{opacity:1;}
 
 /* ── TABS ── */
 .tabs{display:flex;gap:4px;background:var(--s2);border-radius:12px;padding:4px;margin-bottom:24px;}
