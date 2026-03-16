@@ -1,6 +1,7 @@
 // services/ai-cfo.js — CFO + Action Plan
 
 async function sendCFO(quickMsg) {
+  console.log("AI CFO VERSION TEST");
   const input = document.getElementById('cfoInput');
   const msg = quickMsg || input.value.trim();
   if (!msg) return;
