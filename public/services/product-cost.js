@@ -912,17 +912,31 @@ function saveAndNextProduct() {
     return;
   }
 
-  // حفظ المنتج الحالي
+  // ① احفظ snapshot للتكاليف التشغيلية قبل أي شيء
+  const opIds = ['pc-rent','pc-salaries','pc-elec','pc-water',
+                 'pc-internet','pc-maintenance','pc-marketing','pc-op-other'];
+  const opSnapshot = {};
+  opIds.forEach(id => {
+    opSnapshot[id] = document.getElementById(id)?.value || '';
+  });
+
+  // ② حفظ المنتج الحالي
   saveProductCost();
 
-  // مهلة قصيرة لإتمام الحفظ قبل تنظيف الحقول
+  // ③ مهلة قصيرة لإتمام الحفظ قبل تنظيف الحقول
   setTimeout(() => {
-    // ─ مسح حقول المنتج فقط (التكاليف التشغيلية تبقى) ──────────────
+    // ─ مسح حقول المنتج فقط (بدون dispatchEvent لمنع التأثيرات الجانبية)
     ['pc-name', 'pc-price', 'pc-suggested-price', 'pc-monthly-sales', 'pc-daily-sales']
       .forEach(id => {
         const el = document.getElementById(id);
-        if (el) { el.value = ''; el.dispatchEvent(new Event('input')); }
+        if (el) el.value = '';
       });
+
+    // ─ استعادة التكاليف التشغيلية (ضمان عدم تأثّرها بأي حدث جانبي)
+    opIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = opSnapshot[id];
+    });
 
     // ─ مسح المكونات — أبقِ صفاً واحداً فارغاً جاهزاً ───────────────
     const ingContainer = document.getElementById('pc-ingredients');
