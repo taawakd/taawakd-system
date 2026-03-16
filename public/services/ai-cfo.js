@@ -45,6 +45,12 @@ async function sendCFO(quickMsg) {
 
   document.getElementById('cfoSendBtn').disabled = true;
 
+  // ── تأكد من تحميل بيانات حاسبة التكاليف (PC_STATE) قبل بناء الـ prompt ──
+  // pcLoadFromDB تُشغَّل عند فتح الصفحة لكن إذا كانت لم تنته بعد، ننتظرها هنا
+  if (typeof pcLoadFromDB === 'function' && (!window.PC_STATE?.products?.length)) {
+    try { await pcLoadFromDB(); } catch(e) { /* استمر حتى لو فشل التحميل */ }
+  }
+
   const ctx = getCFOContext();
 
   // Update context bar

@@ -107,6 +107,9 @@ function showPage(name, _fromHash) {
   if(name==='profile') loadBusinessProfile();
   if(name==='userprofile' && typeof loadUserProfile==='function') loadUserProfile();
   if(name==='costcalc' && typeof initProductCostPage==='function') initProductCostPage();
+  // عند فتح AI CFO: حمّل بيانات حاسبة التكاليف من Supabase بشكل غير متزامن
+  // حتى تكون PC_STATE محدّثة حتى لو لم يزر المستخدم صفحة الحاسبة في هذه الجلسة
+  if(name==='cfo' && typeof pcLoadFromDB==='function') pcLoadFromDB().catch(()=>{});
   if(name==='admin' && typeof initAdminDashboard==='function') initAdminDashboard();
   if(name==='plans' && typeof initPlansPage==='function') initPlansPage();
   loadReportsFromDB();

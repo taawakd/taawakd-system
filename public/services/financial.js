@@ -1030,7 +1030,24 @@ function buildCFOSystemPrompt(ctx) {
 
   // ══ بناء قسم المنتجات التفصيلي من PC_STATE ══
   // PC_STATE هو المصدر الأغنى: يحتوي على تكلفة المكونات + التشغيل + الهامش الحقيقي
-  const pcProds = (window.PC_STATE?.products || []).filter(p => p && p.name);
+  //
+  // ⚠️  مشكلة مُحتملة: PC_STATE يُهيَّأ عند تحميل الصفحة قبل أن يُضبط __CURRENT_PROJECT_ID__
+  //     لذا قد يقرأ من مفتاح localStorage خاطئ ويبقى فارغاً.
+  //     الحل: نقرأ أيضاً من localStorage مباشرة بالمفتاح الصحيح ونستخدم المصدر الأغنى.
+  const _pcKey = typeof projectProductCostsKey === 'function'
+    ? projectProductCostsKey(window.__CURRENT_PROJECT_ID__ || 'default')
+    : 'tw_product_costs';
+  const _fromState   = (window.PC_STATE?.products || []).filter(p => p && p.name);
+  const _fromStorage = (() => {
+    try { return JSON.parse(localStorage.getItem(_pcKey) || '[]').filter(p => p && p.name); }
+    catch(e) { return []; }
+  })();
+  // استخدم المصدر الأغنى (أكثر منتجات) وحدّث PC_STATE بالبيانات المقروءة
+  const pcProds = _fromStorage.length > _fromState.length ? _fromStorage : _fromState;
+  // مزامنة PC_STATE بالبيانات الصحيحة إذا كانت localStorage أغنى
+  if (_fromStorage.length > _fromState.length && window.PC_STATE) {
+    window.PC_STATE.products = _fromStorage;
+  }
   const latestProds = latest.products || [];
 
   let prodsSection = '';
