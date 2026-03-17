@@ -141,8 +141,14 @@ async function sendCFO(quickMsg) {
 
     // ── التحقق من حالة الاستجابة قبل قراءة JSON ──
     if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      throw new Error(`API error ${resp.status}: ${errText.slice(0, 120)}`);
+      let serverMsg = '';
+      try {
+        const errJson = await resp.json();
+        serverMsg = errJson.error || JSON.stringify(errJson);
+      } catch {
+        serverMsg = await resp.text().catch(() => '');
+      }
+      throw new Error(`[${resp.status}] ${serverMsg.slice(0, 200)}`);
     }
 
     // ── التحقق من Content-Type قبل تحليل JSON ──
@@ -175,7 +181,8 @@ async function sendCFO(quickMsg) {
   } catch(e) {
     console.error('AI CFO error:', e);
     removeTyping(typingId);
-    appendCFOMessage('ai', '⚠️ تعذّر الاتصال بالمستشار المالي — تأكد من الإنترنت وحاول مرة أخرى.');
+    const errDetail = e.message ? `\n\`${e.message}\`` : '';
+    appendCFOMessage('ai', `⚠️ تعذّر الاتصال بالمستشار المالي — تأكد من الإنترنت وحاول مرة أخرى.${errDetail}`);
   } finally {
     document.getElementById('cfoSendBtn').disabled = false;
     input.focus();

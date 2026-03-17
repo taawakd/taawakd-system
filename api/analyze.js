@@ -167,6 +167,12 @@ export default async function handler(req, res) {
       messages.push({ role: 'user', content: 'ابدأ التحليل' });
     }
 
+    // فحص وجود مفتاح Anthropic قبل الاستدعاء
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('ANTHROPIC_API_KEY is not set in environment variables');
+      return res.status(500).json({ error: 'ANTHROPIC_API_KEY غير مضبوط في متغيرات البيئة — أضفه في Vercel Dashboard' });
+    }
+
     // CFO calls: concise answers, same limit as regular analysis
     const maxTokens = isCFO ? 1024 : 1024;
 
@@ -187,8 +193,10 @@ export default async function handler(req, res) {
 
     if (!claudeRes.ok) {
       const err = await claudeRes.json().catch(() => ({}));
-      console.error('Anthropic API error:', err);
-      return res.status(claudeRes.status).json({ error: err.error?.message || 'خطأ في التحليل' });
+      const errMsg = err.error?.message || JSON.stringify(err) || 'خطأ في التحليل';
+      console.error('Anthropic API error:', claudeRes.status, errMsg);
+      // أرجع status 502 دائماً حتى لا يتشابك مع auth errors الخاصة بالتطبيق
+      return res.status(502).json({ error: `Anthropic ${claudeRes.status}: ${errMsg}` });
     }
 
     const data = await claudeRes.json();
