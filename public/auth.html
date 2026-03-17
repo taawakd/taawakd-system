@@ -20,7 +20,8 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(200,164,90,0.08),transparent);pointer-events:none;}
 .auth-wrap{width:100%;max-width:420px;padding:24px;}
 .logo{text-align:center;margin-bottom:36px;}
-.logo-icon{height:80px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.logo-icon{display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.logo-icon img{height:80px !important;width:auto !important;}
 .logo p{font-size:13px;color:var(--gray);margin-top:0;}
 .card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:32px;}
 .tabs{display:flex;background:var(--s2);border-radius:12px;padding:4px;margin-bottom:28px;}
@@ -56,7 +57,7 @@ label{display:block;font-size:12px;font-weight:600;color:var(--gray);margin-bott
 <body>
 <div class="auth-wrap">
   <div class="logo">
-    <div class="logo-icon"><img src="/assets/logo.png" alt="توكّد" style="height:80px;width:auto;"></div>
+    <div class="logo-icon"><img src="/assets/logo.png" alt="توكّد"></div>
     <p>يقين قبل الاستثمار</p>
   </div>
   <div class="card">
