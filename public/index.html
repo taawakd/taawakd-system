@@ -536,39 +536,87 @@ input[type=number]::-webkit-outer-spin-button:hover{opacity:1;}
 
 /* ══ LIGHT MODE ══ */
 body.light-mode {
-  background: #f4f5f7;
-  color: #111111;
+  /* ── Variables ── */
+  --bg:     #f2f3f5;
+  --s1:     #ffffff;
+  --s2:     #f2f3f5;
+  --s3:     #e6e8ed;
+  --border: #e0e2e8;
+  --white:  #0a0a0a;
+  --gray:   #555555;
+  --gray2:  #777777;
+  --gold-d: rgba(180,140,50,0.12);
+  --gold-b: rgba(180,140,50,0.4);
+  --red-d:  rgba(200,60,60,0.1);
+  --green-d:rgba(40,160,100,0.1);
+  --blue-d: rgba(60,120,200,0.1);
+  --warn-d: rgba(200,120,30,0.1);
+
+  /* ── Base ── */
+  background: #f2f3f5;
+  color: #0a0a0a;
 }
-body.light-mode {
-  --bg: #f4f5f7;
-  --s1: #ffffff;
-  --s2: #f0f1f4;
-  --s3: #e4e6eb;
-  --border: rgba(0,0,0,0.08);
-  --white: #111111;
-  --gray: #666666;
-  --gray2: #888888;
-  --gold-d: rgba(200,164,90,0.12);
-  --gold-b: rgba(200,164,90,0.35);
-  --red-d: rgba(217,95,95,0.1);
-  --green-d: rgba(76,175,130,0.1);
-  --blue-d: rgba(91,143,204,0.1);
-  --warn-d: rgba(212,137,58,0.1);
+
+/* Layout */
+body.light-mode .sidebar      { background:#ffffff; border-color:#e0e2e8; }
+body.light-mode .mob-topbar   { background:#ffffff; border-color:#e0e2e8; }
+body.light-mode .main-area    { background:#f2f3f5; }
+
+/* Cards */
+body.light-mode .card {
+  background: #ffffff;
+  border: 1px solid #eaedf2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-body.light-mode .sidebar { background: #ffffff; border-color: rgba(0,0,0,0.08); }
-body.light-mode .mob-topbar { background: #ffffff; border-color: rgba(0,0,0,0.08); }
-body.light-mode .card { background: #ffffff; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-body.light-mode .input-field,
+body.light-mode .card-title { color: #0a0a0a; }
+
+/* Inputs */
 body.light-mode input,
 body.light-mode select,
-body.light-mode textarea { background: #f0f1f4; border-color: rgba(0,0,0,0.12); color: #111; }
-body.light-mode .nav-item { color: #444; }
-body.light-mode .nav-item:hover,
-body.light-mode .nav-item.active { background: #f0f1f4; color: #111; }
-body.light-mode .sb-user { background: #f0f1f4; }
-body.light-mode .sb-user:hover { background: #e4e6eb; }
-body.light-mode .sb-theme-btn { background: #f0f1f4; }
-body.light-mode .sb-theme-btn:hover { background: #e4e6eb; }
+body.light-mode textarea {
+  background: #f2f3f5;
+  border-color: #d4d8e0;
+  color: #0a0a0a;
+}
+body.light-mode input::placeholder,
+body.light-mode textarea::placeholder { color: #aaa; }
+
+/* Sidebar nav */
+body.light-mode .nav-item               { color: #444444; }
+body.light-mode .nav-item:hover         { background: #eef0f5; color: #0a0a0a; }
+body.light-mode .nav-item.active        { background: rgba(200,164,90,0.12); color: #0a0a0a; }
+body.light-mode .sb-section             { color: #999; }
+body.light-mode .sb-user               { background: #f2f3f5; border-color: #e0e2e8; }
+body.light-mode .sb-user:hover         { background: #e6e8ed; }
+body.light-mode .sb-user-name          { color: #0a0a0a; }
+body.light-mode .sb-theme-btn          { background: #f2f3f5; border-color: #e0e2e8; color: #555; }
+body.light-mode .sb-theme-btn:hover    { background: #e6e8ed; color: #0a0a0a; }
+
+/* KPI numbers — قوية وواضحة */
+body.light-mode .kpi-val.neu  { color: #0a0a0a; }
+body.light-mode .kpi-val.pos  { color: #1a8f52; }
+body.light-mode .kpi-val.neg  { color: #c0392b; }
+body.light-mode .kpi-val.warn { color: #b35a00; }
+body.light-mode .kpi-label    { color: #555555; }
+
+/* Buttons — الذهبي يبقى كما هو */
+body.light-mode .btn-primary  { background: var(--gold); color: #000; }
+body.light-mode .btn-ghost    { background: #fff; border-color: #d4d8e0; color: #333; }
+body.light-mode .btn-ghost:hover { border-color: var(--gold); color: #0a0a0a; }
+
+/* Tables */
+body.light-mode table th { background: #f2f3f5; color: #333; border-color: #e0e2e8; }
+body.light-mode table td { border-color: #eaedf2; color: #0a0a0a; }
+body.light-mode tr:hover td { background: #f8f9fb; }
+
+/* Logo — بدون تعديل */
+body.light-mode .sb-icon img,
+body.light-mode .mob-logo-icon img { opacity:1 !important; filter:none !important; }
+
+/* Misc text */
+body.light-mode .card-subtitle,
+body.light-mode .section-desc { color: #666; }
+body.light-mode .sb-bottom    { border-color: #e0e2e8; }
 </style>
 <script>
 // Supabase config — injected by server or set here as fallback
