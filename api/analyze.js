@@ -138,44 +138,61 @@ export default async function handler(req, res) {
       }
     }
 
-    // بناء messages لـ OpenAI
+    // بناء messages لـ Anthropic Claude
     // Supports two approaches:
-    //   (a) body.system (legacy) → prepended as { role:'system' }
-    //   (b) body.messages[0].role === 'system' (CFO / new style) → used as-is
+    //   (a) body.system (legacy) → top-level system field
+    //   (b) body.messages[0].role === 'system' (CFO / new style) → extracted to top-level system
+    // Note: Anthropic requires system as top-level field, not inside messages array
     const isCFO = body._type === 'cfo';
-    const messages = [];
+    const rawMessages = [];
     if (body.system) {
       // legacy: system passed as separate top-level field
-      messages.push({ role: 'system', content: body.system });
+      rawMessages.push({ role: 'system', content: body.system });
     }
     if (body.messages && Array.isArray(body.messages)) {
-      messages.push(...body.messages);
+      rawMessages.push(...body.messages);
+    }
+
+    // Anthropic: extract system messages → top-level system field
+    const systemParts = rawMessages
+      .filter(m => m.role === 'system')
+      .map(m => (Array.isArray(m.content)
+        ? m.content.map(c => c.text || c.content || '').join('\n')
+        : String(m.content || '')));
+    const systemContent = systemParts.join('\n\n');
+    const messages = rawMessages.filter(m => m.role !== 'system');
+
+    // Ensure at least one user message
+    if (messages.length === 0) {
+      messages.push({ role: 'user', content: 'ابدأ التحليل' });
     }
 
     // CFO calls: concise answers, same limit as regular analysis
-    const maxTokens = isCFO ? 600 : 600;
+    const maxTokens = isCFO ? 1024 : 1024;
 
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.2,
+        model: 'claude-3-7-sonnet-latest',
         max_tokens: maxTokens,
-        messages: messages,
-      })
+        ...(systemContent ? { system: systemContent } : {}),
+        messages,
+      }),
     });
 
-    if (!openaiRes.ok) {
-      const err = await openaiRes.json();
-      return res.status(openaiRes.status).json({ error: err.error?.message || 'خطأ في التحليل' });
+    if (!claudeRes.ok) {
+      const err = await claudeRes.json().catch(() => ({}));
+      console.error('Anthropic API error:', err);
+      return res.status(claudeRes.status).json({ error: err.error?.message || 'خطأ في التحليل' });
     }
 
-    const data = await openaiRes.json();
-    const resultText = data.choices?.[0]?.message?.content || '';
+    const data = await claudeRes.json();
+    const resultText = data.content?.[0]?.text || '';
 
     // حفظ في Cache
     if (cacheKey && resultText) {

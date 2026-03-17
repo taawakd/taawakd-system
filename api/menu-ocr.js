@@ -64,20 +64,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'الملف فارغ أو غير صالح.' });
   }
 
-  // ─ بناء الرسائل للنموذج ────────────────────────────────────────────────
+  // ─ بناء الرسائل للنموذج (Anthropic Claude) ───────────────────────────
   let messages;
 
   if (isImage) {
-    // رؤية الصورة مباشرةً
+    // رؤية الصورة — صيغة Anthropic للصور
     messages = [
       {
         role: 'user',
         content: [
           {
-            type: 'image_url',
-            image_url: {
-              url: `data:${mimeType};base64,${fileBase64}`,
-              detail: 'high',
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mimeType,   // e.g. "image/jpeg" or "image/png"
+              data: fileBase64,
             },
           },
           {
@@ -97,35 +98,31 @@ export default async function handler(req, res) {
     ];
   }
 
-  // ─ استدعاء OpenAI ──────────────────────────────────────────────────────
+  // ─ استدعاء Anthropic Claude ────────────────────────────────────────────
   try {
-    const model = isImage ? 'gpt-4o' : 'gpt-4o-mini';
-
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model,
-        temperature: 0,
+        model: 'claude-3-7-sonnet-latest',
         max_tokens: 3000,
-        messages: [
-          { role: 'system', content: MENU_SYSTEM_PROMPT },
-          ...messages,
-        ],
+        system: MENU_SYSTEM_PROMPT,
+        messages,
       }),
     });
 
-    if (!openaiRes.ok) {
-      const errData = await openaiRes.json().catch(() => ({}));
-      console.error('OpenAI error:', errData);
+    if (!claudeRes.ok) {
+      const errData = await claudeRes.json().catch(() => ({}));
+      console.error('Anthropic error:', errData);
       return res.status(502).json({ error: 'فشل تحليل الملف بواسطة الذكاء الاصطناعي. حاول مرة أخرى.' });
     }
 
-    const aiData = await openaiRes.json();
-    const content = aiData?.choices?.[0]?.message?.content || '';
+    const aiData = await claudeRes.json();
+    const content = aiData?.content?.[0]?.text || '';
 
     // ─ استخراج JSON من الرد ──────────────────────────────────────────────
     const jsonMatch = content.match(/\[[\s\S]*?\]/);
