@@ -7,7 +7,9 @@ function renderResults(report) {
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey} = report;
   const createdAt = report.createdAt || report.date || null;
   const resolvedSectorKey = sectorKey || getSectorKey(bizType);
-  const {revenue, netProfit, netMargin, grossMargin, totalExpenses, rentPct, salPct, cogsPct, mktPct, cogs, rent} = metrics;
+  const {revenue, netProfit, netMargin, grossMargin, totalExpenses, rentPct, salPct, cogsPct, mktPct,
+         cogs, rent, salaries, marketing, other, utilities,
+         delTotal, delCommission, hasDelivery} = metrics;
 
   document.getElementById('resultTitle').textContent = `تقرير ${bizName}`;
   const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
@@ -92,6 +94,7 @@ function renderResults(report) {
     }
   }
   renderAlerts(alerts, 'resultAlerts');
+  renderExpenseTable(metrics, 'resultExpenses');
 
   const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0)+(metrics.utilities||0);
   const beNetProfit = metrics.netProfit !== undefined ? metrics.netProfit : (revenue - (cogs||0) - fixedCosts);
@@ -299,5 +302,137 @@ function renderAIBlocks(text, containerId) {
   });
 }
 
-window.renderResults  = renderResults;
-window.renderAIBlocks = renderAIBlocks;
+// ── جدول تحليل المصاريف ──────────────────────────────────────────────
+function renderExpenseTable(metrics, containerId) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const m = metrics || {};
+  const revenue       = m.revenue       ?? 0;
+  const cogs          = m.cogs          ?? 0;
+  const rent          = m.rent          ?? 0;
+  const salaries      = m.salaries      ?? 0;
+  const marketing     = m.marketing     ?? 0;
+  const utilities     = m.utilities     ?? 0;
+  const other         = m.other         ?? 0;
+  const delCommission = m.delCommission ?? 0;
+  const totalExpenses = m.totalExpenses ?? (cogs + rent + salaries + marketing + utilities + other + delCommission);
+
+  const rows = [
+    { label: 'تكلفة البضاعة / الإنتاج', val: cogs,          icon: '🛒' },
+    { label: 'الإيجار',                  val: rent,          icon: '🏠' },
+    { label: 'الرواتب والأجور',          val: salaries,      icon: '👥' },
+    { label: 'التسويق والإعلان',         val: marketing,     icon: '📣' },
+    { label: 'الكهرباء والمياه',         val: utilities,     icon: '💡' },
+    { label: 'مصاريف أخرى',             val: other,         icon: '📦' },
+    ...(delCommission > 0 ? [{ label: 'عمولة تطبيقات التوصيل', val: delCommission, icon: '🚗' }] : []),
+  ].filter(r => r.val > 0);
+
+  if (!rows.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--gray);font-size:13px;text-align:center;padding:20px;';
+    empty.textContent = 'لم يتم إدخال مصاريف';
+    wrap.appendChild(empty);
+    return;
+  }
+
+  // جدول المصاريف
+  const table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+
+  // رأس الجدول
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['البند', 'المبلغ', 'من الإيرادات', 'من المصاريف'].forEach(h => {
+    const th = document.createElement('th');
+    th.style.cssText = 'padding:8px 10px;border-bottom:2px solid var(--border);text-align:right;color:var(--gray2);font-size:11px;font-weight:600;';
+    th.textContent = h;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  // صفوف المصاريف
+  const tbody = document.createElement('tbody');
+  rows.forEach(r => {
+    const pctOfRev  = revenue      > 0 ? ((r.val / revenue)      * 100).toFixed(1) : '—';
+    const pctOfExp  = totalExpenses > 0 ? ((r.val / totalExpenses) * 100).toFixed(1) : '—';
+    const barW      = totalExpenses > 0 ? Math.min(100, (r.val / totalExpenses) * 100) : 0;
+
+    const tr = document.createElement('tr');
+    tr.style.cssText = 'border-bottom:1px solid var(--border);';
+
+    // عمود الاسم
+    const tdLabel = document.createElement('td');
+    tdLabel.style.cssText = 'padding:10px;';
+    const labelWrap = document.createElement('div');
+    labelWrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    const iconEl = document.createElement('span');
+    iconEl.style.cssText = 'font-size:16px;';
+    iconEl.textContent = r.icon;
+    const nameEl = document.createElement('span');
+    nameEl.style.cssText = 'color:var(--white);font-size:13px;';
+    nameEl.textContent = r.label;
+    labelWrap.appendChild(iconEl);
+    labelWrap.appendChild(nameEl);
+
+    // شريط التقدم
+    const barWrap = document.createElement('div');
+    barWrap.style.cssText = 'height:4px;background:var(--border);border-radius:2px;margin-top:5px;';
+    const barFill = document.createElement('div');
+    barFill.style.cssText = `height:4px;width:${barW}%;background:var(--gold);border-radius:2px;`;
+    barWrap.appendChild(barFill);
+    tdLabel.appendChild(labelWrap);
+    tdLabel.appendChild(barWrap);
+
+    // عمود المبلغ
+    const tdVal = document.createElement('td');
+    tdVal.style.cssText = 'padding:10px;font-weight:700;color:var(--white);font-size:13px;white-space:nowrap;';
+    tdVal.textContent = fmt(r.val) + ' ر';
+
+    // عمود % من الإيرادات
+    const tdPctRev = document.createElement('td');
+    tdPctRev.style.cssText = 'padding:10px;color:var(--gray2);font-size:12px;';
+    tdPctRev.textContent = pctOfRev + '%';
+
+    // عمود % من المصاريف
+    const tdPctExp = document.createElement('td');
+    tdPctExp.style.cssText = 'padding:10px;color:var(--gold);font-size:12px;font-weight:600;';
+    tdPctExp.textContent = pctOfExp + '%';
+
+    tr.appendChild(tdLabel);
+    tr.appendChild(tdVal);
+    tr.appendChild(tdPctRev);
+    tr.appendChild(tdPctExp);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  // صف الإجمالي
+  const totalRow = document.createElement('tr');
+  totalRow.style.cssText = 'border-top:2px solid var(--gold-d);';
+  const tdTotalLabel = document.createElement('td');
+  tdTotalLabel.style.cssText = 'padding:10px;font-weight:700;color:var(--gold);font-size:13px;';
+  tdTotalLabel.textContent = 'إجمالي المصاريف';
+  const tdTotalVal = document.createElement('td');
+  tdTotalVal.style.cssText = 'padding:10px;font-weight:800;color:var(--gold);font-size:14px;white-space:nowrap;';
+  tdTotalVal.textContent = fmt(totalExpenses) + ' ر';
+  const tdTotalPctRev = document.createElement('td');
+  tdTotalPctRev.style.cssText = 'padding:10px;font-weight:700;color:var(--warn);font-size:12px;';
+  tdTotalPctRev.textContent = (revenue > 0 ? ((totalExpenses / revenue) * 100).toFixed(1) : '—') + '%';
+  const tdTotalPctExp = document.createElement('td');
+  tdTotalPctExp.style.cssText = 'padding:10px;font-weight:700;color:var(--gold);font-size:12px;';
+  tdTotalPctExp.textContent = '100%';
+  totalRow.appendChild(tdTotalLabel);
+  totalRow.appendChild(tdTotalVal);
+  totalRow.appendChild(tdTotalPctRev);
+  totalRow.appendChild(tdTotalPctExp);
+  tbody.appendChild(totalRow);
+
+  wrap.appendChild(table);
+}
+
+window.renderResults      = renderResults;
+window.renderAIBlocks     = renderAIBlocks;
+window.renderExpenseTable = renderExpenseTable;

@@ -557,8 +557,17 @@ async function exportPDF() {
   if (!rep) { alert('لا يوجد تقرير للتصدير. يرجى إجراء تحليل أولاً.'); return; }
 
   const { bizName, bizType, period, metrics, scoreData, alerts, products, reportText, sectorKey, scenarios } = rep;
-  const { revenue, netProfit, netMargin, grossMargin, totalExpenses,
-          rentPct, salPct, cogsPct, mktPct, cogs, rent, salaries, marketing, other, utilities } = metrics;
+  const { revenue, netProfit, netMargin, grossMargin,
+          rentPct, salPct, cogsPct, mktPct } = metrics;
+  // ?? 0 ensures old reports (before utilities was added to metrics) still render correctly
+  const cogs          = metrics.cogs          ?? 0;
+  const rent          = metrics.rent          ?? 0;
+  const salaries      = metrics.salaries      ?? 0;
+  const marketing     = metrics.marketing     ?? 0;
+  const utilities     = metrics.utilities     ?? 0;
+  const other         = metrics.other         ?? 0;
+  const delCommission = metrics.delCommission ?? 0;
+  const totalExpenses = metrics.totalExpenses ?? (cogs + rent + salaries + marketing + utilities + other + delCommission);
 
   const score       = scoreData ? scoreData.total : 0;
   const scoreColor  = score >= 65 ? '#16a34a' : score >= 40 ? '#d97706' : '#dc2626';
@@ -576,25 +585,33 @@ async function exportPDF() {
     return `<div style="padding:9px 12px;margin-bottom:7px;border-radius:7px;background:${bg};border-right:4px solid ${border};font-size:12px;color:#1a1a1a;">${icon} ${a.msg || a.message || ''}</div>`;
   }).join('');
 
-  // ── المصاريف ──
+  // ── المصاريف (جميع البنود مع ?? 0 للتوافق مع التقارير القديمة) ──
   const expensesRows = [
-    { label: 'تكلفة البضاعة', val: cogs },
-    { label: 'الإيجار', val: rent },
-    { label: 'الرواتب', val: salaries },
-    { label: 'التسويق', val: marketing },
-    { label: 'المرافق', val: utilities },
-    { label: 'مصاريف أخرى', val: other },
+    { label: 'تكلفة البضاعة / الإنتاج',     val: cogs          },
+    { label: 'الإيجار',                       val: rent          },
+    { label: 'الرواتب والأجور',               val: salaries      },
+    { label: 'التسويق والإعلان',              val: marketing     },
+    { label: 'الكهرباء والمياه',              val: utilities     },
+    { label: 'مصاريف أخرى',                  val: other         },
+    ...(delCommission > 0 ? [{ label: 'عمولة تطبيقات التوصيل', val: delCommission }] : []),
   ].filter(r => r.val > 0);
 
   const expensesHtml = expensesRows.map((r, i) => {
-    const p  = revenue > 0 ? ((r.val / revenue) * 100).toFixed(1) : 0;
+    const pRev = revenue       > 0 ? ((r.val / revenue)       * 100).toFixed(1) : '—';
+    const pExp = totalExpenses > 0 ? ((r.val / totalExpenses) * 100).toFixed(1) : '—';
     const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
     return `<tr style="background:${bg};">
       <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#374151;font-size:12px;">${r.label}</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1a1a1a;font-size:12px;">${f(r.val)} ر</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#6b7280;font-size:12px;">${p}%</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#6b7280;font-size:12px;">${pRev}%</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:600;">${pExp}%</td>
     </tr>`;
-  }).join('');
+  }).join('') + `<tr style="background:#f3f4f6;font-weight:700;">
+    <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#1a1a1a;font-size:12px;">إجمالي المصاريف</td>
+    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-size:12px;">${f(totalExpenses)} ر</td>
+    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;">${revenue > 0 ? ((totalExpenses/revenue)*100).toFixed(1) : '—'}%</td>
+    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:700;">100%</td>
+  </tr>`;
 
   // ── مؤشر الصحة ──
   const scoreBreakdownHtml = (scoreData && scoreData.breakdown) ? scoreData.breakdown.map(b => {
@@ -759,7 +776,8 @@ async function exportPDF() {
           <thead><tr style="background:#f3f4f6;">
             <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:right;font-size:11px;color:#374151;">البند</th>
             <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;color:#374151;">المبلغ</th>
-            <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;color:#374151;">%</th>
+            <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;color:#374151;">% من الإيراد</th>
+            <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;color:#374151;">% من المصاريف</th>
           </tr></thead>
           <tbody>${expensesHtml}</tbody>
         </table>
