@@ -636,7 +636,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 
 // ── تطبيق الشعار الصحيح على كل صور الشعار الموجودة في DOM ──
 function _swapLogos(isLight) {
-  var src = isLight ? '/logo-light.png' : '/logo-dark.png';
+  var src = isLight ? '/logo-light.png' : '/logo.png';
   document.querySelectorAll('.tw-logo-img').forEach(function(img) {
     img.src = src;
   });
@@ -869,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <body>
 <!-- شاشة التحميل الأولية — تختفي بعد اكتمال الـ auth -->
 <div id="init-loader">
-  <img src="/logo-dark.png" alt="توكّد">
+  <img src="/logo.png" alt="توكّد">
   <div class="init-ring"></div>
   <p>جاري التحميل…</p>
 </div>

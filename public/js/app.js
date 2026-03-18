@@ -14,7 +14,7 @@ async function initApp() {
     // تطبيق الشعار الصحيح فور حقن السايدبار — مباشر بدون اعتماد على دالة خارجية
     var _logoSrc = document.body.classList.contains('light-mode')
       ? '/logo-light.png'
-      : '/logo-dark.png';
+      : '/logo.png';
     document.querySelectorAll('.tw-logo-img').forEach(function(img) {
       img.src = _logoSrc;
     });
