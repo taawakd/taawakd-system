@@ -544,7 +544,7 @@
 <nav>
   <div class="nav-inner">
     <a href="https://towkd.com" class="nav-logo">
-      <div class="nav-logo-icon"><img src="/assets/logo.png" alt="توكّد"></div>
+      <div class="nav-logo-icon"><img id="landingLogoImg" src="/logo-dark.png" alt="توكّد"></div>
     </a>
     <ul class="nav-links">
       <li><a href="#how">كيف يعمل</a></li>
@@ -1316,6 +1316,14 @@ const trustObs = new IntersectionObserver(entries => {
 }, { threshold: 0.5 });
 const trustBar = document.querySelector('.trust-bar-inner');
 if (trustBar) trustObs.observe(trustBar.closest('.trust-bar'));
+</script>
+<script>
+// تبديل شعار الهيدر حسب الثيم المحفوظ
+(function() {
+  var isLight = localStorage.getItem('tw_theme') === 'light';
+  var img = document.getElementById('landingLogoImg');
+  if (img) img.src = isLight ? '/logo-light.png' : '/logo-dark.png';
+})();
 </script>
 </body>
 </html>

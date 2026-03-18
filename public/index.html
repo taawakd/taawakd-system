@@ -33,6 +33,12 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{font-family:'IBM Plex Sans Arabic',sans-serif;background:#07080a;color:var(--white);min-height:100vh;direction:rtl;overflow-x:hidden;}
+/* ── شاشة التحميل الأولية — تظهر فوراً وتختفي بعد الـ auth ── */
+#init-loader{position:fixed;inset:0;background:#07080a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+#init-loader img{height:60px;width:auto;opacity:0.9;}
+#init-loader .init-ring{width:36px;height:36px;border:2px solid rgba(200,164,90,0.2);border-top-color:#c8a45a;border-radius:50%;animation:spin 0.9s linear infinite;}
+#init-loader p{color:#7a7670;font-size:13px;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* ── رمز الريال السعودي الرسمي ── */
 .sar-icon{height:1.15em;width:1.03em;vertical-align:-0.25em;display:inline-block;flex-shrink:0;overflow:visible;shape-rendering:geometricPrecision;}
@@ -609,9 +615,7 @@ body.light-mode table th { background: #f2f3f5; color: #333; border-color: #e0e2
 body.light-mode table td { border-color: #eaedf2; color: #0a0a0a; }
 body.light-mode tr:hover td { background: #f8f9fb; }
 
-/* Logo — بدون تعديل */
-body.light-mode .sb-icon img,
-body.light-mode .mob-logo-icon img { opacity:1 !important; filter:none !important; }
+/* Logo — يتغير بـ JS عبر _swapLogos() */
 
 /* Misc text */
 body.light-mode .card-subtitle,
@@ -630,35 +634,47 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   if (saved === 'light') document.body.classList.add('light-mode');
 })();
 
+// ── تطبيق الشعار الصحيح على كل صور الشعار الموجودة في DOM ──
+function _swapLogos(isLight) {
+  var src = isLight ? '/logo-light.png' : '/logo-dark.png';
+  document.querySelectorAll('.tw-logo-img').forEach(function(img) {
+    img.src = src;
+  });
+}
+
 function toggleTheme() {
-  const isLight = document.body.classList.toggle('light-mode');
+  var isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('tw_theme', isLight ? 'light' : 'dark');
-  _updateThemeBtn(isLight);
+  // تحديث زر التبديل
+  var icon  = document.getElementById('themeIcon');
+  var label = document.getElementById('themeLabel');
+  if (icon)  icon.textContent  = isLight ? '🌙' : '☀️';
+  if (label) label.textContent = isLight ? 'الوضع الداكن' : 'الوضع الفاتح';
+  // تبديل الشعار
+  _swapLogos(isLight);
 }
 
 function _updateThemeBtn(isLight) {
-  const icon  = document.getElementById('themeIcon');
-  const label = document.getElementById('themeLabel');
-  if (!icon || !label) return;
-  if (isLight) {
-    icon.textContent  = '🌙';
-    label.textContent = 'الوضع الداكن';
-  } else {
-    icon.textContent  = '☀️';
-    label.textContent = 'الوضع الفاتح';
-  }
+  var icon  = document.getElementById('themeIcon');
+  var label = document.getElementById('themeLabel');
+  if (icon)  icon.textContent  = isLight ? '🌙' : '☀️';
+  if (label) label.textContent = isLight ? 'الوضع الداكن' : 'الوضع الفاتح';
 }
 
-// sync button state after sidebar loads
 document.addEventListener('DOMContentLoaded', function() {
   _updateThemeBtn(document.body.classList.contains('light-mode'));
 });
 </script>
 <script src="/api/config.js" async></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
 <script>
 // ── Auth Guard — يمنع الدخول بدون تسجيل ──
 (async function() {
+  const hideLoader = () => {
+    const el = document.getElementById('init-loader');
+    if (el) el.style.display = 'none';
+  };
+
   // ── حماية الدومين: لو فُتح index.html على نطاق التسويق، حوّل لـ landing ──
   const _h = window.location.hostname;
   if (_h === 'towkd.com' || _h === 'www.towkd.com') {
@@ -666,17 +682,17 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // انتظر config.js بشكل ذكي (بولينج بدلاً من انتظار ثابت — يتعامل مع Cold Start في Vercel)
+  // انتظر config.js + supabase-js بشكل ذكي (بولينج — يتعامل مع async + Cold Start)
   await (async () => {
-    for (let i = 0; i < 60; i++) {          // حتى 3 ثوانٍ (60 × 50ms)
-      if (window.__SUPABASE_URL__) return;
+    for (let i = 0; i < 120; i++) {         // حتى 6 ثوانٍ (120 × 50ms)
+      if (window.__SUPABASE_URL__ && window.supabase) return;
       await new Promise(r => setTimeout(r, 50));
     }
   })();
 
   const url  = window.__SUPABASE_URL__  || '';
   const anon = window.__SUPABASE_ANON__ || '';
-  if (!url || !anon) return; // لو Supabase مش مهيّأ، اشتغل بدون auth
+  if (!url || !anon) { hideLoader(); return; } // لو Supabase مش مهيّأ، اشتغل بدون auth
 
   // ── ① كشف OAuth callback قبل إنشاء الـ client ────────────────
   // Supabase ينظّف ?code= من URL فور إنشاء الـ client عبر history.replaceState
@@ -724,6 +740,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.location.href = '/auth.html';
     return;
   }
+
+  // ✅ جلسة مؤكّدة — أخفِ شاشة التحميل
+  hideLoader();
 
   // ✅ جلسة موجودة — خزّن التوكن للاستخدام في API calls
   window.__AUTH_TOKEN__ = session.access_token;
@@ -848,6 +867,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </head>
 <body>
+<!-- شاشة التحميل الأولية — تختفي بعد اكتمال الـ auth -->
+<div id="init-loader">
+  <img src="/logo-dark.png" alt="توكّد">
+  <div class="init-ring"></div>
+  <p>جاري التحميل…</p>
+</div>
 <div class="app">
   <div id="sidebar-container"></div>
   <div class="main-area">

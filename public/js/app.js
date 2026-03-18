@@ -11,6 +11,13 @@ async function initApp() {
     const pc = document.getElementById('pages-container');
     if (sc) sc.innerHTML = sidebarHTML;
     if (pc) pc.innerHTML = pagesHTML;
+    // تطبيق الشعار الصحيح فور حقن السايدبار — مباشر بدون اعتماد على دالة خارجية
+    var _logoSrc = document.body.classList.contains('light-mode')
+      ? '/logo-light.png'
+      : '/logo-dark.png';
+    document.querySelectorAll('.tw-logo-img').forEach(function(img) {
+      img.src = _logoSrc;
+    });
     if (typeof initNumInputs === 'function') initNumInputs();
     if (typeof initProdsSection === 'function') initProdsSection();
     // loadBusinessProfile تحتاج window.sb — نستدعيها بعد tw:appReady لضمان جاهزيته
