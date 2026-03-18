@@ -378,32 +378,6 @@ function toggleAction(week, idx, el) {
   if(el.classList.contains('done')){check.textContent='✓';} else {check.textContent='';}
 }
 
-function exportActionPlanPDF() {
-  toast('جاري تصدير الخطة...');
-  // Uses same jsPDF logic
-  if(!STATE._actionPlanWeeks){toast('لا توجد خطة لتصديرها');return;}
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:'mm',format:'a4'});
-  doc.setFillColor(7,8,10); doc.rect(0,0,210,297,'F');
-  doc.setFillColor(200,164,90); doc.rect(0,0,210,3,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(200,164,90);
-  doc.text('Action Plan — ' + (STATE.currentReport?.bizName||''), 105, 20, {align:'center'});
-  let y = 35;
-  STATE._actionPlanWeeks.forEach(w => {
-    doc.setFontSize(12); doc.setTextColor(200,164,90);
-    doc.text('Week '+w.week+': '+w.focus, 20, y); y+=8;
-    w.actions.forEach(a => {
-      doc.setFontSize(9); doc.setTextColor(160,155,145);
-      doc.text('• '+a.text, 25, y); y+=6;
-      doc.setFontSize(8); doc.setTextColor(100,95,88);
-      doc.text('  → '+a.impact, 28, y); y+=7;
-      if(y>270){doc.addPage();doc.setFillColor(7,8,10);doc.rect(0,0,210,297,'F');y=20;}
-    });
-    y+=5;
-  });
-  doc.save('tawakkad-action-plan.pdf');
-}
-
 // ══════════════════════════════════════════
 // CASH FLOW
 // ══════════════════════════════════════════
@@ -412,4 +386,3 @@ window.sendCFO = sendCFO;
 window.generateActionPlan = generateActionPlan;
 window.renderActionPlan = renderActionPlan;
 window.toggleAction = toggleAction;
-window.exportActionPlanPDF = exportActionPlanPDF;
