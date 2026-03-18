@@ -91,12 +91,18 @@ function showPage(name, _fromHash) {
     if (!planAllows('market_compare')) { showUpgradeModal('مقارنة السوق', 'pro'); return; }
     renderBenchmarkPage();
   }
-  if(name==='scenarios' && window.STATE?.currentReport) renderScenariosPage();
+  if(name==='scenarios') {
+    if (!planAllows('full_report')) { showUpgradeModal('سيناريوهات ماذا لو', 'one_time'); return; }
+    if (window.STATE?.currentReport) renderScenariosPage();
+  }
   if(name==='compare') {
     if (!planAllows('compare_reports')) { showUpgradeModal('مقارنة التقارير', 'pro'); return; }
     renderComparePage();
   }
-  if(name==='actionplan' && window.STATE?.currentReport) generateActionPlan();
+  if(name==='actionplan') {
+    if (!planAllows('full_report')) { showUpgradeModal('خطة العمل الأسبوعية', 'one_time'); return; }
+    if (window.STATE?.currentReport) generateActionPlan();
+  }
   if(name==='cashflow') prefillCashFlowFromReport();
   if(name==='pricing') {
     // تأكد من تحميل بيانات حاسبة التكاليف قبل عرض التسعير
@@ -143,15 +149,19 @@ window.addEventListener('tw:appReady', function() {
 // ══════════════════════════════════════════
 
 // تعريف الميزات المتاحة لكل خطة
-// pro و enterprise يُعاملان كـ paid للتوافق مع الحسابات القديمة
-const _PAID_FEATURES = ['analysis', 'health_score', 'basic_report', 'cfo_limited', 'cfo_full',
+// ── free:     تشغيل التحليل فقط + preview (هامش + مؤشر الصحة)
+// ── one_time: تقرير كامل لمرة واحدة (بدون حفظ / CFO / مقارنة)
+// ── pro/paid: كل الميزات
+const _PAID_FEATURES = ['analysis', 'health_score', 'full_report', 'basic_report', 'cfo_limited', 'cfo_full',
   'advanced_report', 'forecast', 'market_compare', 'pdf_export',
   'save_reports', 'compare_reports'];
+const _ONE_TIME_FEATURES = ['analysis', 'health_score', 'full_report', 'basic_report', 'advanced_report', 'pdf_export'];
 const PLAN_FEATURES = {
-  free:       ['analysis', 'health_score', 'basic_report', 'cfo_limited'],
+  free:       ['analysis', 'health_score'],   // preview فقط — لا يُعرض التقرير الكامل
+  one_time:   _ONE_TIME_FEATURES,             // تقرير كامل لمرة واحدة
   paid:       _PAID_FEATURES,
-  pro:        _PAID_FEATURES,        // توافق مع الخطط القديمة
-  enterprise: _PAID_FEATURES,        // توافق مع الخطط القديمة
+  pro:        _PAID_FEATURES,                 // توافق مع الخطط القديمة
+  enterprise: _PAID_FEATURES,                 // توافق مع الخطط القديمة
 };
 
 function planAllows(feature) {
@@ -162,41 +172,61 @@ window.planAllows = planAllows;
 
 // ── عرض نافذة الترقية ──────────────────────────────────────
 function showUpgradeModal(featureName, requiredPlan) {
-  // خطة واحدة مدفوعة فقط
-  const planLabel    = 'المدفوعة';
-  const planPrice    = '79';
-  const planFeatures = ['تحليلات غير محدودة','مؤشر صحة المشروع','تقارير مالية متقدمة','AI CFO كامل',
-     'توقعات الإيرادات','مقارنة السوق','تقارير PDF','حفظ التقارير'];
-
   const existing = document.getElementById('upgradeModalOverlay');
   if (existing) existing.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'upgradeModalOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
   overlay.innerHTML = `
-    <div style="background:#13131a;border:1px solid rgba(201,168,76,0.3);border-radius:20px;padding:32px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;position:relative;font-family:inherit;">
+    <div style="background:#13131a;border:1px solid rgba(201,168,76,0.3);border-radius:20px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;font-family:inherit;">
       <button onclick="document.getElementById('upgradeModalOverlay').remove()"
         style="position:absolute;top:14px;left:14px;background:rgba(255,255,255,0.06);border:none;color:#888;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="font-size:36px;margin-bottom:12px;">🔒</div>
-        <h3 style="color:#fff;font-size:18px;margin:0 0 8px;">${featureName || 'هذه الميزة'} غير متاحة في خطتك الحالية</h3>
-        <p style="color:#888;font-size:14px;margin:0;">قم بالترقية إلى الخطة ${planLabel} للوصول إليها</p>
+
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:36px;margin-bottom:10px;">🔒</div>
+        <h3 style="color:#fff;font-size:18px;margin:0 0 6px;">${featureName ? featureName + ' — ' : ''}هذه الميزة تحتاج ترقية</h3>
+        <p style="color:#888;font-size:13px;margin:0;">اختر الخيار المناسب لك</p>
       </div>
-      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:20px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <span style="color:#e8c76a;font-size:17px;font-weight:700;">الخطة ${planLabel}</span>
-          <span style="color:#fff;font-size:22px;font-weight:800;">${planPrice} <span style="font-size:13px;color:#888;font-weight:400;">ر.س/شهر</span></span>
+
+      <!-- خيار ١: تقرير لمرة واحدة -->
+      <div style="border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="color:#ddd;font-size:15px;font-weight:600;">فتح هذا التقرير</span>
+          <span style="color:#fff;font-size:20px;font-weight:800;">29 <span style="font-size:12px;color:#888;font-weight:400;">ر.س</span></span>
         </div>
-        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
-          ${planFeatures.map(f=>`<li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ddd;"><span style="color:#4caf82;">✓</span>${f}</li>`).join('')}
+        <ul style="list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px;">
+          <li style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>التقرير المالي الكامل</li>
+          <li style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات ونقطة التعادل</li>
+          <li style="font-size:12px;color:#555;display:flex;align-items:center;gap:6px;"><span style="color:#555;">✗</span>لا يشمل الحفظ أو AI CFO أو التقارير المستقبلية</li>
         </ul>
+        <a href="/landing.html#pricing" target="_blank"
+          style="display:block;text-align:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+          فتح التقرير — 29 ر.س
+        </a>
       </div>
-      <a href="/landing.html#pricing" target="_blank"
-        style="display:block;text-align:center;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;margin-bottom:10px;">
-        عرض الخطط والأسعار ←
-      </a>
-      <p style="text-align:center;font-size:12px;color:#555;margin:0;">تواصل معنا للترقية الفورية</p>
+
+      <!-- خيار ٢: الاشتراك الشهري — الأفضل -->
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:18px;position:relative;">
+        <div style="position:absolute;top:-10px;right:16px;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;font-size:10px;font-weight:700;padding:3px 12px;border-radius:100px;">الأفضل قيمة ⭐</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="color:#e8c76a;font-size:15px;font-weight:700;">الاشتراك الشهري</span>
+          <span style="color:#fff;font-size:20px;font-weight:800;">79 <span style="font-size:12px;color:#888;font-weight:400;">ر.س/شهر</span></span>
+        </div>
+        <ul style="list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px;">
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تقارير غير محدودة</li>
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>AI CFO كامل — استشارات مالية لا محدودة</li>
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>حفظ التقارير وتتبع الأداء</li>
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات + التوقعات الذكية</li>
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>مقارنة السوق وجميع الميزات</li>
+        </ul>
+        <a href="/landing.html#pricing" target="_blank"
+          style="display:block;text-align:center;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;">
+          اشترك الآن — 79 ر.س/شهر ←
+        </a>
+      </div>
+
+      <p style="text-align:center;font-size:11px;color:#444;margin:14px 0 0;">للتواصل والاستفسار: <a href="https://wa.me/966500000000" target="_blank" style="color:#555;text-decoration:none;">WhatsApp</a></p>
     </div>`;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);

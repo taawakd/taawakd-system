@@ -2,7 +2,122 @@
 // ✅ المرحلة 3-A: استخراج renderResults + renderAIBlocks من financial.js
 // ============================================================
 
+function renderResultsPreview(report) {
+  const {bizName, bizType, period, metrics, scoreData} = report;
+  const createdAt = report.createdAt || report.date || null;
+  const {revenue, netProfit, netMargin} = metrics;
+
+  document.getElementById('resultTitle').textContent = `تقرير ${bizName}`;
+  const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
+  document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${dateStr}`;
+
+  // Show only margin + health score KPIs
+  const kpiContainer = document.getElementById('resultKpis');
+  kpiContainer.innerHTML = '';
+  [
+    {val: netMargin + '%', label: 'هامش الربح', cls: netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn'},
+    {val: scoreData.total + '/100', label: 'مؤشر الصحة', cls: scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg'},
+  ].forEach(k => {
+    const card = document.createElement('div');
+    card.className = 'kpi';
+    const valEl = document.createElement('div');
+    valEl.className = `kpi-val ${k.cls}`;
+    valEl.textContent = k.val;
+    const lblEl = document.createElement('div');
+    lblEl.className = 'kpi-label';
+    lblEl.textContent = k.label;
+    card.appendChild(valEl);
+    card.appendChild(lblEl);
+    kpiContainer.appendChild(card);
+  });
+
+  // Health score ring (visible)
+  renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
+  const bdEl = document.getElementById('resScoreBreakdown');
+  bdEl.innerHTML = '';
+  const bdWrap = document.createElement('div');
+  bdWrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:16px;';
+  (scoreData.breakdown || []).forEach(b => {
+    const pwrap = document.createElement('div'); pwrap.className = 'progress-wrap';
+    const phead = document.createElement('div'); phead.className = 'progress-head';
+    const lblSpan = document.createElement('span');
+    lblSpan.style.cssText = 'font-size:12px;color:var(--gray2);';
+    lblSpan.textContent = b.label;
+    const valSpan = document.createElement('span');
+    valSpan.style.cssText = 'font-size:12px;color:var(--gold);';
+    valSpan.textContent = `${b.val}/${b.max}`;
+    phead.appendChild(lblSpan); phead.appendChild(valSpan);
+    const ptrack = document.createElement('div'); ptrack.className = 'progress-track';
+    const pfill = document.createElement('div'); pfill.className = 'progress-fill';
+    pfill.style.cssText = `width:${(b.val / b.max) * 100}%;background:${b.color};`;
+    ptrack.appendChild(pfill);
+    pwrap.appendChild(phead); pwrap.appendChild(ptrack);
+    bdWrap.appendChild(pwrap);
+  });
+  bdEl.appendChild(bdWrap);
+
+  // CTA block
+  const ctaHTML = `
+    <div style="margin:28px 0;padding:28px 20px;border-radius:16px;background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.2);text-align:center;">
+      <div style="font-size:28px;margin-bottom:10px;">🔒</div>
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">التقرير الكامل مقفل</div>
+      <p style="font-size:13px;color:#888;margin:0 0 20px;line-height:1.6;">
+        لديك مشكلة في ${netMargin < 5 ? 'هامش الربح المنخفض' : scoreData.total < 50 ? 'مؤشر الصحة المالية' : 'أداء المشروع'}.<br>
+        افتح التقرير الكامل لمعرفة التشخيص والتوصيات.
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="showUpgradeModal('التقرير الكامل','one_time')"
+          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          فتح هذا التقرير — 29 ر.س
+        </button>
+        <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
+          style="background:rgba(201,168,76,0.12);color:#e8c76a;border:1px solid rgba(201,168,76,0.35);border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          اشترك — 79 ر.س/شهر
+        </button>
+      </div>
+    </div>`;
+
+  // Locked sections placeholder
+  const lockedHTML = `
+    <div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:20px;">
+      <div style="filter:blur(4px);pointer-events:none;opacity:0.45;padding:20px;border:1px solid rgba(255,255,255,0.06);border-radius:14px;background:rgba(255,255,255,0.02);">
+        <div style="height:14px;background:rgba(255,255,255,0.1);border-radius:6px;margin-bottom:10px;width:60%;"></div>
+        <div style="height:10px;background:rgba(255,255,255,0.07);border-radius:6px;margin-bottom:8px;width:80%;"></div>
+        <div style="height:10px;background:rgba(255,255,255,0.07);border-radius:6px;width:50%;"></div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:20px;">🔒</span>
+      </div>
+    </div>`;
+
+  // Render CTA + locked placeholders into the sections that would normally appear
+  const alertsEl = document.getElementById('resultAlerts');
+  if (alertsEl) alertsEl.innerHTML = ctaHTML;
+
+  const expEl = document.getElementById('resultExpenses');
+  if (expEl) expEl.innerHTML = lockedHTML;
+
+  const beEl = document.getElementById('resultBreakeven');
+  if (beEl) beEl.innerHTML = lockedHTML;
+
+  const prodEl = document.getElementById('resultProducts');
+  if (prodEl) prodEl.innerHTML = lockedHTML;
+
+  const aiEl = document.getElementById('aiBlocks');
+  if (aiEl) aiEl.innerHTML = lockedHTML;
+
+  const scenEl = document.getElementById('scenariosContainer');
+  if (scenEl) scenEl.innerHTML = lockedHTML;
+
+  const benchEl = document.getElementById('benchmarkContainer');
+  if (benchEl) benchEl.innerHTML = lockedHTML;
+}
+
 function renderResults(report) {
+  if (!planAllows('full_report')) {
+    renderResultsPreview(report);
+    return;
+  }
   console.log("renderResults executed");
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey} = report;
   const createdAt = report.createdAt || report.date || null;
@@ -211,6 +326,7 @@ function renderResults(report) {
 }
 
 function renderAIBlocks(text, containerId) {
+  if (!planAllows('full_report')) return;   // حراسة دفاعية — منع الاستدعاء المباشر
   const wrap = document.getElementById(containerId);
   wrap.innerHTML = '';
 
@@ -304,6 +420,7 @@ function renderAIBlocks(text, containerId) {
 
 // ── جدول تحليل المصاريف ──────────────────────────────────────────────
 function renderExpenseTable(metrics, containerId) {
+  if (!planAllows('full_report')) return;   // حراسة دفاعية — منع الاستدعاء المباشر
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   wrap.innerHTML = '';

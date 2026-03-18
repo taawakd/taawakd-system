@@ -28,9 +28,67 @@ function _clearDashboard() {
 }
 window._clearDashboard = _clearDashboard;
 
+// ── عرض Dashboard للخطة المجانية (بيانات محجوبة) ──────────────────
+function _renderDashboardPreview(rep) {
+  // مؤشر الصحة فقط — الرقم المالي الوحيد المسموح به في المجاني
+  document.getElementById('dk-health').textContent = rep.scoreData.total + '/100';
+  renderScore('scoreRingFill', 'scoreVal', 'scoreLabel', 'scoreBreakdown', rep.scoreData.total);
+
+  // حجب الأرقام المالية الثلاثة
+  const _lock = (id) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = '🔒'; el.className = 'kpi-val'; }
+  };
+  _lock('dk-rev'); _lock('dk-profit'); _lock('dk-margin');
+
+  // قالب القفل للأقسام التفصيلية
+  const lockedSection = `
+    <div style="position:relative;border-radius:14px;overflow:hidden;">
+      <div style="filter:blur(3px);pointer-events:none;opacity:0.3;padding:24px;border:1px solid rgba(255,255,255,0.06);border-radius:14px;background:rgba(255,255,255,0.02);">
+        <div style="height:12px;background:rgba(255,255,255,0.12);border-radius:6px;margin-bottom:10px;width:55%;"></div>
+        <div style="height:9px;background:rgba(255,255,255,0.08);border-radius:6px;margin-bottom:8px;width:75%;"></div>
+        <div style="height:9px;background:rgba(255,255,255,0.08);border-radius:6px;width:45%;"></div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:20px;">🔒</span>
+      </div>
+    </div>`;
+
+  const ac = document.getElementById('alertsContainer');
+  if (ac) ac.innerHTML = lockedSection;
+
+  const bc = document.getElementById('breakevenContainer');
+  if (bc) bc.innerHTML = lockedSection;
+
+  const fc = document.getElementById('forecastContainer');
+  if (fc) fc.innerHTML = `
+    <div style="text-align:center;padding:28px 20px;border:1px dashed rgba(201,168,76,0.25);border-radius:14px;background:rgba(201,168,76,0.04);">
+      <div style="font-size:28px;margin-bottom:10px;">🔒</div>
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">التقرير الكامل مقفل</div>
+      <p style="font-size:13px;color:#888;margin:0 0 18px;line-height:1.6;">افتح التقرير لرؤية الإيرادات والأرباح ونقطة التعادل والتنبيهات</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="showUpgradeModal('التقرير الكامل','one_time')"
+          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          فتح هذا التقرير — 29 ر.س
+        </button>
+        <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
+          style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          اشترك — 79 ر.س/شهر
+        </button>
+      </div>
+    </div>`;
+}
+
 function updateDashboard() {
   const rep = STATE.savedReports[0];
-  if(!rep){ _clearDashboard(); return; }
+  if (!rep) { _clearDashboard(); return; }
+
+  // ── بوابة الخطة المجانية: منع عرض أي رقم مالي حقيقي ──────────────
+  if (!planAllows('full_report')) {
+    _renderDashboardPreview(rep);
+    return;
+  }
+
   const m = rep.metrics;
 
   document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ﷼';
@@ -204,16 +262,20 @@ function renderSavedReports() {
     </div>`;
     return;
   }
+  const canSeeNumbers = planAllows('full_report');
   grid.innerHTML = STATE.savedReports.map((r,i)=>{
     const m = r.metrics;
+    const revDisplay    = canSeeNumbers ? `${fmt(m.revenue)} ${SAR}`                                                        : '🔒';
+    const profitCls     = canSeeNumbers ? (m.netProfit>=0?'pos':'neg')                                                      : '';
+    const profitDisplay = canSeeNumbers ? `${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ${SAR}`                              : '🔒';
     return `<div class="card" style="cursor:pointer;transition:all 0.2s;animation:fadeUp 0.4s ease ${i*0.06}s forwards;opacity:0;" onmouseenter="this.style.borderColor='var(--gold-b)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="openSavedReport('${r.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
         <div style="font-size:15px;font-weight:700;color:var(--white);">${r.bizName}</div>
         <div style="font-size:11px;padding:3px 10px;background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-b);border-radius:20px;">${r.bizType||'—'}</div>
       </div>
       <div class="kpi-row kpi-row-2" style="margin-bottom:12px;">
-        <div class="kpi card-sm"><div class="kpi-val neu" style="font-size:16px;">${fmt(m.revenue)} ${SAR}</div><div class="kpi-label">الإيرادات</div></div>
-        <div class="kpi card-sm"><div class="kpi-val ${m.netProfit>=0?'pos':'neg'}" style="font-size:16px;">${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ${SAR}</div><div class="kpi-label">صافي الربح</div></div>
+        <div class="kpi card-sm"><div class="kpi-val neu" style="font-size:16px;">${revDisplay}</div><div class="kpi-label">الإيرادات</div></div>
+        <div class="kpi card-sm"><div class="kpi-val ${profitCls}" style="font-size:16px;">${profitDisplay}</div><div class="kpi-label">صافي الربح</div></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;color:var(--gray);">${r.reportPeriod || (r.createdAt||r.date ? new Date(r.createdAt||r.date).toLocaleDateString('ar-SA') : '—')}</div>
