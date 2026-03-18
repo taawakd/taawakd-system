@@ -143,14 +143,42 @@ async function importFromSheets() {
 // ══════════════════════════════════════════
 function renderPricingPage() {
   const rep = STATE.currentReport;
-  if(!rep || !rep.products?.length) {
+
+  // ── بناء قائمة المنتجات: أولاً من التقرير، ثم من حاسبة التكاليف ──
+  let products = [];
+
+  if (rep?.products?.length) {
+    // مصدر ١: منتجات التقرير المالي {name, price, cost, qty}
+    products = rep.products.filter(p => p.price > 0);
+  }
+
+  if (!products.length && window.PC_STATE?.products?.length) {
+    // مصدر ٢: حاسبة تكلفة المنتج — نحوّل للتنسيق المطلوب
+    products = window.PC_STATE.products
+      .filter(p => p.salePrice > 0)
+      .map(p => {
+        const ingCost = (p.ingredients || []).reduce((s, i) => s + (i.total || (i.qty * i.unitCost) || 0), 0);
+        const opTotal = p.opCosts ? Object.values(p.opCosts).reduce((s, v) => s + (v || 0), 0) : 0;
+        const sales   = p.monthlySales || 1;
+        const rev     = p.salePrice * sales;
+        const totalRev = p.projectTotalSales || rev;
+        const opShare = totalRev > 0 ? (opTotal * rev / totalRev) / sales : 0;
+        return {
+          name:  p.name,
+          price: p.salePrice,
+          cost:  +(ingCost + opShare).toFixed(2),
+          qty:   sales,
+        };
+      });
+  }
+
+  if (!products.length) {
     document.getElementById('pricingContent').innerHTML =
-      '<div class="feature-empty"><div class="fe-icon">💲</div><p>أضف منتجات في التحليل لتفعيل هذه الصفحة</p></div>';
+      '<div class="feature-empty"><div class="fe-icon">💲</div><p>أضف منتجات في حاسبة التكاليف أو أجرِ تحليلاً لتفعيل هذه الصفحة</p></div>';
     return;
   }
 
-  const m = rep.metrics;
-  const products = rep.products.filter(p=>p.price>0);
+  const m = rep?.metrics || {};
 
   let html = `
     <div class="card" style="margin-bottom:16px;">

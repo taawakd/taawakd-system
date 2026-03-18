@@ -98,7 +98,14 @@ function showPage(name, _fromHash) {
   }
   if(name==='actionplan' && window.STATE?.currentReport) generateActionPlan();
   if(name==='cashflow') prefillCashFlowFromReport();
-  if(name==='pricing') renderPricingPage();
+  if(name==='pricing') {
+    // تأكد من تحميل بيانات حاسبة التكاليف قبل عرض التسعير
+    if (typeof pcLoadFromDB === 'function') {
+      pcLoadFromDB().catch(() => {}).finally(() => renderPricingPage());
+    } else {
+      renderPricingPage();
+    }
+  }
   if(name==='forecast') {
     if (!planAllows('forecast')) { showUpgradeModal('التوقعات الذكية', 'pro'); return; }
     if (window.STATE?.currentReport) renderSmartForecast();
