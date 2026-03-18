@@ -11,40 +11,34 @@ function renderResultsPreview(report) {
   const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
   document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${dateStr}`;
 
-  // ── KPIs: مؤشر الصحة فقط — الهامش والأرقام مخفية في الخطة المجانية ──
+  // ── KPIs: كل البطاقات مبهمة ومقفلة للمجاني ──────────────────────────
   const kpiContainer = document.getElementById('resultKpis');
   kpiContainer.innerHTML = '';
+  kpiContainer.style.position = 'relative';
 
-  // مؤشر الصحة — يظهر دائماً
-  const scoreCard = document.createElement('div');
-  scoreCard.className = 'kpi';
-  const scoreValEl = document.createElement('div');
+  // محتوى حقيقي مبهم (margin + score)
+  const kpiInner = document.createElement('div');
+  kpiInner.style.cssText = 'display:contents;filter:blur(5px);pointer-events:none;user-select:none;';
   const scoreCls = scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg';
-  scoreValEl.className = `kpi-val ${scoreCls}`;
-  scoreValEl.textContent = scoreData.total + '/100';
-  const scoreLblEl = document.createElement('div');
-  scoreLblEl.className = 'kpi-label';
-  scoreLblEl.textContent = 'مؤشر الصحة';
-  scoreCard.appendChild(scoreValEl);
-  scoreCard.appendChild(scoreLblEl);
-  kpiContainer.appendChild(scoreCard);
-
-  // هامش الربح — مبهم ومقفل في الخطة المجانية
-  const marginCard = document.createElement('div');
-  marginCard.className = 'kpi';
-  marginCard.style.cssText = 'position:relative;overflow:hidden;';
-  marginCard.innerHTML = `
-    <div style="filter:blur(5px);pointer-events:none;user-select:none;">
-      <div class="kpi-val warn">••%</div>
-      <div class="kpi-label">هامش الربح</div>
+  kpiInner.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-val ${scoreCls}">${scoreData.total}/100</div>
+      <div class="kpi-label">مؤشر الصحة</div>
     </div>
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;"
-         onclick="showUpgradeModal('التقرير الكامل','one_time')">
-      <span style="font-size:16px;">🔒</span>
+    <div class="kpi">
+      <div class="kpi-val ${netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn'}">${netMargin.toFixed(1)}%</div>
+      <div class="kpi-label">هامش الربح</div>
     </div>`;
-  kpiContainer.appendChild(marginCard);
+  kpiContainer.appendChild(kpiInner);
 
-  // Health score ring (visible)
+  // طبقة القفل فوق الـ KPIs
+  const kpiLock = document.createElement('div');
+  kpiLock.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;';
+  kpiLock.innerHTML = `<span style="font-size:18px;">🔒</span><span style="font-size:13px;color:#c9a84c;font-weight:600;">اضغط لرؤية النتائج</span>`;
+  kpiLock.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+  kpiContainer.appendChild(kpiLock);
+
+  // ── حلقة مؤشر الصحة: تُعرض بشكل حقيقي ثم تُبهم ──────────────────
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
   const bdEl = document.getElementById('resScoreBreakdown');
   bdEl.innerHTML = '';
@@ -69,6 +63,25 @@ function renderResultsPreview(report) {
   });
   bdEl.appendChild(bdWrap);
 
+  // تبهيم الحلقة + التفاصيل وإضافة قفل فوقها
+  const scoreWrap = document.querySelector('.score-wrap');
+  if (scoreWrap) scoreWrap.style.cssText += ';filter:blur(6px);pointer-events:none;user-select:none;';
+  bdEl.style.cssText += ';filter:blur(6px);pointer-events:none;user-select:none;';
+
+  const scoreCardEl = document.getElementById('resScoreVal')?.closest('.card');
+  if (scoreCardEl) {
+    scoreCardEl.style.position = 'relative';
+    scoreCardEl.style.overflow = 'hidden';
+    const scoreLockEl = document.createElement('div');
+    scoreLockEl.style.cssText = 'position:absolute;inset:0;top:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;';
+    scoreLockEl.innerHTML = `
+      <span style="font-size:32px;">🔒</span>
+      <span style="font-size:13px;color:#c9a84c;font-weight:600;">فتح التحليل الكامل</span>
+      <span style="font-size:11px;color:#666;">29 ر.س أو اشتراك شهري</span>`;
+    scoreLockEl.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+    scoreCardEl.appendChild(scoreLockEl);
+  }
+
   // ── رسالة ديناميكية تحت حلقة المؤشر ────────────────────────────────
   const _scoreHint = (() => {
     const s = scoreData.total;
@@ -89,14 +102,7 @@ function renderResultsPreview(report) {
     };
   })();
 
-  const hintEl = document.createElement('div');
-  hintEl.style.cssText = 'text-align:center;margin-top:16px;padding:12px 16px;border-radius:10px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);';
-  hintEl.innerHTML = `
-    <div style="font-size:18px;margin-bottom:4px;">${_scoreHint.icon}</div>
-    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px;">${_scoreHint.headline}</div>
-    <div style="font-size:12px;color:#888;">${_scoreHint.sub}</div>
-    <div style="font-size:11px;color:rgba(201,168,76,0.6);margin-top:6px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</div>`;
-  bdEl.appendChild(hintEl);
+  // الرسالة الديناميكية ستظهر ضمن الـ CTA أسفل الصفحة (bdEl مبهم ولا نضيف له شيء)
 
   // ── CTA block — فضول + نقص معلومات ────────────────────────────────
   const _cta = (() => {
@@ -121,8 +127,9 @@ function renderResultsPreview(report) {
 
   const ctaHTML = `
     <div style="margin:28px 0;padding:28px 20px;border-radius:16px;background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.2);text-align:center;">
-      <div style="font-size:28px;margin-bottom:10px;">${_cta.emoji}</div>
-      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">${_cta.title}</div>
+      <div style="font-size:28px;margin-bottom:10px;">${_scoreHint.icon}</div>
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">${_scoreHint.headline}</div>
+      <p style="font-size:13px;color:#888;margin:0 0 4px;line-height:1.7;">${_scoreHint.sub}</p>
       <p style="font-size:13px;color:#888;margin:0 0 6px;line-height:1.7;">${_cta.body}</p>
       <p style="font-size:12px;color:rgba(201,168,76,0.55);margin:0 0 20px;font-style:italic;">التفاصيل الكاملة غير ظاهرة في الخطة المجانية</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
