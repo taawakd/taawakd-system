@@ -318,12 +318,16 @@
       font-size: 18px; font-weight: 700; margin-bottom: 20px;
       display: flex; align-items: center; gap: 10px;
     }
-    .problem-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .problem-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
     .problem-list li {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: 14px; color: var(--muted); line-height: 1.6;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 16px; font-weight: 500; color: var(--text);
+      line-height: 1.6; margin-bottom: 10px;
     }
-    .problem-list li .ic { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+    .problem-list li:first-child {
+      font-size: 18px; font-weight: 700;
+    }
+    .problem-list li .ic { flex-shrink: 0; font-size: 18px; }
 
     /* ── HOW IT WORKS ── */
     .steps-row {
@@ -702,10 +706,10 @@
           <span style="color:#e05555">بدون توكّد</span>
         </div>
         <ul class="problem-list">
-          <li>ما تعرف هل مشروعك رابح أو خاسر</li>
-          <li>قرارات مبنية على تخمين</li>
-          <li>مصروفات خفية تلتهم الأرباح</li>
-          <li>لا يوجد توقع مالي واضح</li>
+          <li><span class="ic">❌</span> ما تعرف هل مشروعك <strong>رابح أو خاسر</strong></li>
+          <li><span class="ic">❌</span> <strong>قرارات</strong> مبنية على تخمين</li>
+          <li><span class="ic">❌</span> مصروفات خفية تلتهم <strong>الأرباح</strong></li>
+          <li><span class="ic">❌</span> لا يوجد <strong>توقع مالي</strong> واضح</li>
         </ul>
       </div>
       <div class="problem-card after reveal reveal-delay-1">
@@ -714,11 +718,11 @@
           <span style="color:#4caf82">مع توكّد</span>
         </div>
         <ul class="problem-list">
-          <li>تقرير مالي واضح خلال دقائق</li>
-          <li>قرارات مبنية على أرقام حقيقية</li>
-          <li>كشف نقاط الضعف وفرص التحسين</li>
-          <li>توقعات للإيرادات والتدفق النقدي</li>
-          <li>تحليل مالي احترافي بدون تعقيد</li>
+          <li><span class="ic">✅</span> <strong>تقرير مالي</strong> واضح خلال دقائق</li>
+          <li><span class="ic">✅</span> <strong>قرارات</strong> مبنية على أرقام حقيقية</li>
+          <li><span class="ic">✅</span> كشف نقاط الضعف و<strong>فرص التحسين</strong></li>
+          <li><span class="ic">✅</span> توقعات للإيرادات و<strong>التدفق النقدي</strong></li>
+          <li><span class="ic">✅</span> <strong>تحليل مالي</strong> احترافي بدون تعقيد</li>
         </ul>
         <div style="margin-top:28px;text-align:center">
           <a href="https://app.towkd.com/auth.html" class="btn-primary">ابدأ تحليل مشروعك الآن ←</a>
