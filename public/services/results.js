@@ -11,25 +11,38 @@ function renderResultsPreview(report) {
   const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
   document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${dateStr}`;
 
-  // Show only margin + health score KPIs
+  // ── KPIs: مؤشر الصحة فقط — الهامش والأرقام مخفية في الخطة المجانية ──
   const kpiContainer = document.getElementById('resultKpis');
   kpiContainer.innerHTML = '';
-  [
-    {val: netMargin + '%', label: 'هامش الربح', cls: netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn'},
-    {val: scoreData.total + '/100', label: 'مؤشر الصحة', cls: scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg'},
-  ].forEach(k => {
-    const card = document.createElement('div');
-    card.className = 'kpi';
-    const valEl = document.createElement('div');
-    valEl.className = `kpi-val ${k.cls}`;
-    valEl.textContent = k.val;
-    const lblEl = document.createElement('div');
-    lblEl.className = 'kpi-label';
-    lblEl.textContent = k.label;
-    card.appendChild(valEl);
-    card.appendChild(lblEl);
-    kpiContainer.appendChild(card);
-  });
+
+  // مؤشر الصحة — يظهر دائماً
+  const scoreCard = document.createElement('div');
+  scoreCard.className = 'kpi';
+  const scoreValEl = document.createElement('div');
+  const scoreCls = scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg';
+  scoreValEl.className = `kpi-val ${scoreCls}`;
+  scoreValEl.textContent = scoreData.total + '/100';
+  const scoreLblEl = document.createElement('div');
+  scoreLblEl.className = 'kpi-label';
+  scoreLblEl.textContent = 'مؤشر الصحة';
+  scoreCard.appendChild(scoreValEl);
+  scoreCard.appendChild(scoreLblEl);
+  kpiContainer.appendChild(scoreCard);
+
+  // هامش الربح — مبهم ومقفل في الخطة المجانية
+  const marginCard = document.createElement('div');
+  marginCard.className = 'kpi';
+  marginCard.style.cssText = 'position:relative;overflow:hidden;';
+  marginCard.innerHTML = `
+    <div style="filter:blur(5px);pointer-events:none;user-select:none;">
+      <div class="kpi-val warn">••%</div>
+      <div class="kpi-label">هامش الربح</div>
+    </div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;"
+         onclick="showUpgradeModal('التقرير الكامل','one_time')">
+      <span style="font-size:16px;">🔒</span>
+    </div>`;
+  kpiContainer.appendChild(marginCard);
 
   // Health score ring (visible)
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
@@ -56,15 +69,62 @@ function renderResultsPreview(report) {
   });
   bdEl.appendChild(bdWrap);
 
-  // CTA block
+  // ── رسالة ديناميكية تحت حلقة المؤشر ────────────────────────────────
+  const _scoreHint = (() => {
+    const s = scoreData.total;
+    if (s >= 65) return {
+      icon: '👀',
+      headline: 'وضعك يبدو جيداً…',
+      sub: 'لكن هناك فرص تحسين مخفية لم تراها بعد',
+    };
+    if (s >= 40) return {
+      icon: '⚠️',
+      headline: 'أداء متوسط',
+      sub: 'التقرير يكشف أين تتسرب أرباحك بالضبط',
+    };
+    return {
+      icon: '🚨',
+      headline: 'مشروعك يخسر بدون ما تدري',
+      sub: 'التقرير يحدد المشكلة الجذرية قبل فوات الأوان',
+    };
+  })();
+
+  const hintEl = document.createElement('div');
+  hintEl.style.cssText = 'text-align:center;margin-top:16px;padding:12px 16px;border-radius:10px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);';
+  hintEl.innerHTML = `
+    <div style="font-size:18px;margin-bottom:4px;">${_scoreHint.icon}</div>
+    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px;">${_scoreHint.headline}</div>
+    <div style="font-size:12px;color:#888;">${_scoreHint.sub}</div>
+    <div style="font-size:11px;color:rgba(201,168,76,0.6);margin-top:6px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</div>`;
+  bdEl.appendChild(hintEl);
+
+  // ── CTA block — فضول + نقص معلومات ────────────────────────────────
+  const _cta = (() => {
+    const s = scoreData.total;
+    const nm = netMargin;
+    if (nm < 5 || s < 40) return {
+      emoji: '🚨',
+      title: 'مشروعك في خطر',
+      body: 'الأرقام تشير لمشكلة حقيقية — التقرير يحدد المشكلة الجذرية ويعطيك خطة واضحة للخروج منها.',
+    };
+    if (s >= 65 && nm >= 15) return {
+      emoji: '🔍',
+      title: 'وضعك جيد… لكن هل تعرف كم تخسر من فرص التحسين؟',
+      body: 'المشاريع "الجيدة" غالباً تخسر 20-30% من أرباحها الممكنة بدون ما تعرف. التقرير يكشف أين بالضبط.',
+    };
+    return {
+      emoji: '🔒',
+      title: 'في أرقام مهمة مخفية',
+      body: 'المؤشر وحده لا يكفي — التقرير الكامل يريك تفاصيل المصاريف، نقطة التعادل، وأين يمكن رفع الربح.',
+    };
+  })();
+
   const ctaHTML = `
     <div style="margin:28px 0;padding:28px 20px;border-radius:16px;background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.2);text-align:center;">
-      <div style="font-size:28px;margin-bottom:10px;">🔒</div>
-      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">التقرير الكامل مقفل</div>
-      <p style="font-size:13px;color:#888;margin:0 0 20px;line-height:1.6;">
-        لديك مشكلة في ${netMargin < 5 ? 'هامش الربح المنخفض' : scoreData.total < 50 ? 'مؤشر الصحة المالية' : 'أداء المشروع'}.<br>
-        افتح التقرير الكامل لمعرفة التشخيص والتوصيات.
-      </p>
+      <div style="font-size:28px;margin-bottom:10px;">${_cta.emoji}</div>
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">${_cta.title}</div>
+      <p style="font-size:13px;color:#888;margin:0 0 6px;line-height:1.7;">${_cta.body}</p>
+      <p style="font-size:12px;color:rgba(201,168,76,0.55);margin:0 0 20px;font-style:italic;">التفاصيل الكاملة غير ظاهرة في الخطة المجانية</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
         <button onclick="showUpgradeModal('التقرير الكامل','one_time')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">

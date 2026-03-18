@@ -30,9 +30,11 @@ window._clearDashboard = _clearDashboard;
 
 // ── عرض Dashboard للخطة المجانية (بيانات محجوبة) ──────────────────
 function _renderDashboardPreview(rep) {
-  // مؤشر الصحة فقط — الرقم المالي الوحيد المسموح به في المجاني
-  document.getElementById('dk-health').textContent = rep.scoreData.total + '/100';
-  renderScore('scoreRingFill', 'scoreVal', 'scoreLabel', 'scoreBreakdown', rep.scoreData.total);
+  const score = rep.scoreData.total;
+
+  // مؤشر الصحة + حلقة التقييم
+  document.getElementById('dk-health').textContent = score + '/100';
+  renderScore('scoreRingFill', 'scoreVal', 'scoreLabel', 'scoreBreakdown', score);
 
   // حجب الأرقام المالية الثلاثة
   const _lock = (id) => {
@@ -41,7 +43,32 @@ function _renderDashboardPreview(rep) {
   };
   _lock('dk-rev'); _lock('dk-profit'); _lock('dk-margin');
 
-  // قالب القفل للأقسام التفصيلية
+  // ── رسالة ديناميكية: فضول + نقص معلومات ────────────────
+  const _msg = (() => {
+    if (score >= 65) return {
+      icon: '👀',
+      title: 'وضعك يبدو جيداً…',
+      body: 'لكن هناك فرص تحسين مخفية لم تراها — الأرقام التفصيلية غير ظاهرة',
+      ctaMain: 'فتح هذا التقرير — 29 ر.س',
+      ctaSub:  'اشترك — 79 ر.س/شهر',
+    };
+    if (score >= 40) return {
+      icon: '⚠️',
+      title: 'أداء متوسط — في تفاصيل مخفية',
+      body: 'التقرير يكشف أين تتسرب أرباحك بالضبط، ونقطة التعادل، والمصاريف',
+      ctaMain: 'فتح هذا التقرير — 29 ر.س',
+      ctaSub:  'اشترك — 79 ر.س/شهر',
+    };
+    return {
+      icon: '🚨',
+      title: 'مشروعك يخسر بدون ما تدري',
+      body: 'المؤشر يشير لمشكلة حقيقية — التقرير الكامل يحدد سببها ويعطيك خطة خروج',
+      ctaMain: 'اكشف المشكلة — 29 ر.س',
+      ctaSub:  'اشترك — 79 ر.س/شهر',
+    };
+  })();
+
+  // قالب القفل للأقسام
   const lockedSection = `
     <div style="position:relative;border-radius:14px;overflow:hidden;">
       <div style="filter:blur(3px);pointer-events:none;opacity:0.3;padding:24px;border:1px solid rgba(255,255,255,0.06);border-radius:14px;background:rgba(255,255,255,0.02);">
@@ -63,17 +90,18 @@ function _renderDashboardPreview(rep) {
   const fc = document.getElementById('forecastContainer');
   if (fc) fc.innerHTML = `
     <div style="text-align:center;padding:28px 20px;border:1px dashed rgba(201,168,76,0.25);border-radius:14px;background:rgba(201,168,76,0.04);">
-      <div style="font-size:28px;margin-bottom:10px;">🔒</div>
-      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">التقرير الكامل مقفل</div>
-      <p style="font-size:13px;color:#888;margin:0 0 18px;line-height:1.6;">افتح التقرير لرؤية الإيرادات والأرباح ونقطة التعادل والتنبيهات</p>
+      <div style="font-size:26px;margin-bottom:10px;">${_msg.icon}</div>
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px;">${_msg.title}</div>
+      <p style="font-size:13px;color:#888;margin:0 0 6px;line-height:1.6;">${_msg.body}</p>
+      <p style="font-size:11px;color:rgba(201,168,76,0.5);margin:0 0 18px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button onclick="showUpgradeModal('التقرير الكامل','one_time')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-          فتح هذا التقرير — 29 ر.س
+          ${_msg.ctaMain}
         </button>
         <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
           style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-          اشترك — 79 ر.س/شهر
+          ${_msg.ctaSub}
         </button>
       </div>
     </div>`;
@@ -152,13 +180,32 @@ async function loadReportsFromDB() {
     const user = window.__USER__;
     if (!user) return;
 
+    // ── مساعد: هل هذا التقرير مرئي للمستخدم؟ ──────────────────────
+    // paid_one_time: محفوظ للـ analytics فقط — لا يظهر في التقارير المحفوظة
+    const _isVisibleToUser = (r) => {
+      // عمود DB (بعد migration) — أولوية
+      if (typeof r.is_saved_for_user === 'boolean') return r.is_saved_for_user;
+      if (typeof r.paid_one_time     === 'boolean') return !r.paid_one_time;
+      // fallback: اقرأ من report_json إذا لم تُوجد الأعمدة بعد
+      const rj = r.report_json || {};
+      if (typeof rj._is_saved_for_user === 'boolean') return rj._is_saved_for_user;
+      if (typeof rj._paid_one_time     === 'boolean') return !rj._paid_one_time;
+      return true; // التقارير القديمة قبل هذه الميزة — تظهر بشكل افتراضي
+    };
+
     // ── مشاريع غير الافتراضي تُحمَّل من localStorage ──────────────
     const projId = window.__CURRENT_PROJECT_ID__ || 'default';
     if (projId !== 'default') {
       const key   = typeof projectReportsKey === 'function' ? projectReportsKey(projId) : `tw_reports_${projId}`;
       const saved = localStorage.getItem(key);
       if (saved) {
-        STATE.savedReports = JSON.parse(saved);
+        const all = JSON.parse(saved);
+        // فلترة: أخرج تقارير paid_one_time من قائمة التقارير المحفوظة
+        STATE.savedReports = all.filter(r => {
+          if (typeof r._is_saved_for_user === 'boolean') return r._is_saved_for_user;
+          if (typeof r._paid_one_time     === 'boolean') return !r._paid_one_time;
+          return true;
+        });
         if (!STATE.currentReport && STATE.savedReports.length) STATE.currentReport = STATE.savedReports[0];
       }
       if (document.getElementById('savedReportsGrid')) renderSavedReports();
@@ -171,44 +218,49 @@ async function loadReportsFromDB() {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50); // نحمّل أكثر لأننا سنفلتر بعضها
     if (error || !data) return;
-    STATE.savedReports = data.map(r => {
-      // Restore computed ratio fields from report_json — they are NOT stored
-      // as individual Supabase columns (only revenue/expenses/profit/margin/score are)
-      const rj  = r.report_json  || {};
-      const rjm = rj.metrics     || {};
-      return {
-        id: r.id, bizName: r.biz_name, bizType: r.biz_type, period: r.period,
-        metrics: {
-          revenue:       r.revenue,
-          totalExpenses: r.total_expenses,
-          netProfit:     r.net_profit,
-          netMargin:     r.net_margin,
-          healthScore:   r.health_score,
-          // Restore ratio fields from report_json (required by getCFOContext + system prompt)
-          grossMargin:   rjm.grossMargin,
-          rentPct:       rjm.rentPct,
-          salPct:        rjm.salPct,
-          cogsPct:       rjm.cogsPct,
-          mktPct:        rjm.mktPct,
-          cogs:          rjm.cogs,
-          rent:          rjm.rent,
-          salaries:      rjm.salaries,
-          marketing:     rjm.marketing,
-          other:         rjm.other,
-        },
-        scoreData:   rj.scoreData  || { total: r.health_score },
-        alerts:      rj.alerts     || [],
-        products:    rj.products   || [],
-        scenarios:   rj.scenarios  || [],
-        reportText:  rj.reportText || '',
-        sectorKey:   rj.sectorKey  || '',
-        reportPeriod: r.report_period || rj.reportPeriod || null,
-        reportJson:  rj,
-        createdAt:   r.created_at,
-      };
-    });
+
+    // فلترة: استبعد تقارير paid_one_time من القائمة المرئية
+    STATE.savedReports = data
+      .filter(_isVisibleToUser)
+      .slice(0, 20)
+      .map(r => {
+        // Restore computed ratio fields from report_json — they are NOT stored
+        // as individual Supabase columns (only revenue/expenses/profit/margin/score are)
+        const rj  = r.report_json  || {};
+        const rjm = rj.metrics     || {};
+        return {
+          id: r.id, bizName: r.biz_name, bizType: r.biz_type, period: r.period,
+          metrics: {
+            revenue:       r.revenue,
+            totalExpenses: r.total_expenses,
+            netProfit:     r.net_profit,
+            netMargin:     r.net_margin,
+            healthScore:   r.health_score,
+            // Restore ratio fields from report_json (required by getCFOContext + system prompt)
+            grossMargin:   rjm.grossMargin,
+            rentPct:       rjm.rentPct,
+            salPct:        rjm.salPct,
+            cogsPct:       rjm.cogsPct,
+            mktPct:        rjm.mktPct,
+            cogs:          rjm.cogs,
+            rent:          rjm.rent,
+            salaries:      rjm.salaries,
+            marketing:     rjm.marketing,
+            other:         rjm.other,
+          },
+          scoreData:   rj.scoreData  || { total: r.health_score },
+          alerts:      rj.alerts     || [],
+          products:    rj.products   || [],
+          scenarios:   rj.scenarios  || [],
+          reportText:  rj.reportText || '',
+          sectorKey:   rj.sectorKey  || '',
+          reportPeriod: r.report_period || rj.reportPeriod || null,
+          reportJson:  rj,
+          createdAt:   r.created_at,
+        };
+      });
 
     // Bug fix: loadReportsFromDB never set STATE.currentReport.
     // Auto-restore from the most recent DB report so CFO has data even when

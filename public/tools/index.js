@@ -178,6 +178,54 @@ function renderPricingPage() {
     return;
   }
 
+  // ── Preview mode للخطة المجانية ──────────────────────────────
+  if (!planAllows('full_report')) {
+    const first = products[0];
+    const firstMargin = first.price > 0 ? ((first.price - first.cost) / first.price * 100) : 0;
+    const mColor = firstMargin > 30 ? 'var(--green)' : firstMargin < 10 ? 'var(--red)' : 'var(--warn)';
+    const _lockedRow = `
+      <div style="position:relative;border-radius:10px;overflow:hidden;margin-top:8px;">
+        <div style="filter:blur(3px);pointer-events:none;opacity:0.2;padding:14px 16px;border:1px solid rgba(255,255,255,0.05);border-radius:10px;display:flex;gap:12px;">
+          <div style="height:10px;background:rgba(255,255,255,0.1);border-radius:4px;flex:1;"></div>
+          <div style="height:10px;background:rgba(255,255,255,0.07);border-radius:4px;width:60px;"></div>
+          <div style="height:10px;background:rgba(255,255,255,0.07);border-radius:4px;width:40px;"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:14px;">🔒</span>
+        </div>
+      </div>`;
+    document.getElementById('pricingContent').innerHTML = `
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><div class="card-title-icon">📊</div>تأثير تغيير الأسعار على الربح</div>
+        <!-- المنتج الأول — هامشه فقط -->
+        <div style="padding:14px 16px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--white);">${first.name}</div>
+            <div style="font-size:12px;color:${mColor};margin-top:2px;">هامش ${firstMargin.toFixed(0)}%</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:${mColor};">${firstMargin.toFixed(0)}%</div>
+            <div style="font-size:10px;color:var(--gray);">هامش الربح</div>
+          </div>
+          <button onclick="showUpgradeModal('تحليل التسعير','one_time')"
+            style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+            🔒 تأثير السعر
+          </button>
+        </div>
+        <!-- المنتجات الباقية مقفلة -->
+        ${products.slice(1).map(() => _lockedRow).join('')}
+      </div>
+      <div style="text-align:center;padding:20px;border-radius:12px;background:rgba(201,168,76,0.04);border:1px dashed rgba(201,168,76,0.2);">
+        <p style="font-size:13px;color:#888;margin:0 0 6px;">تحليل تأثير تغيير الأسعار على الربح، السلايدر التفاعلي، والمقارنة بين المنتجات</p>
+        <p style="font-size:11px;color:rgba(201,168,76,0.5);margin:0 0 14px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
+        <button onclick="showUpgradeModal('تحليل التسعير الكامل','one_time')"
+          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          فتح التحليل الكامل — 29 ر.س
+        </button>
+      </div>`;
+    return;
+  }
+
   const m = rep?.metrics || {};
 
   let html = `
@@ -403,9 +451,73 @@ function defaultDecisions(rep) {
 }
 
 function drawHealthAdvisor(decisions) {
-  const rankColors = ['rank-1-bg','rank-2-bg','rank-3-bg'];
   const borderColors = ['var(--gold)','var(--warn)','var(--red)'];
+  const rankColors   = ['rank-1-bg','rank-2-bg','rank-3-bg'];
 
+  // ── Preview mode للخطة المجانية ──────────────────────────────
+  if (!planAllows('full_report')) {
+    const _lockCard = `
+      <div style="position:relative;border-radius:12px;overflow:hidden;margin-top:10px;">
+        <div style="filter:blur(3px);pointer-events:none;opacity:0.2;padding:18px;border:1px solid rgba(255,255,255,0.05);border-radius:12px;">
+          <div style="height:10px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:8px;width:70%;"></div>
+          <div style="height:8px;background:rgba(255,255,255,0.07);border-radius:4px;margin-bottom:6px;width:90%;"></div>
+          <div style="height:8px;background:rgba(255,255,255,0.07);border-radius:4px;width:55%;"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;">
+          <span style="font-size:16px;">🔒</span>
+          <button onclick="showUpgradeModal('مستشار الصحة المالية','one_time')"
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            اكشف الحل
+          </button>
+        </div>
+      </div>`;
+
+    document.getElementById('healthAdvisorContent').innerHTML = `
+      <!-- عناوين المشاكل الثلاث — ظاهرة لتوليد الفضول -->
+      <div class="kpi-row kpi-row-3" style="margin-bottom:20px;">
+        ${decisions.map((d,i)=>`
+          <div class="kpi" style="border-right:3px solid ${borderColors[i]||'var(--gold)'};">
+            <div style="font-size:22px;margin-bottom:6px;">${i===0?'1️⃣':i===1?'2️⃣':'3️⃣'}</div>
+            <div class="kpi-label" style="font-size:13px;color:var(--white);font-weight:600;">${d.title}</div>
+          </div>`).join('')}
+      </div>
+      <!-- القرار الأول: السبب ظاهر، الحل مقفل -->
+      <div class="decision-card" style="border-right-color:${borderColors[0]};">
+        <div class="decision-rank">
+          <div class="rank-badge ${rankColors[0]}">1</div>
+          <div class="decision-title">${decisions[0].title}</div>
+        </div>
+        <div class="decision-why">${decisions[0].why}</div>
+        <div style="margin-top:10px;font-size:12px;color:rgba(201,168,76,0.6);font-style:italic;">التفاصيل الكاملة غير ظاهرة</div>
+        ${_lockCard}
+      </div>
+      <!-- القراران الثاني والثالث: مقفلان بالكامل -->
+      ${decisions.slice(1).map((d,i)=>`
+        <div class="decision-card" style="border-right-color:${borderColors[i+1]||'var(--red)'};">
+          <div class="decision-rank">
+            <div class="rank-badge ${rankColors[i+1]||'rank-3-bg'}">${i+2}</div>
+            <div class="decision-title">${d.title}</div>
+          </div>
+          ${_lockCard}
+        </div>`).join('')}
+      <!-- CTA -->
+      <div style="text-align:center;margin-top:20px;padding:16px;border-radius:12px;background:rgba(201,168,76,0.04);border:1px dashed rgba(201,168,76,0.2);">
+        <p style="font-size:13px;color:#888;margin:0 0 12px;font-style:italic;">التفاصيل الكاملة غير ظاهرة — الخطوات + التأثير المتوقع + التوصيات</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="showUpgradeModal('مستشار الصحة المالية','one_time')"
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            فتح التحليل الكامل — 29 ر.س
+          </button>
+          <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
+            style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            اشترك — 79 ر.س/شهر
+          </button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // ── عرض كامل للخطط المدفوعة ──────────────────────────────────
   document.getElementById('healthAdvisorContent').innerHTML = `
     <div class="kpi-row kpi-row-3" style="margin-bottom:20px;">
       ${decisions.map((d,i)=>`

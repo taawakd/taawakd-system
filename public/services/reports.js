@@ -498,6 +498,59 @@ function renderScenariosPage() {
   if(!STATE.currentReport) return;
   const {metrics} = STATE.currentReport;
   const scenarios = buildScenarios(metrics);
+
+  // ── Preview mode للخطة المجانية: سيناريو واحد فقط ─────────────
+  if (!planAllows('full_report')) {
+    const first = scenarios[0];
+    const firstMargin = metrics.revenue > 0 ? ((first.newProfit/metrics.revenue)*100).toFixed(1) : 0;
+    const _lockedCard = `
+      <div style="position:relative;border-radius:12px;overflow:hidden;">
+        <div style="filter:blur(4px);pointer-events:none;opacity:0.2;padding:20px;border:1px solid rgba(255,255,255,0.06);border-radius:12px;background:rgba(255,255,255,0.01);">
+          <div style="height:12px;background:rgba(255,255,255,0.15);border-radius:4px;margin-bottom:10px;width:70%;"></div>
+          <div style="height:9px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:8px;width:90%;"></div>
+          <div style="height:14px;background:rgba(100,200,100,0.2);border-radius:4px;width:55%;"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-size:16px;">🔒</span>
+          <button onclick="showUpgradeModal('سيناريوهات ماذا لو','one_time')"
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            اكشف هذا السيناريو
+          </button>
+        </div>
+      </div>`;
+
+    document.getElementById('scenariosPageContent').innerHTML = `
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات "ماذا لو؟"</div>
+        <div class="grid-3">
+          <!-- السيناريو الأول ظاهر -->
+          <div class="scenario-card">
+            <div class="sc-title">${first.title}</div>
+            <div class="sc-desc">${first.desc}</div>
+            <div class="sc-result" style="color:var(--gray);filter:blur(4px);user-select:none;">🔒🔒🔒</div>
+            <div style="font-size:11px;color:rgba(201,168,76,0.5);margin-top:4px;font-style:italic;">النتيجة مخفية</div>
+          </div>
+          <!-- الباقي مقفل -->
+          ${scenarios.slice(1).map(() => _lockedCard).join('')}
+        </div>
+        <div style="text-align:center;margin-top:16px;padding:16px;border-radius:10px;background:rgba(201,168,76,0.04);border:1px dashed rgba(201,168,76,0.2);">
+          <p style="font-size:12px;color:rgba(201,168,76,0.5);margin:0 0 12px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button onclick="showUpgradeModal('سيناريوهات ماذا لو','one_time')"
+              style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+              فتح جميع السيناريوهات — 29 ر.س
+            </button>
+            <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
+              style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+              اشترك — 79 ر.س/شهر
+            </button>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // ── عرض كامل للخطط المدفوعة ──────────────────────────────────
   const html = `
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات "ماذا لو؟"</div>

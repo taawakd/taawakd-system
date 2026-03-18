@@ -157,13 +157,26 @@ async function runAnalysis() {
   console.log('[Tawakkad] report.reportPeriod:', report.reportPeriod);
   window._excelReportPeriod = null;
 
+  // ── تحديد نوع الحفظ بناءً على الخطة ─────────────────────────────
+  // one_time: يُحفظ في DB للـ analytics فقط — لا يظهر في "التقارير المحفوظة"
+  // save_reports (paid/pro): يُحفظ ويظهر للمستخدم كاملاً
+  const _isSavedForUser = planAllows('save_reports'); // false للمجاني + one_time
+  const _isPaidOneTime  = (window.__USER_PLAN__ || 'free') === 'one_time';
+
+  // أضف الـ flags للكائن (لاستخدامها في localStorage والفلترة)
+  report._is_saved_for_user = _isSavedForUser;
+  report._paid_one_time     = _isPaidOneTime;
+
   STATE.currentReport = report;
-  STATE.savedReports.unshift(report);
-  // حفظ في مفتاح المشروع الحالي
-  if (typeof saveProjectReports === 'function') {
-    saveProjectReports(STATE.savedReports);
-  } else {
-    localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0, 20)));
+
+  // أضف للـ STATE.savedReports فقط إذا كان المستخدم يرى التقارير المحفوظة
+  if (_isSavedForUser) {
+    STATE.savedReports.unshift(report);
+    if (typeof saveProjectReports === 'function') {
+      saveProjectReports(STATE.savedReports);
+    } else {
+      localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0, 20)));
+    }
   }
 
   try {
@@ -178,24 +191,43 @@ async function runAnalysis() {
           period: report.period, revenue: report.metrics?.revenue || 0,
           total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
           net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
+          paid_one_time:     _isPaidOneTime,   // للـ analytics — لا يُعرض للمستخدم
+          is_saved_for_user: _isSavedForUser,  // يتحكم في الظهور في التقارير المحفوظة
           report_json: report
         };
-        // Try with report_period column; if column doesn't exist yet, fall back without it
-        // (reportPeriod is always present inside report_json as a safe fallback)
+        // Try with all new columns; fallback gracefully if columns don't exist yet
         let { error: insertErr } = await window.sb.from('reports').insert({
           ...basePayload, report_period: report.reportPeriod || null
         });
         if (insertErr) {
           console.error('[Tawakkad] Supabase insert error:', insertErr.message, insertErr);
-          // If the error is a missing column, retry without report_period
-          if (insertErr.code === '42703' || (insertErr.message && insertErr.message.includes('report_period'))) {
-            console.warn('[Tawakkad] report_period column missing — run SQL migration. Retrying without column...');
-            const { error: retryErr } = await window.sb.from('reports').insert(basePayload);
-            if (retryErr) console.error('[Tawakkad] Supabase retry insert error:', retryErr.message, retryErr);
-            else console.log('[Tawakkad] Insert succeeded without report_period (reportPeriod stored in report_json)');
+          // fallback 1: بدون report_period
+          if (insertErr.code === '42703' || (insertErr.message?.includes('report_period'))) {
+            console.warn('[Tawakkad] report_period missing — retrying without it');
+            const { error: e2 } = await window.sb.from('reports').insert(basePayload);
+            if (e2) {
+              // fallback 2: بدون الأعمدة الجديدة (paid_one_time / is_saved_for_user)
+              if (e2.code === '42703') {
+                console.warn('[Tawakkad] paid_one_time/is_saved_for_user columns missing — run migration. Retrying with minimal payload');
+                const minimalPayload = {
+                  user_id: user.id, biz_name: report.bizName, biz_type: report.bizType,
+                  period: report.period, revenue: report.metrics?.revenue || 0,
+                  total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
+                  net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
+                  report_json: report
+                };
+                const { error: e3 } = await window.sb.from('reports').insert(minimalPayload);
+                if (e3) console.error('[Tawakkad] minimal insert error:', e3.message);
+                else console.log('[Tawakkad] Insert OK (minimal — flags stored in report_json only)');
+              } else {
+                console.error('[Tawakkad] Supabase retry error:', e2.message);
+              }
+            } else {
+              console.log('[Tawakkad] Insert OK without report_period');
+            }
           }
         } else {
-          console.log('[Tawakkad] Supabase insert OK — report_period:', report.reportPeriod);
+          console.log('[Tawakkad] Supabase insert OK | paid_one_time:', _isPaidOneTime, '| is_saved_for_user:', _isSavedForUser);
         }
         // ملاحظة: زيادة analyses_used تتم من الـ API مباشرة — لا نكررها هنا
       }
@@ -203,6 +235,15 @@ async function runAnalysis() {
   } catch(saveErr) { console.error('[Tawakkad] Supabase save exception:', saveErr); }
 
   if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
+
+  // ── sync session state قبل العرض ───────────────────────────────
+  if ((window.__USER_PLAN__ || 'free') === 'one_time') {
+    STATE.isPaidOneTime = true;
+  }
+  if (STATE.isPaidOneTime) {
+    STATE.plan = 'one_time';
+  }
+
   renderResults(report);
   showPage('results');
   document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';

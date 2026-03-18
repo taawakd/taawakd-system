@@ -163,11 +163,66 @@ function calcProductCost() {
   }
 }
 
+// قالب القفل المشترك للحاسبة
+function _pcLockHTML(label) {
+  return `<span style="color:var(--gray);font-size:12px;cursor:pointer;" onclick="showUpgradeModal('حاسبة التكاليف الكاملة','one_time')">🔒 ${label||''}</span>`;
+}
+
+// قفل الأقسام التفصيلية عند الخطة المجانية
+function _pcLockDetailSections() {
+  const _sectionLock = `
+    <div style="position:relative;border-radius:12px;overflow:hidden;margin:8px 0;">
+      <div style="filter:blur(3px);pointer-events:none;opacity:0.25;padding:20px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.05);border-radius:12px;">
+        <div style="height:10px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:8px;width:60%;"></div>
+        <div style="height:8px;background:rgba(255,255,255,0.07);border-radius:4px;width:80%;"></div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span style="font-size:16px;">🔒</span>
+        <button onclick="showUpgradeModal('التفاصيل الكاملة','one_time')"
+          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          فتح التحليل الكامل
+        </button>
+      </div>
+    </div>`;
+  ['pc-alerts','pc-price-impact-table','pc-sales-impact-table','pc-comparison'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = _sectionLock;
+  });
+}
+
 // ── تحديث حقول النتائج ─────────────────────────────────────────
 function _pcSetResults(d) {
   const setEl    = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   const setColor = (id, c)   => { const e = document.getElementById(id); if (e) e.style.color = c; };
 
+  // الهامش يُعرض دائماً
+  setEl('res-margin', d.margin.toFixed(1) + '%');
+  setColor('res-margin', d.margin >= d.bench.min ? 'var(--green)' : d.margin >= 0 ? 'var(--warn)' : 'var(--red)');
+
+  // تقييم الربحية — عنوان فقط (بدون أرقام)
+  let rating = '—', rColor = 'var(--gray)';
+  if (d.salePrice > 0) {
+    if      (d.margin >= d.bench.good)        { rating = '⭐ ممتاز';  rColor = 'var(--green)'; }
+    else if (d.margin >= d.bench.min)         { rating = '✅ صحي';    rColor = 'var(--green)'; }
+    else if (d.margin >= d.bench.min * 0.6)  { rating = '⚠️ ضعيف';  rColor = 'var(--warn)';  }
+    else                                      { rating = '🔴 خطر';   rColor = 'var(--red)';   }
+  }
+  const rEl = document.getElementById('res-rating');
+  if (rEl) { rEl.textContent = rating; rEl.style.color = rColor; }
+
+  // ── بوابة الخطة المجانية: قفل كل الأرقام التفصيلية ──────────
+  if (!planAllows('full_report')) {
+    const _lock = (id) => { const e = document.getElementById(id); if (e) { e.innerHTML = _pcLockHTML(); e.style.color = ''; } };
+    _lock('res-ing-cost'); _lock('res-op-cost-unit'); _lock('res-true-cost');
+    _lock('res-profit-unit'); _lock('res-monthly-profit'); _lock('res-be-units');
+    _lock('res-product-share'); _lock('res-sales-count'); _lock('res-suggested-price');
+    const beVsEl = document.getElementById('res-be-vs-sales');
+    if (beVsEl) { beVsEl.innerHTML = _pcLockHTML(); beVsEl.style.color = ''; }
+    _pcLockDetailSections();
+    return;
+  }
+
+  // ── نتائج كاملة للخطط المدفوعة ──────────────────────────────
   setEl('res-ing-cost',      d.ingCost.toFixed(2) + ' ﷼');
   setEl('res-op-cost-unit',  d.opPerUnit.toFixed(2) + ' ﷼');
   setEl('res-true-cost',     d.trueCost.toFixed(2) + ' ﷼');
@@ -175,27 +230,12 @@ function _pcSetResults(d) {
   setEl('res-profit-unit',   (d.profitPerUnit >= 0 ? '+' : '') + d.profitPerUnit.toFixed(2) + ' ﷼');
   setColor('res-profit-unit', d.profitPerUnit >= 0 ? 'var(--green)' : 'var(--red)');
 
-  setEl('res-margin',  d.margin.toFixed(1) + '%');
-  setColor('res-margin', d.margin >= d.bench.min ? 'var(--green)' : d.margin >= 0 ? 'var(--warn)' : 'var(--red)');
-
   setEl('res-monthly-profit', fmt(Math.round(d.monthlyProfit)) + ' ﷼');
   setColor('res-monthly-profit', d.monthlyProfit >= 0 ? 'var(--green)' : 'var(--red)');
 
   setEl('res-be-units', d.beUnits === Infinity ? '—' : d.beUnits.toLocaleString('ar-SA'));
   setEl('res-product-share', (d.sharePct * 100).toFixed(1) + '%');
   setEl('res-sales-count', d.actualSales > 0 ? Math.round(d.actualSales) + ' وحدة' : '—');
-
-  // تقييم الربحية
-  let rating = '—', rColor = 'var(--gray)';
-  if (d.salePrice > 0) {
-    if      (d.margin >= d.bench.good) { rating = '⭐ ممتاز';  rColor = 'var(--green)'; }
-    else if (d.margin >= d.bench.min)  { rating = '✅ صحي';    rColor = 'var(--green)'; }
-    else if (d.margin >= d.bench.min * 0.6) { rating = '⚠️ ضعيف'; rColor = 'var(--warn)'; }
-    else                               { rating = '🔴 خطر';   rColor = 'var(--red)';  }
-  }
-  const rEl = document.getElementById('res-rating');
-  if (rEl) { rEl.textContent = rating; rEl.style.color = rColor; }
-
   setEl('res-suggested-price', d.suggestedCalc > 0 ? d.suggestedCalc.toFixed(2) + ' ﷼' : '—');
 }
 

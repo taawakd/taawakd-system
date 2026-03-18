@@ -92,8 +92,7 @@ function showPage(name, _fromHash) {
     renderBenchmarkPage();
   }
   if(name==='scenarios') {
-    if (!planAllows('full_report')) { showUpgradeModal('سيناريوهات ماذا لو', 'one_time'); return; }
-    if (window.STATE?.currentReport) renderScenariosPage();
+    if (window.STATE?.currentReport) renderScenariosPage(); // preview داخل renderScenariosPage() حسب الخطة
   }
   if(name==='compare') {
     if (!planAllows('compare_reports')) { showUpgradeModal('مقارنة التقارير', 'pro'); return; }
@@ -165,6 +164,10 @@ const PLAN_FEATURES = {
 };
 
 function planAllows(feature) {
+  // ── أولوية: session-level state بعد دفع one_time في نفس الجلسة ──
+  if (window.STATE?.isPaidOneTime && feature === 'full_report') return true;
+  if (window.STATE?.plan === 'one_time' && feature === 'full_report') return true;
+  // ── الخطة العادية من الـ server ───────────────────────────────
   const plan = window.__USER_PLAN__ || 'free';
   return (PLAN_FEATURES[plan] || PLAN_FEATURES.free).includes(feature);
 }
@@ -200,10 +203,10 @@ function showUpgradeModal(featureName, requiredPlan) {
           <li style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات ونقطة التعادل</li>
           <li style="font-size:12px;color:#555;display:flex;align-items:center;gap:6px;"><span style="color:#555;">✗</span>لا يشمل الحفظ أو AI CFO أو التقارير المستقبلية</li>
         </ul>
-        <a href="/landing.html#pricing" target="_blank"
-          style="display:block;text-align:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;">
+        <button id="btnOneTimePay"
+          style="display:block;width:100%;text-align:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">
           فتح التقرير — 29 ر.س
-        </a>
+        </button>
       </div>
 
       <!-- خيار ٢: الاشتراك الشهري — الأفضل -->
@@ -230,6 +233,12 @@ function showUpgradeModal(featureName, requiredPlan) {
     </div>`;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+
+  // ربط زر "29 ر.س" مباشرة بعد إضافة الـ overlay للـ DOM
+  const btnPay = document.getElementById('btnOneTimePay');
+  if (btnPay) {
+    btnPay.addEventListener('click', function() { _onOneTimePaid(); });
+  }
 }
 window.showUpgradeModal = showUpgradeModal;
 
@@ -239,6 +248,23 @@ function requirePlan(feature, featureName, requiredPlan, fn) {
   else { showUpgradeModal(featureName, requiredPlan || 'pro'); }
 }
 window.requirePlan = requirePlan;
+
+// ── دفع مرة واحدة: فتح التقرير الكامل في نفس الجلسة ────────
+function _onOneTimePaid() {
+  // تحديث الحالة على مستوى الجلسة — بدون إعادة تحميل
+  window.STATE = window.STATE || {};
+  window.STATE.isPaidOneTime = true;
+  window.STATE.plan          = 'one_time';
+  window.__USER_PLAN__       = 'one_time';
+
+  // إغلاق نافذة الترقية
+  const modal = document.getElementById('upgradeModalOverlay');
+  if (modal) modal.remove();
+
+  // إعادة تصيير التقرير الكامل مباشرةً — بدون navigation أو reload
+  renderResults(STATE.currentReport);
+}
+window._onOneTimePaid = _onOneTimePaid;
 
 // تسجيل الخروج
 function signOut() {
