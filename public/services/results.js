@@ -11,34 +11,32 @@ function renderResultsPreview(report) {
   const dateStr = report.reportPeriod || (createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString('ar-SA') : '—');
   document.getElementById('resultMeta').textContent = `${bizType} — تحليل ${period} — ${dateStr}`;
 
-  // ── KPIs: كل البطاقات مبهمة ومقفلة للمجاني ──────────────────────────
+  // ── KPIs: عرض البطاقات الحقيقية + backdrop-filter overlay يبهمها ────
   const kpiContainer = document.getElementById('resultKpis');
   kpiContainer.innerHTML = '';
-  kpiContainer.style.position = 'relative';
+  kpiContainer.style.cssText += ';position:relative;overflow:hidden;';
 
-  // محتوى حقيقي مبهم (margin + score)
-  const kpiInner = document.createElement('div');
-  kpiInner.style.cssText = 'display:contents;filter:blur(5px);pointer-events:none;user-select:none;';
-  const scoreCls = scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg';
-  kpiInner.innerHTML = `
-    <div class="kpi">
-      <div class="kpi-val ${scoreCls}">${scoreData.total}/100</div>
-      <div class="kpi-label">مؤشر الصحة</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-val ${netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn'}">${netMargin.toFixed(1)}%</div>
-      <div class="kpi-label">هامش الربح</div>
-    </div>`;
-  kpiContainer.appendChild(kpiInner);
+  const scoreCls  = scoreData.total >= 65 ? 'pos' : scoreData.total >= 40 ? 'warn' : 'neg';
+  const marginCls = netMargin > 15 ? 'pos' : netMargin < 5 ? 'neg' : 'warn';
 
-  // طبقة القفل فوق الـ KPIs
+  // بطاقتان حقيقيتان تُرسمان تحت الطبقة
+  const kpiScoreCard = document.createElement('div');
+  kpiScoreCard.className = 'kpi';
+  kpiScoreCard.innerHTML = `<div class="kpi-val ${scoreCls}">${scoreData.total}/100</div><div class="kpi-label">مؤشر الصحة</div>`;
+  const kpiMarginCard = document.createElement('div');
+  kpiMarginCard.className = 'kpi';
+  kpiMarginCard.innerHTML = `<div class="kpi-val ${marginCls}">${netMargin.toFixed(1)}%</div><div class="kpi-label">هامش الربح</div>`;
+  kpiContainer.appendChild(kpiScoreCard);
+  kpiContainer.appendChild(kpiMarginCard);
+
+  // overlay بـ backdrop-filter يبهم كل ما خلفه
   const kpiLock = document.createElement('div');
-  kpiLock.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;';
-  kpiLock.innerHTML = `<span style="font-size:18px;">🔒</span><span style="font-size:13px;color:#c9a84c;font-weight:600;">اضغط لرؤية النتائج</span>`;
+  kpiLock.style.cssText = 'position:absolute;inset:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(13,13,20,0.4);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;border-radius:inherit;';
+  kpiLock.innerHTML = `<span style="font-size:20px;">🔒</span><span style="font-size:14px;color:#c9a84c;font-weight:600;">اضغط لرؤية النتائج</span>`;
   kpiLock.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
   kpiContainer.appendChild(kpiLock);
 
-  // ── حلقة مؤشر الصحة: تُعرض بشكل حقيقي ثم تُبهم ──────────────────
+  // ── حلقة مؤشر الصحة: تُرسم حقيقية + backdrop-filter overlay فوقها ─
   renderScore('resScoreRing','resScoreVal','resScoreLabel','resScoreBreakdown', scoreData.total);
   const bdEl = document.getElementById('resScoreBreakdown');
   bdEl.innerHTML = '';
@@ -63,21 +61,17 @@ function renderResultsPreview(report) {
   });
   bdEl.appendChild(bdWrap);
 
-  // تبهيم الحلقة + التفاصيل وإضافة قفل فوقها
-  const scoreWrap = document.querySelector('.score-wrap');
-  if (scoreWrap) scoreWrap.style.cssText += ';filter:blur(6px);pointer-events:none;user-select:none;';
-  bdEl.style.cssText += ';filter:blur(6px);pointer-events:none;user-select:none;';
-
+  // overlay فوق كارد الحلقة (يبهم المحتوى — يبدأ بعد عنوان الكارد)
   const scoreCardEl = document.getElementById('resScoreVal')?.closest('.card');
   if (scoreCardEl) {
     scoreCardEl.style.position = 'relative';
     scoreCardEl.style.overflow = 'hidden';
     const scoreLockEl = document.createElement('div');
-    scoreLockEl.style.cssText = 'position:absolute;inset:0;top:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;';
+    scoreLockEl.style.cssText = 'position:absolute;inset:0;top:48px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(13,13,20,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;';
     scoreLockEl.innerHTML = `
-      <span style="font-size:32px;">🔒</span>
-      <span style="font-size:13px;color:#c9a84c;font-weight:600;">فتح التحليل الكامل</span>
-      <span style="font-size:11px;color:#666;">29 ر.س أو اشتراك شهري</span>`;
+      <span style="font-size:36px;">🔒</span>
+      <span style="font-size:15px;color:#c9a84c;font-weight:700;">فتح التحليل الكامل</span>
+      <span style="font-size:12px;color:#888;">29 ر.س أو اشتراك شهري</span>`;
     scoreLockEl.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
     scoreCardEl.appendChild(scoreLockEl);
   }
