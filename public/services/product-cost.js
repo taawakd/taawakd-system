@@ -361,6 +361,10 @@ function addIngredient() {
 
 // ── حفظ المنتج ─────────────────────────────────────────────────
 function saveProductCost() {
+  if (!planAllows('save_reports')) {
+    showUpgradeModal('حفظ المنتجات وتعديلها', 'pro');
+    return;
+  }
   const name = document.getElementById('pc-name')?.value?.trim();
   if (!name) { toast('أدخل اسم المنتج أولاً'); return; }
 
@@ -476,6 +480,10 @@ async function pcLoadFromDB() {
 // ── تحميل منتج في النموذج ──────────────────────────────────────
 function loadProductToForm(p) {
   if (!p) return;
+  if (!planAllows('save_reports')) {
+    showUpgradeModal('تعديل المنتجات وحفظها', 'pro');
+    return;
+  }
   const set = (id, val) => {
     const el = document.getElementById(id);
     if (el) { el.value = (val !== undefined && val !== null) ? val : ''; el.dispatchEvent(new Event('input')); }
@@ -524,6 +532,10 @@ function loadProductToForm(p) {
 
 // ── تكرار منتج ─────────────────────────────────────────────────
 function duplicateProduct(id) {
+  if (!planAllows('save_reports')) {
+    showUpgradeModal('تعديل المنتجات وحفظها', 'pro');
+    return;
+  }
   const p = PC_STATE.products.find(x => x.id === id);
   if (!p) return;
   loadProductToForm({ ...p, name: p.name + ' (نسخة)', id: Date.now().toString() });
