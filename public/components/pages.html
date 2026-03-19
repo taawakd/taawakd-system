@@ -112,7 +112,7 @@
       <!-- Score + Alerts -->
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">💯</div>مؤشر صحة المشروع</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/kpi-100.png" class="custom-icon" alt=""></div>مؤشر صحة المشروع</div>
           <div class="score-wrap">
             <div class="score-ring">
               <svg width="140" height="140" viewBox="0 0 140 140">
@@ -130,7 +130,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">⚠️</div>التنبيهات المالية</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/alert-warn.png" class="custom-icon" alt=""></div>التنبيهات المالية</div>
           <div id="alertsContainer">
             <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">لا توجد تنبيهات حالياً</div>
           </div>
@@ -140,7 +140,7 @@
       <!-- Chart -->
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">📉</div>تطور الأداء</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/chart-down.png" class="custom-icon" alt=""></div>تطور الأداء</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;">
             <button class="btn btn-ghost btn-sm" id="chartBtn-day"   onclick="switchChart('day')">اليوم</button>
             <button class="btn btn-ghost btn-sm" id="chartBtn-week"  onclick="switchChart('week')">أسبوع</button>
@@ -168,7 +168,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">🔮</div>توقع الأرباح (3 أشهر)</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/forecast.png" class="custom-icon" alt=""></div>توقع الأرباح (3 أشهر)</div>
           <div id="forecastContainer" style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">
             أجرِ تحليلاً أولاً لعرض التوقعات
           </div>
@@ -178,7 +178,7 @@
 
     <!-- Breakeven -->
     <div class="card" style="margin-top:16px;">
-      <div class="card-title"><div class="card-title-icon">⚖️</div>نقطة التعادل</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>نقطة التعادل</div>
       <div id="breakevenContainer">
         <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">أدخل بياناتك لحساب نقطة التعادل</div>
       </div>
@@ -411,7 +411,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>
           <div class="card-title" style="margin-bottom:4px;">
-            <div class="card-title-icon">📦</div>المنتجات والخدمات
+            <div class="card-title-icon"><img src="/assets/icons/products.png" class="custom-icon" alt=""></div>المنتجات والخدمات
             <span style="font-size:11px;color:var(--gray);font-weight:400;letter-spacing:0;text-transform:none;margin-right:8px">— اختياري، يزيد دقة التحليل</span>
           </div>
           <p style="font-size:12px;color:var(--gray);margin:0">أدخل منتجاتك / خدماتك لحساب هامش الربح لكل منتج وتحسين دقة التوصيات</p>
@@ -546,7 +546,7 @@
   <div class="grid-2">
     <!-- Score -->
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">💯</div>مؤشر الصحة المالية</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/kpi-100.png" class="custom-icon" alt=""></div>مؤشر الصحة المالية</div>
       <div class="score-wrap">
         <div class="score-ring">
           <svg width="140" height="140" viewBox="0 0 140 140">
@@ -565,44 +565,44 @@
 
     <!-- Benchmark -->
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">📊</div>مقارنة بالسوق</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>مقارنة بالسوق</div>
       <div id="benchmarkContainer"></div>
     </div>
   </div>
 
   <!-- Alerts -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon">🚨</div>التنبيهات المالية</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/alert-danger.png" class="custom-icon" alt=""></div>التنبيهات المالية</div>
     <div id="resultAlerts"></div>
   </div>
 
   <!-- Expense Breakdown -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon">📊</div>تحليل المصاريف</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>تحليل المصاريف</div>
     <div id="resultExpenses"></div>
   </div>
 
   <!-- Breakeven + Products -->
   <div class="grid-2" style="margin-top:16px;">
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">⚖️</div>نقطة التعادل</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>نقطة التعادل</div>
       <div id="resultBreakeven"></div>
     </div>
     <div class="card">
-      <div class="card-title"><div class="card-title-icon">🏆</div>تحليل المنتجات</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/trophy.png" class="custom-icon" alt=""></div>تحليل المنتجات</div>
       <div id="resultProducts"></div>
     </div>
   </div>
 
   <!-- AI Analysis -->
   <div class="card" style="margin-top:16px;" id="aiAnalysisCard">
-    <div class="card-title"><div class="card-title-icon">🤖</div>التحليل الذكي</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/ai-cfo.png" class="custom-icon" alt=""></div>التحليل الذكي</div>
     <div id="aiBlocks"></div>
   </div>
 
   <!-- Scenarios -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات افتراضية</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/checklist.png" class="custom-icon" alt=""></div>سيناريوهات افتراضية</div>
     <div class="grid-3" id="scenariosContainer"></div>
   </div>
 </div>
@@ -737,7 +737,7 @@
   </div>
   <!-- Cash input -->
   <div class="card" style="margin-top:20px;">
-    <div class="card-title"><div class="card-title-icon">🏦</div>بيانات السيولة</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/cashflow.png" class="custom-icon" alt=""></div>بيانات السيولة</div>
     <div class="form-grid">
       <div class="form-group"><label>الرصيد النقدي الحالي (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label><input class="input num-input" id="cf-cash" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
       <div class="form-group"><label>المصاريف الثابتة الشهرية</label><input class="input num-input" id="cf-fixed" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
@@ -805,7 +805,7 @@
 
   <!-- Google Sheets connect panel -->
   <div class="card" id="gsheetPanel" style="display:none;">
-    <div class="card-title"><div class="card-title-icon">📊</div>ربط Google Sheets</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>ربط Google Sheets</div>
     <div class="form-grid">
       <div class="form-group full"><label>رابط الجدول (يجب أن يكون مشاركاً للعموم)</label>
         <input class="input" id="gsheet-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." dir="ltr">
@@ -871,7 +871,7 @@
 
         <!-- معلومات أساسية -->
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">🏷️</div>معلومات المشروع</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/price-tag.png" class="custom-icon" alt=""></div>معلومات المشروع</div>
           <div class="form-grid">
             <div class="form-group"><label>اسم المشروع</label>
               <input class="input" id="bp-name" type="text" placeholder="مطعم الوليد"></div>
@@ -907,7 +907,7 @@
 
         <!-- التكاليف الثابتة -->
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">📌</div>التكاليف الثابتة الشهرية</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/fixed-costs.png" class="custom-icon" alt=""></div>التكاليف الثابتة الشهرية</div>
           <p style="color:var(--gray);font-size:12px;margin-bottom:12px">تكاليف لا تتغير بغض النظر عن حجم المبيعات</p>
           <div class="form-grid">
             <div class="form-group"><label>الإيجار (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label>
@@ -931,7 +931,7 @@
 
         <!-- التكاليف المتغيرة -->
         <div class="card">
-          <div class="card-title"><div class="card-title-icon">📊</div>التكاليف المتغيرة (% من الإيرادات)</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>التكاليف المتغيرة (% من الإيرادات)</div>
           <p style="color:var(--gray);font-size:12px;margin-bottom:12px">تكاليف ترتفع وتنخفض مع حجم المبيعات</p>
           <div class="form-grid">
             <div class="form-group"><label>تكلفة البضاعة COGS %</label>
@@ -948,7 +948,7 @@
 
       <!-- العمود الأيسر: قائمة المنتجات -->
       <div class="card" style="height:fit-content">
-        <div class="card-title"><div class="card-title-icon">📦</div>قائمة المنتجات</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/products.png" class="custom-icon" alt=""></div>قائمة المنتجات</div>
         <p style="color:var(--gray);font-size:12px;margin-bottom:12px">سعر التكلفة وسعر البيع لكل منتج — النظام يحسب الهامش الحقيقي</p>
 
         <!-- إضافة منتج -->
@@ -1305,7 +1305,7 @@
 
       <!-- بيانات المنتج -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">📝</div>بيانات المنتج</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/doc-data.png" class="custom-icon" alt=""></div>بيانات المنتج</div>
         <div class="form-grid">
           <div class="form-group full">
             <label>اسم المنتج</label>
@@ -1342,7 +1342,7 @@
 
       <!-- مكونات المنتج -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">🧪</div>مكونات المنتج (تكلفة البضاعة / وحدة واحدة)</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/ingredients.png" class="custom-icon" alt=""></div>مكونات المنتج (تكلفة البضاعة / وحدة واحدة)</div>
 
         <!-- رأس الجدول -->
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;">
@@ -1376,7 +1376,7 @@
 
     <!-- ── التكاليف التشغيلية ── -->
     <div class="card" style="margin-bottom:20px">
-      <div class="card-title"><div class="card-title-icon">⚙️</div>التكاليف التشغيلية الشهرية للمشروع بالكامل</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/opex.png" class="custom-icon" alt=""></div>التكاليف التشغيلية الشهرية للمشروع بالكامل</div>
       <p style="color:var(--gray);font-size:12px;margin-bottom:14px">أدخل تكاليف مشروعك الشهرية لحساب حصة هذا المنتج منها بدقة</p>
       <div class="form-grid">
         <div class="form-group"><label>الإيجار (﷼)</label>
@@ -1413,7 +1413,7 @@
 
       <!-- النتائج -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">📊</div>النتائج والتحليل</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>النتائج والتحليل</div>
         <div style="display:flex;flex-direction:column;gap:10px">
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1467,7 +1467,7 @@
 
       <!-- التنبيهات + الهامش المستهدف -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">🔔</div>التنبيهات والتوصيات</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/bell.png" class="custom-icon" alt=""></div>التنبيهات والتوصيات</div>
         <div id="pc-alerts" style="margin-bottom:16px">
           <div style="color:var(--gray);font-size:13px;text-align:center;padding:10px">أدخل البيانات لرؤية التنبيهات</div>
         </div>
@@ -1501,7 +1501,7 @@
 
       <!-- نقطة التعادل -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">⚖️</div>نقطة التعادل لهذا المنتج</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>نقطة التعادل لهذا المنتج</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
           <div style="background:rgba(91,143,204,0.08);border:1px solid rgba(91,143,204,0.2);border-radius:10px;padding:16px;text-align:center">
@@ -1531,7 +1531,7 @@
 
       <!-- تأثير تغيير المبيعات -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon">📉</div>تأثير تغيير المبيعات على الربح</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/chart-down.png" class="custom-icon" alt=""></div>تأثير تغيير المبيعات على الربح</div>
         <p style="color:var(--gray);font-size:12px;margin-bottom:14px">شوف كيف تتغير أرباحك إذا زادت أو نقصت مبيعات هذا المنتج</p>
         <div id="pc-sales-impact-table" style="font-size:13px"></div>
       </div>
@@ -1539,7 +1539,7 @@
 
     <!-- ── مقارنة المنتجات ── -->
     <div class="card" style="margin-bottom:20px">
-      <div class="card-title"><div class="card-title-icon">⚖️</div>مقارنة المنتجات المحفوظة</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>مقارنة المنتجات المحفوظة</div>
       <p style="color:var(--gray);font-size:12px;margin-bottom:14px">احفظ أكثر من منتج لمقارنة ربحيتها ومعرفة الأفضل والأقل</p>
       <div id="pc-comparison">
         <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">احفظ منتجات لمقارنتها هنا</div>
@@ -1648,7 +1648,7 @@
     <!-- بطاقة الاشتراك -->
     <div style="grid-column:1/-1">
       <div class="card" style="padding:24px">
-        <div class="card-title" style="margin-bottom:20px"><div class="card-title-icon">💎</div>معلومات الاشتراك</div>
+        <div class="card-title" style="margin-bottom:20px"><div class="card-title-icon"><img src="/assets/icons/diamond.png" class="custom-icon" alt=""></div>معلومات الاشتراك</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
           <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
             <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">الخطة الحالية</div>

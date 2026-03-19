@@ -28,53 +28,53 @@
   <nav class="sb-nav">
     <div class="sb-section">الرئيسية</div>
     <div class="nav-item active" onclick="showPage('dashboard')">
-      <span class="nav-icon">📊</span> لوحة التحكم
+      <span class="nav-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></span> لوحة التحكم
     </div>
     <div class="nav-item" onclick="showPage('analysis')">
-      <span class="nav-icon">🔍</span> تحليل جديد
+      <span class="nav-icon"><img src="/assets/icons/new-analysis.png" class="custom-icon" alt=""></span> تحليل جديد
     </div>
     <div class="nav-item" onclick="showPage('reports')">
-      <span class="nav-icon">📁</span> التقارير المحفوظة
+      <span class="nav-icon"><img src="/assets/icons/saved-reports.png" class="custom-icon" alt=""></span> التقارير المحفوظة
       <span id="sb-lock-reports" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
 
     <div class="sb-section" style="margin-top:16px;">الأدوات</div>
     <div class="nav-item" onclick="showPage('benchmark')">
-      <span class="nav-icon">📈</span> مقارنة السوق
+      <span class="nav-icon"><img src="/assets/icons/benchmark.png" class="custom-icon" alt=""></span> مقارنة السوق
       <span id="sb-lock-benchmark" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
     <div class="nav-item" onclick="showPage('scenarios')">
-      <span class="nav-icon">🎯</span> سيناريوهات
+      <span class="nav-icon"><img src="/assets/icons/checklist.png" class="custom-icon" alt=""></span> سيناريوهات
     </div>
     <div class="nav-item" onclick="showPage('profile')">
-        <span class="nav-icon">🏢</span> ملف المشروع
-      </div>
-    <div class="nav-item" onclick="showPage('costcalc')">
-      <span class="nav-icon">🧮</span> حاسبة تكلفة المنتج
+      <span class="nav-icon"><img src="/assets/icons/profile.png" class="custom-icon" alt=""></span> ملف المشروع
     </div>
-      <div class="nav-item" onclick="showPage('compare')">
-      <span class="nav-icon">⚖️</span> مقارنة الفترات
+    <div class="nav-item" onclick="showPage('costcalc')">
+      <span class="nav-icon"><img src="/assets/icons/cost-calc.png" class="custom-icon" alt=""></span> حاسبة تكلفة المنتج
+    </div>
+    <div class="nav-item" onclick="showPage('compare')">
+      <span class="nav-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></span> مقارنة الفترات
       <span id="sb-lock-compare" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
 
     <div class="sb-section" style="margin-top:16px;">ذكاء اصطناعي</div>
     <div class="nav-item" id="nav-cfo" onclick="showPage('cfo')">
-      <span class="nav-icon">🤖</span> <span>AI CFO</span>
+      <span class="nav-icon"><img src="/assets/icons/ai-cfo.png" class="custom-icon" alt=""></span> <span>AI CFO</span>
       <span style="font-size:10px;background:var(--gold);color:#000;padding:2px 7px;border-radius:10px;font-weight:700;margin-right:auto;">جديد</span>
     </div>
-    <div class="nav-item" onclick="showPage('actionplan')"><span class="nav-icon">📋</span> خطة العمل</div>
-    <div class="nav-item" onclick="showPage('cashflow')"><span class="nav-icon">💧</span> التدفق النقدي</div>
-    <div class="nav-item" onclick="showPage('integrations')"><span class="nav-icon">🔌</span> الربط والاستيراد</div>
-    <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon">💲</span> تحليل التسعير</div>
-    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">🔮</span> التوقعات الذكية
+    <div class="nav-item" onclick="showPage('actionplan')"><span class="nav-icon"><img src="/assets/icons/action-plan.png" class="custom-icon" alt=""></span> خطة العمل</div>
+    <div class="nav-item" onclick="showPage('cashflow')"><span class="nav-icon"><img src="/assets/icons/cashflow.png" class="custom-icon" alt=""></span> التدفق النقدي</div>
+    <div class="nav-item" onclick="showPage('integrations')"><span class="nav-icon"><img src="/assets/icons/reports-compare.png" class="custom-icon" alt=""></span> الربط والاستيراد</div>
+    <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon"><img src="/assets/icons/pricing.png" class="custom-icon" alt=""></span> تحليل التسعير</div>
+    <div class="nav-item" onclick="showPage('forecast')"><span class="nav-icon"><img src="/assets/icons/forecast.png" class="custom-icon" alt=""></span> التوقعات الذكية
       <span id="sb-lock-forecast" style="font-size:11px;color:#666;margin-right:auto;display:none;">🔒</span>
     </div>
-    <div class="nav-item" onclick="showPage('healthadvisor')"><span class="nav-icon">❤️</span> مستشار الصحة</div>
+    <div class="nav-item" onclick="showPage('healthadvisor')"><span class="nav-icon"><img src="/assets/icons/health-score.png" class="custom-icon" alt=""></span> مستشار الصحة</div>
 
     <!-- Admin — مخفي افتراضياً, يظهر فقط لحسابات is_admin -->
     <div class="sb-section" id="nav-admin-section" style="margin-top:16px;display:none">الإدارة</div>
     <div class="nav-item" onclick="showPage('admin')" id="nav-admin" style="display:none">
-      <span class="nav-icon">⚙️</span> لوحة الإدارة
+      <span class="nav-icon"><img src="/assets/icons/settings.png" class="custom-icon" alt=""></span> لوحة الإدارة
     </div>
   </nav>
 
