@@ -31,17 +31,52 @@ window._clearDashboard = _clearDashboard;
 // ── عرض Dashboard للخطة المجانية (بيانات محجوبة) ──────────────────
 function _renderDashboardPreview(rep) {
   const score = rep.scoreData.total;
+  const scoreCls = score >= 65 ? 'pos' : score >= 40 ? 'warn' : 'neg';
 
-  // مؤشر الصحة + حلقة التقييم
-  document.getElementById('dk-health').textContent = score + '/100';
+  // ── KPI row: عرض القيم الحقيقية + overlay يبهمها جميعاً ─────────────
+  const m = rep.metrics || {};
+  const dkRev    = document.getElementById('dk-rev');
+  const dkProfit = document.getElementById('dk-profit');
+  const dkMargin = document.getElementById('dk-margin');
+  const dkHealth = document.getElementById('dk-health');
+  if (dkRev)    { dkRev.textContent    = fmt(m.revenue    || 0); dkRev.className    = 'kpi-val neu'; }
+  if (dkProfit) { dkProfit.textContent = fmt(m.netProfit  || 0); dkProfit.className = 'kpi-val ' + (m.netProfit >= 0 ? 'pos' : 'neg'); }
+  if (dkMargin) { dkMargin.textContent = (m.netMargin || 0).toFixed(1) + '%'; dkMargin.className = 'kpi-val ' + (m.netMargin > 15 ? 'pos' : m.netMargin < 5 ? 'neg' : 'warn'); }
+  if (dkHealth) { dkHealth.textContent = score + '/100'; dkHealth.className = 'kpi-val ' + scoreCls; }
+
+  // overlay فوق كل الـ KPIs
+  const dashKpis = document.getElementById('dashKpis');
+  if (dashKpis) {
+    dashKpis.style.cssText += ';position:relative;overflow:hidden;';
+    // أزل أي overlay سابق
+    dashKpis.querySelector('[data-lock-overlay]')?.remove();
+    const kpiOverlay = document.createElement('div');
+    kpiOverlay.setAttribute('data-lock-overlay', '1');
+    kpiOverlay.style.cssText = 'position:absolute;inset:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(13,13,20,0.4);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;border-radius:inherit;z-index:2;';
+    kpiOverlay.innerHTML = `<span style="font-size:20px;">🔒</span><span style="font-size:14px;color:#c9a84c;font-weight:600;">اضغط لرؤية النتائج</span>`;
+    kpiOverlay.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+    dashKpis.appendChild(kpiOverlay);
+  }
+
+  // ── حلقة المؤشر: تُرسم حقيقية + overlay يبهمها ─────────────────────
   renderScore('scoreRingFill', 'scoreVal', 'scoreLabel', 'scoreBreakdown', score);
 
-  // حجب الأرقام المالية الثلاثة
-  const _lock = (id) => {
-    const el = document.getElementById(id);
-    if (el) { el.textContent = '🔒'; el.className = 'kpi-val'; }
-  };
-  _lock('dk-rev'); _lock('dk-profit'); _lock('dk-margin');
+  // overlay فوق كارد الحلقة (يبدأ بعد عنوان الكارد)
+  const scoreCardEl = document.getElementById('scoreVal')?.closest('.card');
+  if (scoreCardEl) {
+    scoreCardEl.style.position = 'relative';
+    scoreCardEl.style.overflow = 'hidden';
+    scoreCardEl.querySelector('[data-lock-overlay]')?.remove();
+    const scoreLock = document.createElement('div');
+    scoreLock.setAttribute('data-lock-overlay', '1');
+    scoreLock.style.cssText = 'position:absolute;inset:0;top:48px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(13,13,20,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;z-index:2;';
+    scoreLock.innerHTML = `
+      <span style="font-size:36px;">🔒</span>
+      <span style="font-size:15px;color:#c9a84c;font-weight:700;">فتح التحليل الكامل</span>
+      <span style="font-size:12px;color:#888;">29 ر.س أو اشتراك شهري</span>`;
+    scoreLock.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+    scoreCardEl.appendChild(scoreLock);
+  }
 
   // ── رسالة ديناميكية: فضول + نقص معلومات ────────────────
   const _msg = (() => {
