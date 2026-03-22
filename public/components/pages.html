@@ -168,7 +168,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/forecast.png" class="custom-icon" alt=""></div>توقع الأرباح (3 أشهر)</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/forecast-card.png" class="custom-icon" alt=""></div>توقع الأرباح (3 أشهر)</div>
           <div id="forecastContainer" style="color:var(--gray);font-size:13px;text-align:center;padding:20px;">
             أجرِ تحليلاً أولاً لعرض التوقعات
           </div>
@@ -178,7 +178,7 @@
 
     <!-- Breakeven -->
     <div class="card" style="margin-top:16px;">
-      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>نقطة التعادل</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare-card.png" class="custom-icon" alt=""></div>نقطة التعادل</div>
       <div id="breakevenContainer">
         <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">أدخل بياناتك لحساب نقطة التعادل</div>
       </div>
@@ -565,27 +565,27 @@
 
     <!-- Benchmark -->
     <div class="card">
-      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>مقارنة بالسوق</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard-card.png" class="custom-icon" alt=""></div>مقارنة بالسوق</div>
       <div id="benchmarkContainer"></div>
     </div>
   </div>
 
   <!-- Alerts -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/alert-danger.png" class="custom-icon" alt=""></div>التنبيهات المالية</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/alert-warn.png" class="custom-icon" alt=""></div>التنبيهات المالية</div>
     <div id="resultAlerts"></div>
   </div>
 
   <!-- Expense Breakdown -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>تحليل المصاريف</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard-card.png" class="custom-icon" alt=""></div>تحليل المصاريف</div>
     <div id="resultExpenses"></div>
   </div>
 
   <!-- Breakeven + Products -->
   <div class="grid-2" style="margin-top:16px;">
     <div class="card">
-      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>نقطة التعادل</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare-card.png" class="custom-icon" alt=""></div>نقطة التعادل</div>
       <div id="resultBreakeven"></div>
     </div>
     <div class="card">
@@ -596,13 +596,13 @@
 
   <!-- AI Analysis -->
   <div class="card" style="margin-top:16px;" id="aiAnalysisCard">
-    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/ai-cfo.png" class="custom-icon" alt=""></div>التحليل الذكي</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/ai-analysis.png" class="custom-icon" alt=""></div>التحليل الذكي</div>
     <div id="aiBlocks"></div>
   </div>
 
   <!-- Scenarios -->
   <div class="card" style="margin-top:16px;">
-    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/checklist.png" class="custom-icon" alt=""></div>سيناريوهات افتراضية</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/checklist-card.png" class="custom-icon" alt=""></div>سيناريوهات افتراضية</div>
     <div class="grid-3" id="scenariosContainer"></div>
   </div>
 </div>
@@ -737,7 +737,7 @@
   </div>
   <!-- Cash input -->
   <div class="card" style="margin-top:20px;">
-    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/cashflow.png" class="custom-icon" alt=""></div>بيانات السيولة</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/cashflow-card.png" class="custom-icon" alt=""></div>بيانات السيولة</div>
     <div class="form-grid">
       <div class="form-group"><label>الرصيد النقدي الحالي (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>)</label><input class="input num-input" id="cf-cash" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
       <div class="form-group"><label>المصاريف الثابتة الشهرية</label><input class="input num-input" id="cf-fixed" inputmode="numeric" placeholder="0" oninput="calcCashFlow()"></div>
@@ -805,7 +805,7 @@
 
   <!-- Google Sheets connect panel -->
   <div class="card" id="gsheetPanel" style="display:none;">
-    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>ربط Google Sheets</div>
+    <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard-card.png" class="custom-icon" alt=""></div>ربط Google Sheets</div>
     <div class="form-grid">
       <div class="form-group full"><label>رابط الجدول (يجب أن يكون مشاركاً للعموم)</label>
         <input class="input" id="gsheet-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." dir="ltr">
@@ -931,7 +931,7 @@
 
         <!-- التكاليف المتغيرة -->
         <div class="card">
-          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>التكاليف المتغيرة (% من الإيرادات)</div>
+          <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard-card.png" class="custom-icon" alt=""></div>التكاليف المتغيرة (% من الإيرادات)</div>
           <p style="color:var(--gray);font-size:12px;margin-bottom:12px">تكاليف ترتفع وتنخفض مع حجم المبيعات</p>
           <div class="form-grid">
             <div class="form-group"><label>تكلفة البضاعة COGS %</label>
@@ -1413,7 +1413,7 @@
 
       <!-- النتائج -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard.png" class="custom-icon" alt=""></div>النتائج والتحليل</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/dashboard-card.png" class="custom-icon" alt=""></div>النتائج والتحليل</div>
         <div style="display:flex;flex-direction:column;gap:10px">
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1501,7 +1501,7 @@
 
       <!-- نقطة التعادل -->
       <div class="card">
-        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>نقطة التعادل لهذا المنتج</div>
+        <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare-card.png" class="custom-icon" alt=""></div>نقطة التعادل لهذا المنتج</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
           <div style="background:rgba(91,143,204,0.08);border:1px solid rgba(91,143,204,0.2);border-radius:10px;padding:16px;text-align:center">
@@ -1539,7 +1539,7 @@
 
     <!-- ── مقارنة المنتجات ── -->
     <div class="card" style="margin-bottom:20px">
-      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare.png" class="custom-icon" alt=""></div>مقارنة المنتجات المحفوظة</div>
+      <div class="card-title"><div class="card-title-icon"><img src="/assets/icons/compare-card.png" class="custom-icon" alt=""></div>مقارنة المنتجات المحفوظة</div>
       <p style="color:var(--gray);font-size:12px;margin-bottom:14px">احفظ أكثر من منتج لمقارنة ربحيتها ومعرفة الأفضل والأقل</p>
       <div id="pc-comparison">
         <div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">احفظ منتجات لمقارنتها هنا</div>
