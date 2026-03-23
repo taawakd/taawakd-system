@@ -11,12 +11,9 @@ async function initApp() {
     const pc = document.getElementById('pages-container');
     if (sc) sc.innerHTML = sidebarHTML;
     if (pc) pc.innerHTML = pagesHTML;
-    // تطبيق الشعار الصحيح فور حقن السايدبار — مباشر بدون اعتماد على دالة خارجية
-    var _logoSrc = document.body.classList.contains('light-mode')
-      ? '/logo-light.png'
-      : '/logo.png';
+    // تطبيق الشعار — الوضع الداكن فقط
     document.querySelectorAll('.tw-logo-img').forEach(function(img) {
-      img.src = _logoSrc;
+      img.src = '/logo.png';
     });
     if (typeof initNumInputs === 'function') initNumInputs();
     if (typeof initProdsSection === 'function') initProdsSection();

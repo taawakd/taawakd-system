@@ -1339,13 +1339,5 @@ const trustObs = new IntersectionObserver(entries => {
 const trustBar = document.querySelector('.trust-bar-inner');
 if (trustBar) trustObs.observe(trustBar.closest('.trust-bar'));
 </script>
-<script>
-// تبديل شعار الهيدر حسب الثيم المحفوظ
-(function() {
-  var isLight = localStorage.getItem('tw_theme') === 'light';
-  var img = document.getElementById('landingLogoImg');
-  if (img) img.src = isLight ? '/logo-light.png' : '/logo.png';
-})();
-</script>
 </body>
 </html>
