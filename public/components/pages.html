@@ -186,8 +186,8 @@
 
   </div>
 
-  <!-- Floating AI Button -->
-  <button onclick="showPage('aicfo')" style="position:fixed;bottom:28px;left:28px;z-index:9999;width:52px;height:52px;border-radius:9999px;background:#C9A646;color:#000;font-size:14px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(201,166,70,0.5),0 2px 6px rgba(0,0,0,0.3);letter-spacing:0.5px;transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 6px 22px rgba(201,166,70,0.65),0 2px 8px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 16px rgba(201,166,70,0.5),0 2px 6px rgba(0,0,0,0.3)'">AI</button>
+  <!-- Floating Support Button -->
+  <button id="supportFloatBtn" onclick="toggleSupportChat()" title="خدمة العملاء" style="position:fixed;bottom:28px;left:28px;z-index:9999;width:52px;height:52px;border-radius:9999px;background:#C9A646;color:#000;font-size:22px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(201,166,70,0.5),0 2px 6px rgba(0,0,0,0.3);letter-spacing:0.5px;transition:transform 0.15s,box-shadow 0.15s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 6px 22px rgba(201,166,70,0.65),0 2px 8px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 16px rgba(201,166,70,0.5),0 2px 6px rgba(0,0,0,0.3)'">💬</button>
 
 </div>
 
@@ -1752,3 +1752,278 @@
     ✅ ضمان استرداد المبلغ خلال 7 أيام &nbsp;·&nbsp; 🔒 دفع آمن &nbsp;·&nbsp; 📞 دعم على مدار الساعة
   </p>
 </div><!-- /page-plans -->
+
+
+<!-- ════ SUPPORT CHAT WIDGET ════ -->
+<style>
+#supportChatWidget {
+  position: fixed;
+  bottom: 92px;
+  left: 20px;
+  z-index: 9998;
+  width: 340px;
+  max-height: 500px;
+  background: var(--card, #1a1a2e);
+  border: 1px solid var(--border, #2a2a3e);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: inherit;
+  animation: supportSlideUp 0.22s ease;
+}
+#supportChatWidget.open { display: flex; }
+@keyframes supportSlideUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#supportChatHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  background: linear-gradient(135deg, #C9A646, #e0b94a);
+  color: #000;
+  border-radius: 18px 18px 0 0;
+}
+#supportChatHeader .sc-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+#supportChatHeader .sc-info { flex: 1; }
+#supportChatHeader .sc-name { font-weight: 700; font-size: 14px; line-height: 1.2; }
+#supportChatHeader .sc-status { font-size: 11px; opacity: 0.75; }
+#supportChatHeader .sc-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: #000; opacity: 0.6; padding: 2px 4px;
+  line-height: 1; border-radius: 6px;
+  transition: opacity 0.15s;
+}
+#supportChatHeader .sc-close:hover { opacity: 1; }
+#supportChatMessages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+  max-height: 300px;
+}
+#supportChatMessages::-webkit-scrollbar { width: 4px; }
+#supportChatMessages::-webkit-scrollbar-thumb { background: var(--border,#333); border-radius:4px; }
+.sc-msg {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.sc-msg.bot {
+  background: var(--bg2, #252540);
+  color: var(--text, #e8e8f0);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.sc-msg.user {
+  background: #C9A646;
+  color: #000;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.sc-msg.typing {
+  background: var(--bg2, #252540);
+  color: var(--gray, #888);
+  align-self: flex-start;
+  font-style: italic;
+  font-size: 12px;
+}
+.sc-whatsapp-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #25D366; color: #fff;
+  border: none; border-radius: 10px;
+  padding: 7px 14px; font-size: 12px; font-weight: 600;
+  cursor: pointer; margin-top: 6px; text-decoration: none;
+  transition: background 0.15s;
+}
+.sc-whatsapp-btn:hover { background: #1ebe5d; }
+#supportChatInputArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border, #2a2a3e);
+  background: var(--card, #1a1a2e);
+}
+#supportChatInput {
+  flex: 1;
+  background: var(--bg2, #252540);
+  border: 1px solid var(--border, #2a2a3e);
+  border-radius: 10px;
+  color: var(--text, #e8e8f0);
+  font-size: 13px;
+  padding: 9px 12px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  height: 38px;
+  max-height: 90px;
+  overflow-y: auto;
+  line-height: 1.4;
+  transition: border-color 0.15s;
+}
+#supportChatInput:focus { border-color: #C9A646; }
+#supportChatInput::placeholder { color: var(--gray, #888); }
+#supportChatSend {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: #C9A646; color: #000;
+  border: none; border-radius: 10px;
+  cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+#supportChatSend:hover { background: #e0b94a; transform: scale(1.05); }
+#supportChatSend:disabled { background: var(--bg2,#252540); color: var(--gray,#888); cursor: not-allowed; transform: none; }
+/* Light mode */
+body.light-mode #supportChatWidget { background: #fff; border-color: #e5e5e5; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+body.light-mode .sc-msg.bot { background: #f4f4f8; color: #222; }
+body.light-mode #supportChatInputArea { background: #fff; border-color: #e5e5e5; }
+body.light-mode #supportChatInput { background: #f4f4f8; border-color: #ddd; color: #222; }
+body.light-mode #supportChatMessages { scrollbar-color: #ddd transparent; }
+</style>
+
+<div id="supportChatWidget">
+  <div id="supportChatHeader">
+    <div class="sc-avatar">🤖</div>
+    <div class="sc-info">
+      <div class="sc-name">مساعد توكّد</div>
+      <div class="sc-status">متاح الآن · دعم فوري</div>
+    </div>
+    <button class="sc-close" onclick="toggleSupportChat()" title="إغلاق">✕</button>
+  </div>
+  <div id="supportChatMessages"></div>
+  <div id="supportChatInputArea">
+    <textarea id="supportChatInput" placeholder="اكتب سؤالك أو مشكلتك..." rows="1"></textarea>
+    <button id="supportChatSend" onclick="supportChatSend()">➤</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var SC_HISTORY = [];
+  var SC_OPEN = false;
+  var SC_TYPING = false;
+  var SC_GREETED = false;
+
+  window.toggleSupportChat = function() {
+    SC_OPEN = !SC_OPEN;
+    var widget = document.getElementById('supportChatWidget');
+    if (SC_OPEN) {
+      widget.classList.add('open');
+      if (!SC_GREETED) {
+        SC_GREETED = true;
+        _scAppendMsg('bot', 'مرحباً! 👋 أنا مساعد توكّد. كيف أقدر أساعدك اليوم؟');
+      }
+      setTimeout(function(){ document.getElementById('supportChatInput').focus(); }, 80);
+    } else {
+      widget.classList.remove('open');
+    }
+  };
+
+  window.supportChatSend = function() {
+    var input = document.getElementById('supportChatInput');
+    var msg = input.value.trim();
+    if (!msg || SC_TYPING) return;
+    input.value = '';
+    input.style.height = '38px';
+    _scAppendMsg('user', msg);
+    SC_HISTORY.push({ role: 'user', content: msg });
+    _scSetTyping(true);
+
+    var historyToSend = SC_HISTORY.slice(0, -1); // بدون آخر رسالة المستخدم (مُرسلة منفردة)
+
+    fetch('/api/support', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: historyToSend })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      _scSetTyping(false);
+      var reply = data.reply || data.error || 'عذراً، حدث خطأ. حاول مرة أخرى.';
+      _scAppendMsg('bot', reply);
+      SC_HISTORY.push({ role: 'assistant', content: reply });
+      // إذا أشار الرد لواتساب، أضف زر مباشر
+      if (reply.includes('واتساب') || reply.includes('الدعم')) {
+        _scAppendWhatsApp();
+      }
+    })
+    .catch(function() {
+      _scSetTyping(false);
+      _scAppendMsg('bot', 'تعذّر الاتصال. تحقق من الإنترنت أو تواصل معنا مباشرة.');
+      _scAppendWhatsApp();
+    });
+  };
+
+  function _scAppendMsg(role, text) {
+    var msgs = document.getElementById('supportChatMessages');
+    var div = document.createElement('div');
+    div.className = 'sc-msg ' + role;
+    div.textContent = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function _scAppendWhatsApp() {
+    var msgs = document.getElementById('supportChatMessages');
+    var wrapper = document.createElement('div');
+    wrapper.style.alignSelf = 'flex-start';
+    var a = document.createElement('a');
+    a.href = 'https://wa.me/966500000000?text=' + encodeURIComponent('مرحباً، أحتاج مساعدة في منصة توكّد');
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'sc-whatsapp-btn';
+    a.innerHTML = '💬 تواصل عبر واتساب';
+    wrapper.appendChild(a);
+    msgs.appendChild(wrapper);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function _scSetTyping(on) {
+    SC_TYPING = on;
+    document.getElementById('supportChatSend').disabled = on;
+    var existing = document.querySelector('.sc-msg.typing');
+    if (on && !existing) {
+      var msgs = document.getElementById('supportChatMessages');
+      var div = document.createElement('div');
+      div.className = 'sc-msg typing';
+      div.textContent = 'يكتب...';
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    } else if (!on && existing) {
+      existing.remove();
+    }
+  }
+
+  // إرسال بـ Enter (Shift+Enter سطر جديد)
+  document.addEventListener('DOMContentLoaded', function() {
+    var inp = document.getElementById('supportChatInput');
+    if (!inp) return;
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        supportChatSend();
+      }
+    });
+    inp.addEventListener('input', function() {
+      this.style.height = '38px';
+      this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+    });
+  });
+})();
+</script>
