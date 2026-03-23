@@ -46,7 +46,7 @@ export default async function handler(req, res) {
   // ── قراءة الخطة والعدّادات من قاعدة البيانات ──────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at')
+    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, has_used_free_analysis')
     .eq('id', user.id).single();
 
   const plan      = profile?.plan || 'free';
@@ -126,6 +126,22 @@ export default async function handler(req, res) {
       .eq('id', user.id);
   }
 
+  // ── منطق التحليل المجاني الأول (للمستخدمين المجانيين فقط) ───────────────
+  // كل مستخدم مجاني يحصل على تحليل واحد مفتوح بالكامل
+  // بعده تُقفل النتائج حتى يدفع
+  let firstAnalysis = false;
+  if (!isPaidPlan && !isCFOReq) {
+    const hasUsedFree = profile?.has_used_free_analysis ?? false;
+    if (!hasUsedFree) {
+      // هذا هو التحليل المجاني الأول — افتحه وسجّله
+      await supabase.from('profiles')
+        .update({ has_used_free_analysis: true })
+        .eq('id', user.id);
+      firstAnalysis = true;
+    }
+    // إذا كان hasUsedFree = true → firstAnalysis يبقى false → النتائج مقفلة في الـ frontend
+  }
+
   // حد التحليلات للعرض في الـ frontend
   const planLimit = isPaidPlan ? PAID_ANALYSES_PER_MONTH : Infinity;
 
@@ -163,6 +179,7 @@ export default async function handler(req, res) {
         return res.status(200).json({
           content: [{ type: 'text', text: cached.result_text }],
           from_cache: true,
+          first_analysis: firstAnalysis,
           analyses_used: (profile?.analyses_used || 0) + 1,
           analyses_limit: planLimit
         });
@@ -262,6 +279,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       content: [{ type: 'text', text: resultText }],
       from_cache: false,
+      first_analysis: firstAnalysis,
       analyses_used: (profile?.analyses_used || 0) + 1,
       analyses_limit: planLimit
     });

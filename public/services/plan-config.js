@@ -10,8 +10,9 @@ window.PLAN_CONFIG = {
   PRICE_MONTHLY  : 79,    // ريال / شهر — اشتراك كامل
 
   // ── حدود الاستخدام ────────────────────────────────────────────────────────
-  //   free  : يقدر يشغّل تحليلات بدون حد، لكن النتائج مقفلة دائماً
+  //   free  : تحليل واحد مفتوح بالكامل (أول تحليل)، بعده النتائج مقفلة
   //   paid  : 8 تحليلات / شهر (مفتوحة بالكامل)، 3 رسائل CFO / يوم
+  FREE_UNLOCKED_ANALYSES : 1,          // تحليل واحد مجاني مفتوح بالكامل
   FREE_ANALYSES_LIMIT    : Infinity,   // لا حد للإنشاء — القفل في العرض فقط
   PAID_ANALYSES_PER_MONTH: 8,          // تحليل / شهر
   PAID_CFO_PER_DAY       : 3,          // رسائل AI CFO / يوم (مشتركون فقط)
@@ -69,6 +70,10 @@ window.planAllows = function (feature) {
     return (window.PLAN_CONFIG.FEATURES.one_time).includes(feature);
   }
   const plan = window.__USER_PLAN__ || 'free';
+  // منح وصول كامل للتحليل المجاني الأول (يُعيّنه API بعد النجاح)
+  if (plan === 'free' && window.__FIRST_ANALYSIS__ === true) {
+    return (window.PLAN_CONFIG.FEATURES.one_time).includes(feature);
+  }
   const features = window.PLAN_CONFIG.FEATURES[plan] || window.PLAN_CONFIG.FEATURES.free;
   return features.includes(feature);
 };

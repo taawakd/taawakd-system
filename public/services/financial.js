@@ -145,7 +145,11 @@ async function runAnalysis() {
     }
 
     reportText = data.content?.map(i=>i.text||'').join('') || '';
-  } catch(e) { reportText = ''; }
+
+    // ── تحليل مجاني أول: API يُخبرنا إذا كانت هذه أول تحليل لمستخدم مجاني ──
+    // يُخزَّن في window.__FIRST_ANALYSIS__ ليقرأه planAllows() عند عرض النتائج
+    window.__FIRST_ANALYSIS__ = data.first_analysis === true;
+  } catch(e) { reportText = ''; window.__FIRST_ANALYSIS__ = false; }
 
   console.log('[Tawakkad] runAnalysis — window._excelReportPeriod before report build:', window._excelReportPeriod);
   const report = {
@@ -272,6 +276,9 @@ function openSavedReport(id) {
   const rep = STATE.savedReports.find(r => String(r.id) === String(id));
   if(!rep) { toast('⚠️ لم يتم العثور على التقرير، حاول مرة أخرى'); return; }
   STATE.currentReport = rep;
+  // إعادة تعيين علامة التحليل المجاني الأول عند فتح تقرير محفوظ
+  // (التقارير المحفوظة تخضع للخطة الحالية فقط، لا لـ first_analysis)
+  window.__FIRST_ANALYSIS__ = false;
   renderResults(rep);
   showPage('results');
 }
