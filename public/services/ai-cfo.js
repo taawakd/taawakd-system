@@ -6,27 +6,41 @@ async function sendCFO(quickMsg) {
   const msg = quickMsg || input.value.trim();
   if (!msg) return;
 
-  // ── فحص الخطة: AI CFO محدود للمجانيين (3 أسئلة) ─────────────────────────
-  const userPlan = window.__USER_PLAN__ || 'free';
-  const CFO_FREE_LIMIT = 3;
-  if (userPlan === 'free') {
-    const cfoCount = parseInt(localStorage.getItem('tw_cfo_free_count') || '0', 10);
-    if (cfoCount >= CFO_FREE_LIMIT) {
-      input.value = '';
-      appendCFOMessage('ai',
-        `🔒 **وصلت لحد ${CFO_FREE_LIMIT} أسئلة في الخطة المجانية.**\n\n` +
-        'قم بالترقية إلى الخطة الاحترافية للحصول على وصول كامل بدون قيود.');
-      if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO كامل', 'pro');
-      return;
-    }
-    // تسجيل السؤال
-    localStorage.setItem('tw_cfo_free_count', String(cfoCount + 1));
-    // تحذير عند آخر سؤال مجاني
-    if (cfoCount + 1 >= CFO_FREE_LIMIT) {
-      setTimeout(() => appendCFOMessage('ai',
-        `⚠️ هذا آخر سؤال مجاني — استخدمت ${CFO_FREE_LIMIT}/${CFO_FREE_LIMIT} أسئلة. قم بالترقية للاستمرار.`
-      ), 500);
-    }
+  // ── فحص الخطة: AI CFO للمشتركين فقط (3 رسائل / يوم) ────────────────────
+  // القيم من PLAN_CONFIG (plan-config.js) — المصدر المركزي الوحيد
+  const userPlan   = window.__USER_PLAN__ || 'free';
+  const _isPaid    = window.isPaidPlan ? window.isPaidPlan(userPlan) : (userPlan === 'paid' || userPlan === 'pro' || userPlan === 'enterprise');
+  const CFO_DAILY  = window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 3;
+
+  if (!_isPaid) {
+    // المجانيون: لا صلاحية للـ CFO
+    input.value = '';
+    appendCFOMessage('ai',
+      '🔒 **AI CFO متاح للمشتركين فقط.**\n\n' +
+      'اشترك في الخطة المدفوعة للحصول على 3 رسائل يومياً.');
+    if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO', 'pro');
+    return;
+  }
+
+  // المشتركون: تحقق من الحد اليومي (3 رسائل/يوم) عبر localStorage
+  const _today       = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const _cfoKey      = 'tw_cfo_daily_' + _today;
+  const _cfoUsed     = parseInt(localStorage.getItem(_cfoKey) || '0', 10);
+
+  if (_cfoUsed >= CFO_DAILY) {
+    input.value = '';
+    appendCFOMessage('ai',
+      `🔒 **وصلت لحد ${CFO_DAILY} رسائل اليوم.**\n\n` +
+      'يتجدد الحد يومياً — عد غداً للاستمرار.');
+    return;
+  }
+  // تسجيل الرسالة
+  localStorage.setItem(_cfoKey, String(_cfoUsed + 1));
+  // تحذير عند آخر رسالة
+  if (_cfoUsed + 1 >= CFO_DAILY) {
+    setTimeout(() => appendCFOMessage('ai',
+      `⚠️ هذه آخر رسالة لليوم — استخدمت ${CFO_DAILY}/${CFO_DAILY}. يتجدد الغد.`
+    ), 400);
   }
 
   input.value = '';

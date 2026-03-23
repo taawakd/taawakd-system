@@ -146,32 +146,8 @@ window.addEventListener('tw:appReady', function() {
 // ══════════════════════════════════════════
 // PLAN GATING — التحقق من الخطة والميزات
 // ══════════════════════════════════════════
-
-// تعريف الميزات المتاحة لكل خطة
-// ── free:     تشغيل التحليل فقط + preview (هامش + مؤشر الصحة)
-// ── one_time: تقرير كامل لمرة واحدة (بدون حفظ / CFO / مقارنة)
-// ── pro/paid: كل الميزات
-const _PAID_FEATURES = ['analysis', 'health_score', 'full_report', 'basic_report', 'cfo_limited', 'cfo_full',
-  'advanced_report', 'forecast', 'market_compare', 'pdf_export',
-  'save_reports', 'compare_reports'];
-const _ONE_TIME_FEATURES = ['analysis', 'health_score', 'full_report', 'basic_report', 'advanced_report', 'pdf_export'];
-const PLAN_FEATURES = {
-  free:       ['analysis', 'health_score'],   // preview فقط — لا يُعرض التقرير الكامل
-  one_time:   _ONE_TIME_FEATURES,             // تقرير كامل لمرة واحدة
-  paid:       _PAID_FEATURES,
-  pro:        _PAID_FEATURES,                 // توافق مع الخطط القديمة
-  enterprise: _PAID_FEATURES,                 // توافق مع الخطط القديمة
-};
-
-function planAllows(feature) {
-  // ── أولوية: session-level state بعد دفع one_time في نفس الجلسة ──
-  if (window.STATE?.isPaidOneTime && feature === 'full_report') return true;
-  if (window.STATE?.plan === 'one_time' && feature === 'full_report') return true;
-  // ── الخطة العادية من الـ server ───────────────────────────────
-  const plan = window.__USER_PLAN__ || 'free';
-  return (PLAN_FEATURES[plan] || PLAN_FEATURES.free).includes(feature);
-}
-window.planAllows = planAllows;
+// planAllows() و PLAN_CONFIG معرّفان في plan-config.js
+// هذا الملف يستخدمهما فقط — لا يُعيد تعريفهما
 
 // ── عرض نافذة الترقية ──────────────────────────────────────
 function showUpgradeModal(featureName, requiredPlan) {
@@ -217,8 +193,8 @@ function showUpgradeModal(featureName, requiredPlan) {
           <span style="color:#fff;font-size:20px;font-weight:800;">79 <span style="font-size:12px;color:#888;font-weight:400;">ر.س/شهر</span></span>
         </div>
         <ul style="list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px;">
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تقارير غير محدودة</li>
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>AI CFO كامل — استشارات مالية لا محدودة</li>
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>8 تحليلات / شهر (مفتوحة بالكامل)</li>
+          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>AI CFO — 3 رسائل / يوم</li>
           <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>حفظ التقارير وتتبع الأداء</li>
           <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات + التوقعات الذكية</li>
           <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>مقارنة السوق وجميع الميزات</li>

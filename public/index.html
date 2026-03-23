@@ -894,9 +894,11 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 </script>
 
-<!-- Services (order matters: supabase → products → helpers → dashboard → results → reports → ai-cfo → financial) -->
+<!-- Services (order matters: supabase → products → plan-config → helpers → dashboard → results → reports → ai-cfo → financial) -->
 <script src="services/supabase.js"></script>
 <script src="services/products.js"></script>
+<!-- ✅ المرجع المركزي للخطط — يجب تحميله قبل helpers.js وجميع الـ services -->
+<script src="services/plan-config.js"></script>
 <script src="utils/helpers.js"></script>
 <script src="services/dashboard.js"></script>
 <script src="services/results.js"></script>

@@ -43,24 +43,27 @@ export default async function handler(req, res) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'جلسة منتهية، سجّل دخولك مجدداً' });
 
-  // فحص حد الاستخدام بناءً على الخطة
+  // ── قراءة الخطة والعدّادات من قاعدة البيانات ──────────────────────────────
   const { data: profile } = await supabase
-    .from('profiles').select('analyses_used, analyses_limit, plan, analyses_reset_at').eq('id', user.id).single();
+    .from('profiles')
+    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at')
+    .eq('id', user.id).single();
 
-  const plan = profile?.plan || 'free';
-  const isCFOReq = req.body?._type === 'cfo';
-
-  // حدود التحليلات لكل خطة — الخطة المجانية محدودة ولا تتجدد / المدفوعة غير محدودة
-  // pro و enterprise يُعاملان كـ paid للتوافق مع الحسابات القديمة
+  const plan      = profile?.plan || 'free';
+  const isCFOReq  = req.body?._type === 'cfo';
   const isPaidPlan = plan === 'paid' || plan === 'pro' || plan === 'enterprise';
-  const PLAN_LIMITS = { free: 3, paid: 9999, pro: 9999, enterprise: 9999 };
-  const planLimit   = PLAN_LIMITS[plan] ?? 3;
 
-  // إعادة تعيين عداد الخطط المدفوعة شهرياً
+  // ── ثوابت الخطط (مصدر الحقيقة الوحيد على الـ backend) ────────────────────
+  const PAID_ANALYSES_PER_MONTH = 8;   // تحليل / شهر للمشتركين
+  const PAID_CFO_PER_DAY        = 3;   // رسائل CFO / يوم للمشتركين
+  const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const MS_1_DAY   =      24 * 60 * 60 * 1000;
+
+  // ── إعادة تعيين عداد التحليلات الشهري (مشتركون فقط) ─────────────────────
   if (isPaidPlan && !isCFOReq) {
     const resetAt = profile?.analyses_reset_at ? new Date(profile.analyses_reset_at) : null;
     const now     = new Date();
-    if (!resetAt || (now - resetAt) >= 30 * 24 * 60 * 60 * 1000) {
+    if (!resetAt || (now - resetAt) >= MS_30_DAYS) {
       await supabase.from('profiles')
         .update({ analyses_used: 0, analyses_reset_at: now.toISOString() })
         .eq('id', user.id);
@@ -68,35 +71,63 @@ export default async function handler(req, res) {
     }
   }
 
-  // فحص الحد (الخطة المجانية فقط هي المحدودة) ما عدا طلبات CFO
-  if (!isCFOReq && !isPaidPlan && (profile?.analyses_used || 0) >= planLimit) {
-    const msg = `وصلت لحد ${planLimit} تحليلات في الخطة المجانية التجريبية — قم بالترقية للاستمرار`;
+  // ── فحص حد التحليلات الشهري (مشتركون فقط — 8/شهر) ──────────────────────
+  // الخطة المجانية: لا حد للإنشاء، لكن النتائج مقفلة في الـ frontend
+  if (!isCFOReq && isPaidPlan && (profile?.analyses_used || 0) >= PAID_ANALYSES_PER_MONTH) {
     return res.status(403).json({
-      error: msg,
+      error: `وصلت لحد ${PAID_ANALYSES_PER_MONTH} تحليلات هذا الشهر — يتجدد العداد بعد 30 يوماً`,
       limit_reached: true,
       used: profile?.analyses_used || 0,
-      limit: planLimit,
+      limit: PAID_ANALYSES_PER_MONTH,
       plan,
     });
   }
 
-  // فحص حد أسئلة CFO للخطة المجانية (يُتحقق منه في الـ frontend أيضاً)
-  if (isCFOReq && plan === 'free') {
-    const cfoUsed = profile?.cfo_questions_used || 0;
-    if (cfoUsed >= 3) {
+  // ── منطق AI CFO ──────────────────────────────────────────────────────────
+  if (isCFOReq) {
+    // المجانيون لا يملكون صلاحية الـ CFO إطلاقاً
+    if (!isPaidPlan) {
       return res.status(403).json({
-        error: 'وصلت لحد 3 أسئلة لـ AI CFO في الخطة المجانية — قم بالترقية للحصول على وصول كامل',
+        error: 'AI CFO متاح للمشتركين فقط — اشترك في الخطة المدفوعة',
         limit_reached: true,
         cfo_limit: true,
-        used: cfoUsed,
-        limit: 3,
+        requires_subscription: true,
+        plan,
       });
     }
-    // زيادة عداد CFO
+
+    // إعادة تعيين عداد CFO اليومي إذا مضى أكثر من 24 ساعة
+    const cfoResetAt = profile?.cfo_daily_reset_at ? new Date(profile.cfo_daily_reset_at) : null;
+    const now        = new Date();
+    let cfoUsedToday = profile?.cfo_daily_used || 0;
+
+    if (!cfoResetAt || (now - cfoResetAt) >= MS_1_DAY) {
+      // يوم جديد — أعد العداد
+      await supabase.from('profiles')
+        .update({ cfo_daily_used: 0, cfo_daily_reset_at: now.toISOString() })
+        .eq('id', user.id);
+      cfoUsedToday = 0;
+    }
+
+    if (cfoUsedToday >= PAID_CFO_PER_DAY) {
+      return res.status(403).json({
+        error: `وصلت لحد ${PAID_CFO_PER_DAY} رسائل AI CFO اليوم — يتجدد الغد`,
+        limit_reached: true,
+        cfo_limit: true,
+        used: cfoUsedToday,
+        limit: PAID_CFO_PER_DAY,
+        plan,
+      });
+    }
+
+    // زيادة عداد CFO اليومي
     await supabase.from('profiles')
-      .update({ cfo_questions_used: cfoUsed + 1 })
+      .update({ cfo_daily_used: cfoUsedToday + 1 })
       .eq('id', user.id);
   }
+
+  // حد التحليلات للعرض في الـ frontend
+  const planLimit = isPaidPlan ? PAID_ANALYSES_PER_MONTH : Infinity;
 
   try {
     const body = req.body;
