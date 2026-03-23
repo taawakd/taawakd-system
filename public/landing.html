@@ -238,6 +238,8 @@
       background: rgba(255,255,255,0.04); display: flex;
       align-items: center; justify-content: center; font-size: 14px;
     }
+    .mock-sb-icon img { width: 18px; height: 18px; object-fit: contain; opacity: 0.6; }
+    .mock-sb-icon.active img { opacity: 1; filter: drop-shadow(0 0 4px rgba(201,168,76,0.6)); }
     .mock-sb-icon.active { background: var(--gold-d); }
     .mock-content { flex: 1; padding: 16px; overflow: hidden; }
     .mock-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
@@ -601,11 +603,11 @@
           </div>
           <div class="mock-body">
             <div class="mock-sidebar">
-              <div class="mock-sb-icon active" title="لوحة التحكم">📊</div>
-              <div class="mock-sb-icon" title="تحليل">🔍</div>
-              <div class="mock-sb-icon" title="التقارير">📁</div>
-              <div class="mock-sb-icon" title="التوقعات">🔮</div>
-              <div class="mock-sb-icon" title="AI CFO">🤖</div>
+              <div class="mock-sb-icon active" title="لوحة التحكم"><img src="/assets/icons/dashboard.png" alt=""></div>
+              <div class="mock-sb-icon" title="تحليل جديد"><img src="/assets/icons/new-analysis.png" alt=""></div>
+              <div class="mock-sb-icon" title="التقارير المحفوظة"><img src="/assets/icons/saved-reports.png" alt=""></div>
+              <div class="mock-sb-icon" title="التوقعات الذكية"><img src="/assets/icons/forecast.png" alt=""></div>
+              <div class="mock-sb-icon" title="AI CFO"><img src="/assets/icons/ai-cfo.png" alt=""></div>
             </div>
             <div class="mock-content">
               <div class="mock-kpis">
