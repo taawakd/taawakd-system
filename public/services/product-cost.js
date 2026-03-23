@@ -714,7 +714,7 @@ async function exportProductCostPDF() {
       ${content}
     </div>` : '';
 
-  // ── HTML الكامل (light theme + ألوان ثابتة) ──────────────────
+  // ── HTML الكامل للـ PDF (ألوان ثابتة للطباعة — html2canvas) ──────────────────
   const htmlContent = `
   <div style="font-family:'IBM Plex Sans Arabic',Arial,sans-serif;direction:rtl;background:#f1f5f9;color:#1a1a1a;padding:28px;width:750px;box-sizing:border-box;">
 

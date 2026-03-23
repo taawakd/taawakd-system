@@ -602,7 +602,7 @@ function handleExcel(input) {
 // ── exportPDF ─────────────────────────────────────────────────────────────
 // NOTE: The app uses a dark theme with CSS custom properties (var(--s1), var(--white), etc.).
 // html2canvas cannot resolve these correctly, producing a blank white PDF.
-// Fix: deep-clone the results content into a self-contained light-mode wrapper
+// Fix: deep-clone the results content into a self-contained PDF wrapper
 // with all colours set via explicit inline styles so html2canvas sees real values.
 async function exportPDF() {
   // فحص الخطة — PDF للخطط المدفوعة فقط
