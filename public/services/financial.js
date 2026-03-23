@@ -76,8 +76,18 @@ async function runAnalysis() {
   // ✅ إصلاح 1: استخدام sectorKey المعرّف بدلاً من resolvedSectorKey غير المعرّف
   const bench = BENCHMARKS[sectorKey];
 
+  // ── ضريبة القيمة المضافة (VAT) — يُقرأ من vat-config.js ─────────────────
+  // الأرباح لا تتغير: revenue و totalExpenses يمثلان الأسعار بدون ضريبة
+  // الضريبة تُتتبع بشكل منفصل فقط
+  const { vatEnabled, vatOutput, vatInput, netVAT } =
+    (typeof window.calcVAT === 'function')
+      ? window.calcVAT(revenue, totalExpenses)
+      : { vatEnabled: false, vatOutput: 0, vatInput: 0, netVAT: 0 };
+
   const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, utilitiesPct, otherPct,
-    delTotal, delNet, delOrders, delCommission, delCommPct, delAvgOrder, hasDelivery };
+    delTotal, delNet, delOrders, delCommission, delCommPct, delAvgOrder, hasDelivery,
+    // VAT fields — صفر إذا vatEnabled = false
+    vatEnabled, vatOutput, vatInput, netVAT };
   const scoreData = calcScore({ netMargin, grossMargin, rentPct, salPct, cogsPct });
   const alerts = generateAlerts({ ...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct }, sectorKey);
   const scenarios = buildScenarios({ revenue, totalExpenses, netProfit, cogs, salaries, rent });

@@ -48,10 +48,34 @@ async function loadBusinessProfile() {
     set('bp-delivery', data.var_delivery_pct);
     set('bp-marketing', data.var_marketing_pct);
     set('bp-var-other', data.var_other_pct);
+
+    // ── تحميل إعداد ضريبة القيمة المضافة ──────────────────────────────
+    const vatEnabled = data.vat_enabled === true;
+    window.__VAT_ENABLED__ = vatEnabled;
+    _applyVATToggleUI(vatEnabled);
+
     calcBPFixed();
     renderBPProducts();
   } catch(e) { console.warn('loadBusinessProfile:', e); }
 }
+
+// ── تحديث مظهر زر تبديل الـ VAT بصرياً ─────────────────────────────────
+function _applyVATToggleUI(enabled) {
+  const chk    = document.getElementById('bp-vat-enabled');
+  const slider = document.getElementById('bp-vat-slider');
+  const thumb  = document.getElementById('bp-vat-thumb');
+  if (!chk) return;
+  chk.checked = enabled;
+  if (slider) slider.style.background = enabled ? 'rgba(201,168,76,0.7)' : 'var(--s3)';
+  if (thumb)  { thumb.style.background = enabled ? '#c9a84c' : 'var(--gray2)'; thumb.style.right = enabled ? '21px' : '3px'; }
+}
+// ── مزامنة حالة الـ toggle مع window.__VAT_ENABLED__ عند التغيير ────────
+document.addEventListener('change', function(e) {
+  if (e.target?.id !== 'bp-vat-enabled') return;
+  const enabled = e.target.checked;
+  window.__VAT_ENABLED__ = enabled;
+  _applyVATToggleUI(enabled);
+});
 window.loadBusinessProfile = loadBusinessProfile;
 
 async function saveBusinessProfile() {
@@ -66,6 +90,7 @@ async function saveBusinessProfile() {
     const projId = window.__CURRENT_PROJECT_ID__ || 'default';
     if (projId !== 'default') {
       const g = id => parseNum(document.getElementById(id)?.value || '');
+      const _vatEnabledNP = document.getElementById('bp-vat-enabled')?.checked === true;
       const profile = {
         biz_name:            document.getElementById('bp-name')?.value?.trim() || '',
         biz_type:            document.getElementById('bp-type')?.value?.trim() || '',
@@ -80,9 +105,11 @@ async function saveBusinessProfile() {
         var_delivery_pct:    g('bp-delivery'),
         var_marketing_pct:   g('bp-marketing'),
         var_other_pct:       g('bp-var-other'),
+        vat_enabled:         _vatEnabledNP,
         products: window.BP_PRODUCTS || [],
       };
       if (typeof saveProjectProfile === 'function') saveProjectProfile(projId, profile);
+      window.__VAT_ENABLED__ = _vatEnabledNP;
       window._businessProfile = profile;
       if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
       toast('✅ تم حفظ ملف المشروع');
@@ -90,6 +117,7 @@ async function saveBusinessProfile() {
     }
     // parseNum يتعامل مع الأرقام المنسّقة بفواصل ("5,000" → 5000) بخلاف parseFloat ("5,000" → 5)
     const g = id => parseNum(document.getElementById(id)?.value || '');
+    const _vatEnabledDB = document.getElementById('bp-vat-enabled')?.checked === true;
     const profile = {
       user_id: user.id,
       biz_name:            document.getElementById('bp-name')?.value?.trim() || '',
@@ -105,11 +133,13 @@ async function saveBusinessProfile() {
       var_delivery_pct:    g('bp-delivery'),
       var_marketing_pct:   g('bp-marketing'),
       var_other_pct:       g('bp-var-other'),
+      vat_enabled:         _vatEnabledDB,
       products: window.BP_PRODUCTS || [],
     };
     const { error } = await window.sb.from('business_profile')
       .upsert(profile, { onConflict: 'user_id' });
     if (error) throw error;
+    window.__VAT_ENABLED__ = _vatEnabledDB;
     window._businessProfile = profile;
     if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
     toast('✅ تم حفظ ملف المشروع');

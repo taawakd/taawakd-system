@@ -768,6 +768,8 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     chartInstance: null,
     chartMode: 'net'
   };
+  // VAT disabled by default — يُحدَّث من supabase.js عند تحميل ملف المشروع
+  window.__VAT_ENABLED__ = window.__VAT_ENABLED__ || false;
 </script>
 
 <!-- Services (order matters: supabase → products → plan-config → helpers → dashboard → results → reports → ai-cfo → financial) -->
@@ -775,6 +777,8 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
 <script src="services/products.js"></script>
 <!-- ✅ المرجع المركزي للخطط — يجب تحميله قبل helpers.js وجميع الـ services -->
 <script src="services/plan-config.js"></script>
+<!-- ✅ المرجع المركزي لضريبة القيمة المضافة — يجب تحميله قبل financial.js -->
+<script src="services/vat-config.js"></script>
 <script src="utils/helpers.js"></script>
 <script src="services/dashboard.js"></script>
 <script src="services/results.js"></script>
