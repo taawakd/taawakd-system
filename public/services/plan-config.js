@@ -9,7 +9,7 @@ window.PLAN_CONFIG = {
   PRICE_MONTHLY  : 79,    // ريال / شهر — الاشتراك الوحيد المتاح
 
   // ── التجربة المجانية ─────────────────────────────────────────────────────
-  TRIAL_DAYS     : 7,     // عدد أيام التجربة المجانية الكاملة
+  TRIAL_DAYS     : 14,    // عدد أيام التجربة المجانية الكاملة
 
   // ── حدود الاستخدام (للمشتركين) ───────────────────────────────────────────
   //   trial : وصول كامل بدون حدود خلال فترة التجربة
@@ -82,6 +82,9 @@ window.getAccessUser = function () {
 
     // هل التجربة المجانية نشطة؟ — يُعيَّن من API بعد نجاح التحليل أو من بيانات الجلسة
     isTrialActive: window.isTrialActive(window.__TRIAL_STARTED_AT__ || null),
+
+    // المشرف — وصول كامل دائماً بدون قيود
+    isAdmin: !!(window.__IS_ADMIN__),
   };
 };
 
@@ -89,6 +92,7 @@ window.getAccessUser = function () {
 // canAccessFeature(user, feature) — دالة التحكم في الصلاحيات
 //
 // المنطق (بالترتيب):
+//   0. مشرف (user.isAdmin)               → true دائماً بدون استثناء
 //   1. مشترك (user.plan === 'paid')      → true دائماً لكل الميزات
 //   2. تجربة مجانية نشطة                 → true لكل الميزات
 //   3. منتهية التجربة / غير مشترك        → false لكل الميزات
@@ -100,10 +104,16 @@ window.canAccessFeature = function (user, feature) {
 
   // ─────────────── DEBUG LOG ────────────────────────────────────────────
   console.log(
-    '[Tawakkad][access] plan=%s | feature=%s | trialActive=%s',
-    user.plan, feature, user.isTrialActive
+    '[Tawakkad][access] plan=%s | feature=%s | trialActive=%s | isAdmin=%s',
+    user.plan, feature, user.isTrialActive, user.isAdmin
   );
   // ─────────────────────────────────────────────────────────────────────
+
+  // ── 0. مشرف → وصول كامل دائماً ────────────────────────────────────────
+  if (user.isAdmin) {
+    console.log('[Tawakkad][access] ADMIN → granted');
+    return true;
+  }
 
   // ── 1. مشترك → true لكل الميزات بدون استثناء ─────────────────────────
   if (user.plan === 'paid') {
