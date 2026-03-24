@@ -703,14 +703,13 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     // المشكلة: الـ API يعيّنه فقط عند أول تحليل — لكن المستخدم يرى أقفالاً قبل ذلك
     // الحل: نعيّنه هنا مباشرةً ونحدّث قاعدة البيانات حتى تُفعَّل التجربة فوراً
     let _trialStartedAt = userProfile?.trial_started_at || null;
-    // ── إعادة تعيين التجربة إذا كانت null أو منتهية الصلاحية (للخطة المجانية فقط) ──
-    // إذا لم تكن موجودة أو انتهت > 14 يوم، نبدأها من جديد فوراً عند الدخول
-    const _trialExpired = _trialStartedAt && (
-      (Date.now() - new Date(_trialStartedAt).getTime()) / (1000 * 60 * 60 * 24) > (window.PLAN_CONFIG?.TRIAL_DAYS || 14)
-    );
-    if ((!_trialStartedAt || _trialExpired) && window.__USER_PLAN__ === 'free') {
+    // ── تعيين trial_started_at فقط إذا كان null (حساب جديد لم يبدأ تجربته بعد) ──
+    // تنبيه أمني: لا نُعيد الضبط إذا انتهت التجربة — التجربة المنتهية تبقى منتهية
+    // (إعادة الضبط عند الانتهاء تتيح للمستخدم الحصول على تجربة مجانية مجدداً بمجرد تسجيل الخروج/الدخول)
+    // المشرفون محميون بـ isAdmin override في canAccessFeature() بغض النظر عن التجربة
+    if (!_trialStartedAt && window.__USER_PLAN__ === 'free') {
       _trialStartedAt = new Date().toISOString();
-      console.log('[Tawakkad][auth] trial_started_at %s → resetting to NOW:', _trialExpired ? 'expired' : 'null', _trialStartedAt);
+      console.log('[Tawakkad][auth] trial_started_at was null → setting NOW:', _trialStartedAt);
       try {
         await sb.from('profiles')
           .update({ trial_started_at: _trialStartedAt })
