@@ -59,22 +59,16 @@ async function loadBusinessProfile() {
   } catch(e) { console.warn('loadBusinessProfile:', e); }
 }
 
-// ── تحديث مظهر زر تبديل الـ VAT بصرياً ─────────────────────────────────
+// ── تحديث حالة الـ VAT checkbox عند التحميل (الـ CSS يتولى المظهر) ──────
 function _applyVATToggleUI(enabled) {
-  const chk    = document.getElementById('bp-vat-enabled');
-  const slider = document.getElementById('bp-vat-slider');
-  const thumb  = document.getElementById('bp-vat-thumb');
+  const chk = document.getElementById('bp-vat-enabled');
   if (!chk) return;
   chk.checked = enabled;
-  if (slider) slider.style.background = enabled ? 'rgba(201,168,76,0.7)' : 'var(--s3)';
-  if (thumb)  { thumb.style.background = enabled ? '#c9a84c' : 'var(--gray2)'; thumb.style.right = enabled ? '21px' : '3px'; }
 }
-// ── مزامنة حالة الـ toggle مع window.__VAT_ENABLED__ عند التغيير ────────
+// ── مزامنة window.__VAT_ENABLED__ عند تغيير الـ toggle ─────────────────
 document.addEventListener('change', function(e) {
   if (e.target?.id !== 'bp-vat-enabled') return;
-  const enabled = e.target.checked;
-  window.__VAT_ENABLED__ = enabled;
-  _applyVATToggleUI(enabled);
+  window.__VAT_ENABLED__ = e.target.checked;
 });
 window.loadBusinessProfile = loadBusinessProfile;
 
