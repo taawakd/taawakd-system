@@ -319,9 +319,78 @@ document.addEventListener('change', function(e) {
     console.log('[Tawakkad][category] _businessProfile.biz_type updated to=%s', newType);
   }
 
-  // دائماً أعِد تحميل القائمة الثابتة عند اختيار نوع النشاط
+    // دائماً أعِد تحميل القائمة الثابتة عند اختيار نوع النشاط
   if (typeof window.pcSuggestFromCategory === 'function') {
     console.log('[Tawakkad][category] force-loading static products for category=%s', newType);
     window.pcSuggestFromCategory(newType, { force: true });
   }
 });
+
+// ══════════════════════════════════════════════════════════════════
+// getBizTerminology(bizType)
+// ──────────────────────────────────────────────────────────────────
+// يُعيد مصطلحات مالية مخصصة لكل نوع نشاط تجاري.
+// يمنع تسرب مصطلحات المطاعم (طعام/وجبة/مخزون) إلى أنشطة أخرى.
+//
+// @param {string} bizType — مثال: 'barber' | 'restaurant' | 'retail'
+// @returns {object} — cogsLabel, cogsShort, productLabel, suppliersLabel,
+//                     inventoryLabel, wasteLabel, revenueLabel
+// ══════════════════════════════════════════════════════════════════
+
+var _BIZ_TERMINOLOGY = {
+  // ── مطاعم وكافيهات ──
+  restaurant:    { cogsLabel:'تكلفة الخامات والمواد الغذائية', cogsShort:'تكلفة الخامات',   productLabel:'وجبة / منتج',  suppliersLabel:'الموردين',          inventoryLabel:'الطلبات والمخزون الغذائي', wasteLabel:'الهدر والتالف',       revenueLabel:'إيرادات المبيعات'  },
+  cafe:          { cogsLabel:'تكلفة المشروبات والخامات',       cogsShort:'تكلفة الخامات',   productLabel:'مشروب / منتج', suppliersLabel:'الموردين',          inventoryLabel:'الطلبات والمخزون',         wasteLabel:'الهدر والتالف',       revenueLabel:'إيرادات المبيعات'  },
+  cloud_kitchen: { cogsLabel:'تكلفة الخامات والتغليف',         cogsShort:'تكلفة الخامات',   productLabel:'وجبة',         suppliersLabel:'الموردين',          inventoryLabel:'الطلبات والمخزون الغذائي', wasteLabel:'الهدر والتالف',       revenueLabel:'إيرادات التوصيل'   },
+  drive_thru:    { cogsLabel:'تكلفة المشروبات والخامات',       cogsShort:'تكلفة الخامات',   productLabel:'مشروب / منتج', suppliersLabel:'الموردين',          inventoryLabel:'الطلبات والمخزون',         wasteLabel:'الهدر والتالف',       revenueLabel:'إيرادات المبيعات'  },
+  bakery:        { cogsLabel:'تكلفة المكونات والخبيز',          cogsShort:'تكلفة الخامات',   productLabel:'منتج مخبوز',   suppliersLabel:'الموردين',          inventoryLabel:'المخزون والإنتاج اليومي',  wasteLabel:'الفاقد والتالف',      revenueLabel:'إيرادات المبيعات'  },
+  hotel:         { cogsLabel:'تكلفة التشغيل والخدمات',          cogsShort:'تكلفة التشغيل',  productLabel:'خدمة / غرفة',  suppliersLabel:'مزودي الخدمة',      inventoryLabel:'جدول الحجوزات',            wasteLabel:'الطاقة الفارغة',      revenueLabel:'إيرادات الإيواء'   },
+
+  // ── تجزئة ومبيعات ──
+  retail:        { cogsLabel:'تكلفة البضاعة المباعة',           cogsShort:'تكلفة البضاعة',  productLabel:'منتج',         suppliersLabel:'الموردين',          inventoryLabel:'المخزون وحركة البضاعة',    wasteLabel:'البضاعة الراكدة',     revenueLabel:'إيرادات المبيعات'  },
+  ecom:          { cogsLabel:'تكلفة البضاعة المباعة',           cogsShort:'تكلفة البضاعة',  productLabel:'منتج',         suppliersLabel:'الموردين',          inventoryLabel:'المخزون وحركة الطلبات',    wasteLabel:'البضاعة الراكدة',     revenueLabel:'إيرادات المتجر'    },
+  pharmacy:      { cogsLabel:'تكلفة الأدوية والمستلزمات',       cogsShort:'تكلفة البضاعة',  productLabel:'منتج صيدلاني', suppliersLabel:'الموردين',          inventoryLabel:'مخزون الأدوية',            wasteLabel:'منتهي الصلاحية',      revenueLabel:'إيرادات المبيعات'  },
+  perfumes:      { cogsLabel:'تكلفة المنتجات والعبوات',         cogsShort:'تكلفة البضاعة',  productLabel:'عطر / منتج',   suppliersLabel:'الموردين',          inventoryLabel:'المخزون وحركة البضاعة',    wasteLabel:'البضاعة الراكدة',     revenueLabel:'إيرادات المبيعات'  },
+  dates:         { cogsLabel:'تكلفة التمور والتغليف',            cogsShort:'تكلفة البضاعة',  productLabel:'منتج',         suppliersLabel:'الموردين والمزارعين', inventoryLabel:'مخزون التمور',           wasteLabel:'التالف والفاقد',      revenueLabel:'إيرادات المبيعات'  },
+
+  // ── خدمات شخصية ──
+  barber:        { cogsLabel:'تكلفة الخدمات ومستلزمات التشغيل', cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول المواعيد والخدمات',   wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+  beauty:        { cogsLabel:'تكلفة الخدمات ومستحضرات التجميل', cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول المواعيد والخدمات',   wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+  clinic:        { cogsLabel:'تكلفة الخدمات الطبية واللوازم',   cogsShort:'تكلفة الخدمات', productLabel:'جلسة / خدمة',  suppliersLabel:'الموردين الطبيين',  inventoryLabel:'جدول المواعيد الطبية',     wasteLabel:'المواعيد الفارغة',    revenueLabel:'إيرادات العيادة'   },
+  laundry:       { cogsLabel:'تكلفة الخدمات ومواد التنظيف',     cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول الطلبات والتسليم',    wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+  carwash:       { cogsLabel:'تكلفة الخدمات ومواد الغسيل',      cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول الخدمات اليومي',      wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+
+  // ── خدمات مهنية وتقنية ──
+  services:      { cogsLabel:'تكلفة تقديم الخدمات',             cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مزودي الخدمة',      inventoryLabel:'جدول المشاريع والعقود',    wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+  services_co:   { cogsLabel:'تكلفة تقديم الخدمات',             cogsShort:'تكلفة الخدمات', productLabel:'خدمة / عقد',   suppliersLabel:'مزودي الخدمة',      inventoryLabel:'جدول العقود والمشاريع',    wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+  tech:          { cogsLabel:'تكلفة التطوير والبنية التحتية',   cogsShort:'تكلفة الإنتاج', productLabel:'منتج / خدمة',  suppliersLabel:'مزودي الخدمة',      inventoryLabel:'جدول المشاريع والتطوير',   wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات التقنية'   },
+  logistics:     { cogsLabel:'تكلفة التوصيل والتشغيل',          cogsShort:'تكلفة التشغيل', productLabel:'رحلة / خدمة',  suppliersLabel:'السائقين والموردين', inventoryLabel:'جدول الرحلات والشحنات',   wasteLabel:'الطاقة الفارغة',      revenueLabel:'إيرادات التوصيل'   },
+  fitness:       { cogsLabel:'تكلفة تقديم الخدمات والمعدات',    cogsShort:'تكلفة الخدمات', productLabel:'اشتراك / جلسة', suppliersLabel:'مورّدي المعدات',   inventoryLabel:'جدول الحصص والمواعيد',    wasteLabel:'المواعيد الفارغة',    revenueLabel:'إيرادات الاشتراكات'},
+
+  // ── افتراضي ──
+  other:         { cogsLabel:'تكلفة تقديم الخدمات أو المنتجات', cogsShort:'تكلفة الإنتاج', productLabel:'منتج / خدمة',  suppliersLabel:'الموردين',          inventoryLabel:'جدول الخدمات والمخزون',    wasteLabel:'الهدر والوقت الضائع', revenueLabel:'إيرادات المشروع'   },
+};
+
+/**
+ * getBizTerminology(bizType)
+ * ──────────────────────────
+ * يُعيد مصطلحات مالية مخصصة لنوع النشاط التجاري.
+ * يمنع تسرب مصطلحات المطاعم إلى الأنشطة الأخرى.
+ *
+ * @param {string} bizType — مثال: 'barber' | 'restaurant' | 'retail'
+ * @returns {{
+ *   cogsLabel:      string,  // تكلفة الخدمات / تكلفة البضاعة / تكلفة الخامات
+ *   cogsShort:      string,  // نسخة مختصرة للاستخدام في الجداول
+ *   productLabel:   string,  // خدمة / وجبة / منتج
+ *   suppliersLabel: string,  // الموردين / مزودي الخدمة
+ *   inventoryLabel: string,  // جدول المواعيد / المخزون / الطلبات
+ *   wasteLabel:     string,  // الوقت الضائع / الهدر / البضاعة الراكدة
+ *   revenueLabel:   string,  // إيرادات الخدمات / إيرادات المبيعات
+ * }}
+ */
+window.getBizTerminology = function(bizType) {
+  const terms = _BIZ_TERMINOLOGY[bizType] || _BIZ_TERMINOLOGY['other'];
+  console.log('[Tawakkad][bizTerminology] bizType=%s → cogsLabel="%s" | productLabel="%s" | revenueLabel="%s"',
+    bizType, terms.cogsLabel, terms.productLabel, terms.revenueLabel);
+  return terms;
+};

@@ -238,13 +238,21 @@ async function generateActionPlan() {
   c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);">⏳ جاري توليد الخطة...</div>';
 
   const m = rep.metrics;
-  const prompt = `أنت مستشار مالي. بناءً على بيانات "${rep.bizName}":
-- الإيرادات: ${m.revenue?.toLocaleString()} ﷼ | صافي الربح: ${m.netProfit?.toLocaleString()} ﷼ | هامش: ${m.netMargin}%
-- تكاليف البضاعة: ${m.cogsPct}% | الإيجار: ${m.rentPct}% | الرواتب: ${m.salPct}%
+  // مصطلحات مخصصة لنوع النشاط التجاري
+  const _apTerms = typeof window.getBizTerminology === 'function'
+    ? window.getBizTerminology(rep.bizType)
+    : { cogsShort:'تكلفة الإنتاج', productLabel:'منتج / خدمة',
+        suppliersLabel:'الموردين', inventoryLabel:'جدول الخدمات والمخزون',
+        wasteLabel:'الهدر', revenueLabel:'إيرادات المشروع' };
+  console.log('[Tawakkad][actionPlan] biz_type=%s | cogsShort="%s" | suppliersLabel="%s"',
+    rep.bizType, _apTerms.cogsShort, _apTerms.suppliersLabel);
+  const prompt = `أنت مستشار مالي متخصص. بناءً على بيانات "${rep.bizName}" (نشاط: ${rep.bizType || 'غير محدد'}):
+- ${_apTerms.revenueLabel}: ${m.revenue?.toLocaleString()} ﷼ | صافي الربح: ${m.netProfit?.toLocaleString()} ﷼ | هامش: ${m.netMargin}%
+- ${_apTerms.cogsShort}: ${m.cogsPct}% | الإيجار: ${m.rentPct}% | الرواتب: ${m.salPct}%
 - مؤشر الصحة: ${rep.scoreData?.total}/100
 - التنبيهات: ${rep.alerts?.map(a=>a.msg).join(' | ') || 'لا يوجد'}
 
-أعطني خطة عمل 4 أسابيع بالتنسيق التالي بالضبط (JSON فقط بدون أي نص آخر):
+أعطني خطة عمل 4 أسابيع مخصصة لنشاط ${rep.bizType || 'هذا المشروع'} بالتنسيق التالي بالضبط (JSON فقط بدون أي نص آخر):
 {
   "weeks": [
     {
@@ -302,19 +310,27 @@ async function generateActionPlan() {
 
 function defaultActionPlan(rep) {
   const m = rep.metrics;
+  // مصطلحات مخصصة لنوع النشاط التجاري — تمنع ظهور مصطلحات المطعم في أنشطة أخرى
+  const _dTerms = typeof window.getBizTerminology === 'function'
+    ? window.getBizTerminology(rep.bizType)
+    : { cogsShort:'تكلفة الإنتاج', productLabel:'منتج / خدمة',
+        suppliersLabel:'الموردين', inventoryLabel:'جدول الخدمات والمخزون',
+        wasteLabel:'الهدر', revenueLabel:'الإيرادات' };
+  console.log('[Tawakkad][defaultActionPlan] biz_type=%s | cogsShort="%s" | inventoryLabel="%s"',
+    rep.bizType, _dTerms.cogsShort, _dTerms.inventoryLabel);
   return [
     { week:1, focus:'تخفيض التكاليف الفورية', actions:[
-      {text:'راجع عقود الموردين وطلب تخفيض 5-10%', impact:'وفر تصل '+fmt(m.cogs*0.07)+' ﷼', priority:'high'},
+      {text:'راجع عقود '+_dTerms.suppliersLabel+' واطلب تخفيض 5-10%', impact:'وفر تصل '+fmt(m.cogs*0.07)+' ﷼', priority:'high'},
       {text:'حدّد المصاريف غير الضرورية وأوقفها فوراً', impact:'تخفيض مباشر للتكاليف', priority:'high'},
       {text:'راجع ساعات العمل وتوزيع الموظفين', impact:'تحسين الكفاءة التشغيلية', priority:'med'},
     ]},
-    { week:2, focus:'تحسين الإيرادات', actions:[
-      {text:'رفع أسعار المنتجات ذات الهامش المنخفض 5-8%', impact:'زيادة الهامش '+m.netMargin+'%→'+(parseFloat(m.netMargin)+3)+'%', priority:'high'},
-      {text:'فعّل حملة تسويقية للمنتج الأكثر ربحاً', impact:'زيادة المبيعات 10-15%', priority:'high'},
-      {text:'اطلق عروض الولاء للعملاء الحاليين', impact:'تحسين الاحتفاظ بالعملاء', priority:'med'},
+    { week:2, focus:'تحسين '+_dTerms.revenueLabel, actions:[
+      {text:'رفع أسعار '+_dTerms.productLabel+' ذات الهامش المنخفض 5-8%', impact:'زيادة الهامش '+m.netMargin+'%→'+(parseFloat(m.netMargin)+3)+'%', priority:'high'},
+      {text:'فعّل حملة تسويقية للـ'+_dTerms.productLabel+' الأكثر ربحاً', impact:'زيادة المبيعات 10-15%', priority:'high'},
+      {text:'أطلق عروض الولاء للعملاء الحاليين', impact:'تحسين الاحتفاظ بالعملاء', priority:'med'},
     ]},
     { week:3, focus:'تحسين العمليات', actions:[
-      {text:'راجع جدول الطلبات والمخزون لتقليل الهدر', impact:'تخفيض COGS 3-5%', priority:'med'},
+      {text:'راجع '+_dTerms.inventoryLabel+' لتقليل '+_dTerms.wasteLabel, impact:'تخفيض '+_dTerms.cogsShort+' 3-5%', priority:'med'},
       {text:'أتمت العمليات المتكررة قدر الإمكان', impact:'توفير وقت وتكاليف', priority:'low'},
       {text:'حلّل ساعات الذروة وضع طاقم كافٍ', impact:'تحسين خدمة العملاء والمبيعات', priority:'med'},
     ]},

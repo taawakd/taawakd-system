@@ -1104,10 +1104,15 @@ function buildCFOSystemPrompt(ctx) {
       return `أنت AI CFO — مستشار مالي ذكي للمشاريع الصغيرة والمتوسطة السعودية.
 لا تتوفر بيانات مشروع محددة حالياً، لكن يمكنك الإجابة على أي سؤال مالي أو تجاري.
 تحدث بالعربية دائماً. اذهب مباشرة للإجابة بدون مقدمات أو خاتمات. كن موجزاً (3-5 جمل).
-إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال التجارية (كالطبخ أو الرياضة)، قل باختصار أن اختصاصك في الاستشارات المالية والتجارية فقط.
+إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال التجارية، قل باختصار أن اختصاصك في الاستشارات المالية والتجارية فقط.
 ❌ يُمنع استخدام LaTeX أو رموز رياضية مشفرة (\\frac \\text $ وما شابهها). اكتب الحسابات كنص عربي صريح: مثال: 5,000 ÷ 10 = 500 ريال.`;
     }
     // لا يوجد تقارير لكن يوجد ملف مشروع — استخدم بياناته
+    const _bpTerms = typeof window.getBizTerminology === 'function'
+      ? window.getBizTerminology(bp.biz_type)
+      : { cogsShort:'تكلفة الإنتاج', productLabel:'منتج / خدمة' };
+    console.log('[Tawakkad][CFO-bp] biz_type=%s | cogsShort="%s" | productLabel="%s"',
+      bp.biz_type, _bpTerms.cogsShort, _bpTerms.productLabel);
     const totalFixed = (Number(bp.fixed_rent)||0) + (Number(bp.fixed_salaries)||0)
       + (Number(bp.fixed_utilities)||0) + (Number(bp.fixed_marketing)||0)
       + (Number(bp.fixed_subscriptions)||0) + (Number(bp.fixed_other)||0);
@@ -1126,12 +1131,12 @@ function buildCFOSystemPrompt(ctx) {
 - إجمالي التكاليف الثابتة: ${totalFixed > 0 ? totalFixed.toLocaleString('en') : '—'} ر.س/شهر
 
 ══ تعليمات العمل ══
-- إذا كان قسم "بيانات المنتجات الحالية" يحتوي منتجات، استخدم بياناتها مباشرة لتحليل الربحية والتسعير — لا تطلب معلومات إضافية من المستخدم.
+- إذا كان قسم "بيانات المنتجات الحالية" يحتوي ${_bpTerms.productLabel}، استخدم بياناتها مباشرة لتحليل الربحية والتسعير — لا تطلب معلومات إضافية من المستخدم.
 - وجود بيانات المنتجات يعني أن التحليل ممكن فوراً بأرقامه الفعلية.
 - أجب بناءً على البيانات الواردة أعلاه. لا تستخدم أمثلة افتراضية أو أرقاماً من خارج هذا النص.
 - تحدث بالعربية دائماً. اذهب مباشرة للإجابة بدون مقدمات أو خاتمات. كن موجزاً (3-5 جمل).
-- إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال (كالطبخ أو الرياضة كهواية)، قل باختصار أن اختصاصك في الاستشارات المالية فقط.
-- تنبيه: السؤال عن ربحية أو سعر منتج هو سؤال مالي — أجب عليه مباشرة من بيانات المنتجات.
+- إذا سأل عن موضوع لا علاقة له بالمال أو الأعمال، قل باختصار أن اختصاصك في الاستشارات المالية فقط.
+- تنبيه: السؤال عن ربحية أو سعر أي ${_bpTerms.productLabel} هو سؤال مالي — أجب عليه مباشرة من بيانات المنتجات.
 
 ══ قواعد تنسيق الحسابات — إلزامية ══
 ❌ يُمنع منعاً باتاً استخدام أي رموز LaTeX أو تنسيق رياضي مشفر مثل: \\frac \\text \\div \\times $ \\ أو أي رموز مشابهة.
@@ -1150,6 +1155,16 @@ function buildCFOSystemPrompt(ctx) {
   const previous           = cfoContext.previous;
   const trend              = cfoContext.trend || {};
   const hasPreviousReports = previous && previous.length > 0;
+
+  // ── مصطلحات مخصصة لنوع النشاط التجاري (تمنع تسرب مصطلحات المطاعم) ──
+  const _terms = typeof window.getBizTerminology === 'function'
+    ? window.getBizTerminology(latest.bizType)
+    : { cogsLabel:'تكلفة الإنتاج / الخدمات', cogsShort:'تكلفة الإنتاج',
+        productLabel:'منتج / خدمة', suppliersLabel:'الموردين',
+        inventoryLabel:'جدول الخدمات والمخزون', wasteLabel:'الهدر',
+        revenueLabel:'إيرادات المشروع' };
+  console.log('[Tawakkad][CFO] biz_type=%s | cogsLabel="%s" | productLabel="%s" | revenueLabel="%s"',
+    latest.bizType, _terms.cogsLabel, _terms.productLabel, _terms.revenueLabel);
 
   // Null-safe number formatter — shows '—' for missing/undefined values instead of 0
   // Prevents the model seeing "إيرادات 0 ر" for old reports with no data
@@ -1293,7 +1308,7 @@ ${basicLines}\n`;
 ══ تفاصيل المصاريف — أرقام ثابتة لا تُعدَّل إلا بطلب صريح ══
 [⚠️ قاعدة إلزامية: هذه الأرقام هي المصدر الوحيد للحقيقة. عند أي سؤال يتعلق بتعديل بند واحد، عدّل ذلك البند فقط واحتفظ بباقي البنود كما هي بالضبط. لا تُقدّر ولا تُعيد توزيع أي رقم.]
 - الإيرادات:               ${fmtN(latest.revenue)} ريال  ← ثابت
-- تكلفة البضاعة / الإنتاج: ${fmtN(latest.cogs)} ريال  ← بند قابل للتعديل عند الطلب
+- ${_terms.cogsShort}:     ${fmtN(latest.cogs)} ريال  ← بند قابل للتعديل عند الطلب
 - الإيجار:                  ${fmtN(latest.rent)} ريال  ← ثابت
 - الرواتب:                  ${fmtN(latest.salaries)} ريال  ← ثابت
 - التسويق والإعلان:         ${fmtN(latest.marketing)} ريال  ← ثابت
@@ -1304,12 +1319,12 @@ ${basicLines}\n`;
 
 ══ قواعد تعديل المصاريف — إلزامية صارمة ══
 ❌ يُمنع منعاً باتاً: تقدير أي بند أو إعادة توزيع المصاريف أو اختراع أرقام غير موجودة في البيانات.
-✅ القاعدة الذهبية للتعديل: عند تغيير بند واحد (مثل تكلفة البضاعة):
+✅ القاعدة الذهبية للتعديل: عند تغيير بند واحد (مثل ${_terms.cogsShort}):
    - البند المُعدَّل: يأخذ القيمة الجديدة كما ذكرها المستخدم
    - كل البنود الأخرى: تبقى بأرقامها الأصلية من الجدول أعلاه بدون أي تغيير
    - إجمالي المصاريف الجديد = البند الجديد + (إجمالي المصاريف الأصلي − البند القديم)
    - صافي الربح الجديد = الإيرادات − إجمالي المصاريف الجديد
-✅ مثال صحيح: إذا طُلب تغيير تكلفة البضاعة من ${fmtN(latest.cogs)} إلى X:
+✅ مثال صحيح: إذا طُلب تغيير ${_terms.cogsShort} من ${fmtN(latest.cogs)} إلى X:
    - إجمالي المصاريف الجديد = X + (${fmtN(latest.totalExpenses)} − ${fmtN(latest.cogs)})
    - المصاريف الأخرى = ${fmtN(latest.totalExpenses)} − ${fmtN(latest.cogs)} = ${fmtN((latest.totalExpenses||0)-(latest.cogs||0))} ريال (لا تتغير أبداً)
 

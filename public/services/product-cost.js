@@ -76,7 +76,8 @@ function calcProductCost() {
   const productType   = document.getElementById('pc-type')?.value ||
     (typeof window.getCategoryDefaultType === 'function'
       ? window.getCategoryDefaultType(_bpTypeForCalc)
-      : (_bpTypeForCalc ? 'خدمة' : 'طعام'));
+      : (_bpTypeForCalc ? 'خدمة' : 'خدمة'));
+  console.log('[Tawakkad][calcPC] biz_type=%s → productType=%s', _bpTypeForCalc, productType);
   const salePrice     = parseNum(document.getElementById('pc-price')?.value || '');
   const sugPrice      = parseNum(document.getElementById('pc-suggested-price')?.value || '');
   const monthlySales  = parseNum(document.getElementById('pc-monthly-sales')?.value || '');
@@ -127,8 +128,8 @@ function calcProductCost() {
   const contribPerUnit = salePrice - ingCost;
   const beUnits = contribPerUnit > 0 ? Math.ceil(productOpShare / contribPerUnit) : Infinity;
 
-  // معيار النشاط
-  const bench = PC_BENCHMARKS[productType] || PC_BENCHMARKS['طعام'];
+  // معيار النشاط — الاحتياطي 'خدمة' بدلاً من 'طعام' لمنع تسرب معايير المطاعم
+  const bench = PC_BENCHMARKS[productType] || PC_BENCHMARKS['خدمة'] || PC_BENCHMARKS['طعام'];
 
   // السعر المقترح لهامش مستهدف
   const targetRatio  = PC_TARGET_MARGIN / 100;
@@ -482,7 +483,7 @@ async function pcLoadFromDB() {
         const _bpTypeForLoad = window._businessProfile?.biz_type;
         const _catDefault = typeof window.getCategoryDefaultType === 'function'
           ? window.getCategoryDefaultType(_bpTypeForLoad)
-          : (_bpTypeForLoad ? 'خدمة' : 'طعام');
+          : 'خدمة';  // الاحتياطي الآمن — لا 'طعام' ثابت
         console.log('[Tawakkad][pcLoadFromDB] bizType=%s → using default type=%s for products without category',
           _bpTypeForLoad, _catDefault);
         PC_STATE.products = dbProds.map(p => ({
