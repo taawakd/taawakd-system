@@ -698,7 +698,23 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       : (_rawPlan === 'pro' || _rawPlan === 'enterprise' || _rawPlan === 'paid')
           ? 'paid'
           : 'free';
-    window.__TRIAL_STARTED_AT__ = userProfile?.trial_started_at || null;
+
+    // ── تعيين trial_started_at فوراً عند أول دخول إذا لم يكن محدداً ──────────
+    // المشكلة: الـ API يعيّنه فقط عند أول تحليل — لكن المستخدم يرى أقفالاً قبل ذلك
+    // الحل: نعيّنه هنا مباشرةً ونحدّث قاعدة البيانات حتى تُفعَّل التجربة فوراً
+    let _trialStartedAt = userProfile?.trial_started_at || null;
+    if (!_trialStartedAt && window.__USER_PLAN__ === 'free') {
+      _trialStartedAt = new Date().toISOString();
+      console.log('[Tawakkad][auth] trial_started_at was null → setting NOW:', _trialStartedAt);
+      try {
+        await sb.from('profiles')
+          .update({ trial_started_at: _trialStartedAt })
+          .eq('id', session.user.id);
+      } catch(_trialErr) {
+        console.warn('[Tawakkad][auth] could not persist trial_started_at:', _trialErr);
+      }
+    }
+    window.__TRIAL_STARTED_AT__ = _trialStartedAt;
     console.log('[Tawakkad][auth] raw plan=%s → normalized=%s | trial_started_at=%s',
       _rawPlan, window.__USER_PLAN__, window.__TRIAL_STARTED_AT__);
     if (userProfile?.is_admin) {
