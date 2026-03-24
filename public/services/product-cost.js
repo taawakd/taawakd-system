@@ -71,7 +71,12 @@ function pcUpdateIngTotals() {
 function calcProductCost() {
   pcUpdateIngTotals();
 
-  const productType   = document.getElementById('pc-type')?.value || 'طعام';
+  // نوع المنتج: من حقل pc-type، وإذا فارغ → نوع الفئة الافتراضي بناءً على biz_type (لا 'طعام' ثابت)
+  const _bpTypeForCalc = window._businessProfile?.biz_type;
+  const productType   = document.getElementById('pc-type')?.value ||
+    (typeof window.getCategoryDefaultType === 'function'
+      ? window.getCategoryDefaultType(_bpTypeForCalc)
+      : (_bpTypeForCalc ? 'خدمة' : 'طعام'));
   const salePrice     = parseNum(document.getElementById('pc-price')?.value || '');
   const sugPrice      = parseNum(document.getElementById('pc-suggested-price')?.value || '');
   const monthlySales  = parseNum(document.getElementById('pc-monthly-sales')?.value || '');
@@ -383,7 +388,10 @@ function saveProductCost() {
   const productData = {
     id:           (PC_STATE.products.find(p => p.name === name)?.id) || Date.now().toString(),
     name,
-    type:         document.getElementById('pc-type')?.value || 'طعام',
+    type:         document.getElementById('pc-type')?.value ||
+                  (typeof window.getCategoryDefaultType === 'function'
+                    ? window.getCategoryDefaultType(window._businessProfile?.biz_type)
+                    : 'خدمة'),
     salePrice:    parseNum(document.getElementById('pc-price')?.value || ''),
     suggestedPrice: parseNum(document.getElementById('pc-suggested-price')?.value || ''),
     monthlySales,
@@ -470,12 +478,19 @@ async function pcLoadFromDB() {
       const dbProds = await loadProductsFromDB();
       if (dbProds.length && PC_STATE.products.length === 0) {
         // تحويل products → PC_STATE format (بدون مكونات، فقط الأساسيات)
+        // نوع المنتج: من category المخزن، وإذا فارغ → نوع الفئة الافتراضي (لا 'طعام' ثابت)
+        const _bpTypeForLoad = window._businessProfile?.biz_type;
+        const _catDefault = typeof window.getCategoryDefaultType === 'function'
+          ? window.getCategoryDefaultType(_bpTypeForLoad)
+          : (_bpTypeForLoad ? 'خدمة' : 'طعام');
+        console.log('[Tawakkad][pcLoadFromDB] bizType=%s → using default type=%s for products without category',
+          _bpTypeForLoad, _catDefault);
         PC_STATE.products = dbProds.map(p => ({
           id:          p.id,
           name:        p.name,
           salePrice:   p.selling_price,
           trueCost:    p.cost,
-          type:        p.category || 'طعام',
+          type:        p.category || _catDefault,
           ingredients: [],
           opCosts:     {},
           monthlySales: 0,
@@ -669,7 +684,10 @@ function calcUnitsForProfit() {
 // ── تصدير PDF — نفس أسلوب financial.js: HTML مضمّن + html2canvas ─
 async function exportProductCostPDF() {
   const productName = document.getElementById('pc-name')?.value?.trim() || 'منتج';
-  const productType = document.getElementById('pc-type')?.value || 'طعام';
+  const productType = document.getElementById('pc-type')?.value ||
+    (typeof window.getCategoryDefaultType === 'function'
+      ? window.getCategoryDefaultType(window._businessProfile?.biz_type)
+      : 'خدمة');
   const salePrice   = parseNum(document.getElementById('pc-price')?.value || '');
   const statusEl    = document.getElementById('pc-save-status');
 
@@ -955,8 +973,19 @@ function initProductCostPage() {
   // ④ اعرض المقارنة المحفوظة
   renderProductComparison();
 
-  // ⑤ حاول التحميل من Supabase (ثم حدّث المقارنة)
-  pcLoadFromDB().then(() => renderProductComparison());
+  // ⑤ حاول التحميل من Supabase (ثم حدّث المقارنة — واقترح بناءً على الفئة إذا كانت القائمة فارغة)
+  pcLoadFromDB().then(() => {
+    const _bpType = window._businessProfile?.biz_type;
+    console.log('[Tawakkad][initPC] after DB load — PC_STATE.products=%d | biz_type=%s',
+      window.PC_STATE.products.length, _bpType);
+    if (_bpType && window.PC_STATE.products.length === 0 &&
+        typeof window.pcSuggestFromCategory === 'function') {
+      console.log('[Tawakkad][initPC] PC_STATE empty → suggesting for category=%s', _bpType);
+      window.pcSuggestFromCategory(_bpType);
+    } else {
+      renderProductComparison();
+    }
+  });
 
   // ⑥ اختصار لوحة المفاتيح Ctrl+Enter → حفظ والانتقال للتالي
   if (!window._pcKeyHandlerAdded) {

@@ -20,8 +20,11 @@ async function loadBusinessProfile() {
       .select('*').eq('user_id', user.id).single();
     if (error || !data) return;
     window._businessProfile = data;
+    // category — مرادف صريح لـ biz_type (المصدر الوحيد للحقيقة هو biz_type)
+    window._businessProfile.category = data.biz_type || null;
 
     console.log('[Tawakkad][loadBusinessProfile] loaded from DB:', JSON.stringify(data));
+    console.log('[Tawakkad][loadBusinessProfile] category=%s', window._businessProfile.category);
 
     // ── تحميل المنتجات من جدول products الجديد أولاً ──────────────────
     if (typeof loadProductsFromDB === 'function') {
@@ -141,7 +144,9 @@ async function saveBusinessProfile() {
     if (error) throw error;
     window.__VAT_ENABLED__ = _vatEnabledDB;
     window._businessProfile = profile;
-    console.log('[Tawakkad][saveBusinessProfile] ✅ saved to business_profile | user_id=%s', profile.user_id);
+    window._businessProfile.category = profile.biz_type || null;   // مرادف
+    console.log('[Tawakkad][saveBusinessProfile] ✅ saved to business_profile | user_id=%s | category=%s',
+      profile.user_id, window._businessProfile.category);
     if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
     toast('✅ تم حفظ ملف المشروع');
   } catch(err) {
@@ -212,7 +217,9 @@ async function saveOnboarding() {
 
     // تحديث الكاش العالمي
     window._businessProfile = profile;
+    window._businessProfile.category = profile.biz_type || null;   // مرادف
     window.__ONBOARDING_NEEDED__ = false;
+    console.log('[Tawakkad][saveOnboarding] _businessProfile.category set to=%s', window._businessProfile.category);
 
     // ملء حقول page-profile بنفس القيم
     const set = (id, val) => {

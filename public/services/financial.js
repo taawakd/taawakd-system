@@ -698,7 +698,7 @@ async function exportPDF() {
   }).join('') : '';
 
   // ── المقارنات المرجعية ──
-  const bench = (window.BENCHMARKS || BENCHMARKS)[sectorKey || 'restaurant'];
+  const bench = (window.BENCHMARKS || BENCHMARKS)[sectorKey || 'services'] || {};
   const bMetrics = { netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct };
   const benchKeys = ['netMargin','grossMargin','rentPct','salPct','cogsPct','mktPct'];
   const benchHtml = bench ? benchKeys.filter(k => bench[k] && bMetrics[k] !== undefined).map((k, i) => {

@@ -220,20 +220,35 @@ function getSectorKey(bizType) {
     'كيوسك عصائر': 'juice_kiosk', 'juice_kiosk': 'juice_kiosk', 'عصائر': 'juice_kiosk', 'عصير': 'juice_kiosk',
     'مخبز': 'bakery', 'حلويات': 'bakery', 'bakery': 'bakery', 'مخبز / حلويات': 'bakery', 'كيك': 'bakery', 'معجنات': 'bakery',
     'فود ترك': 'food_truck', 'food_truck': 'food_truck',
+    'مطبخ سحابي': 'cloud_kitchen', 'cloud_kitchen': 'cloud_kitchen', 'كلاود كيتشن': 'cloud_kitchen',
+    'درايف ثرو': 'drive_thru', 'drive_thru': 'drive_thru', 'كشك': 'drive_thru',
     // تجارة
     'متجر تجزئة': 'retail', 'retail': 'retail', 'متجر': 'retail',
     'بقالة': 'grocery', 'grocery': 'grocery', 'سوبرماركت': 'grocery', 'ميني ماركت': 'grocery',
     'خضار': 'vegetables', 'خضروات': 'vegetables', 'vegetables': 'vegetables', 'محل خضار': 'vegetables', 'فواكه': 'vegetables',
     'عطور': 'perfumes', 'perfumes': 'perfumes', 'عطر': 'perfumes', 'بخور': 'perfumes',
     'تجارة إلكترونية': 'ecom', 'ecom': 'ecom', 'متجر إلكتروني': 'ecom', 'أونلاين': 'ecom',
-    // خدمات
-    'حلاقة': 'barber', 'تجميل': 'barber', 'barber': 'barber', 'حلاقة وتجميل': 'barber', 'صالون': 'barber', 'سبا': 'barber',
-    'مغسلة': 'laundry', 'laundry': 'laundry', 'غسيل': 'laundry', 'كوي': 'laundry',
+    'تمور': 'dates', 'dates': 'dates', 'تمر': 'dates',
+    // خدمات تجميل وصحة
+    'حلاقة': 'barber', 'barber': 'barber', 'حلاقة وتجميل': 'barber', 'صالون حلاقة': 'barber',
+    'تجميل': 'beauty', 'beauty': 'beauty', 'صالون تجميل': 'beauty', 'صالون': 'beauty', 'سبا': 'beauty',
     'عيادة': 'clinic', 'clinic': 'clinic', 'كلينيك': 'clinic', 'طبيب': 'clinic', 'أسنان': 'clinic',
     'صيدلية': 'pharmacy', 'pharmacy': 'pharmacy', 'دواء': 'pharmacy',
+    // خدمات تشغيلية
+    'مغسلة': 'laundry', 'laundry': 'laundry', 'غسيل': 'laundry', 'كوي': 'laundry', 'مغسلة ملابس': 'laundry',
+    'مغسلة سيارات': 'carwash', 'carwash': 'carwash', 'غسيل سيارات': 'carwash',
+    'لوجستي': 'logistics', 'logistics': 'logistics', 'شحن': 'logistics', 'توصيل': 'logistics', 'الخدمات اللوجستية': 'logistics',
+    // ضيافة
+    'فندق': 'hotel', 'hotel': 'hotel', 'شقق فندقية': 'hotel',
+    // خدمات أعمال
     'خدمات': 'services', 'services': 'services', 'خدمات عامة': 'services',
+    'شركة خدمات': 'services_co', 'services_co': 'services_co', 'مقاول': 'services_co',
+    'تقنية': 'tech', 'tech': 'tech', 'شركة تقنية': 'tech', 'برمجة': 'tech', 'تطبيق': 'tech', 'سوفتوير': 'tech',
   };
-  return map[bizType] || map[Object.keys(map).find(k => bizType?.includes(k))] || 'restaurant';
+  // بحث مباشر أولاً، ثم بحث جزئي، ثم 'services' كاحتياطي محايد (لا 'restaurant')
+  const result = map[bizType] || map[Object.keys(map).find(k => bizType?.includes(k))] || null;
+  console.log('[Tawakkad][getSectorKey] bizType=%s → sectorKey=%s', bizType, result);
+  return result;
 }
 
 function benchStatus(value, min, max, lowerIsBetter) {
@@ -273,8 +288,14 @@ function renderBenchmarkItems(metrics, bench, container) {
 }
 
 function renderBenchmarkPage() {
-  const sector = document.getElementById('bench-sector')?.value || 'restaurant';
-  const bench = BENCHMARKS[sector];
+  // القيمة الافتراضية: biz_type المحفوظة → سيكتور التحليل الأخير → null
+  const _savedBizType = window._businessProfile?.biz_type;
+  const _fallbackSector = _savedBizType
+    ? (typeof getSectorKey === 'function' ? getSectorKey(_savedBizType) : _savedBizType)
+    : (STATE.currentReport?.sectorKey || null);
+  const sector = document.getElementById('bench-sector')?.value || _fallbackSector;
+  console.log('[Tawakkad][benchmarkPage] category=%s | sectorKey=%s', _savedBizType, sector);
+  const bench = BENCHMARKS[sector] || {};
   const metrics = STATE.currentReport?.metrics || {};
 
   const c = document.getElementById('benchPageContent');
@@ -310,7 +331,7 @@ function renderBenchmarkPage() {
 // ALERTS
 // ══════════════════════════════════════════
 function generateAlerts(data, sectorKey) {
-  const bench = (window.BENCHMARKS || BENCHMARKS)[sectorKey] || (window.BENCHMARKS || BENCHMARKS).restaurant;
+  const bench = (window.BENCHMARKS || BENCHMARKS)[sectorKey] || (window.BENCHMARKS || BENCHMARKS).services || {};
   const alerts = [];
   const { netMargin, rentPct, salPct, cogsPct, mktPct, netProfit } = data;
   const rnt  = parseFloat(rentPct).toFixed(1);
