@@ -184,24 +184,25 @@ async function runAnalysis() {
   console.log('[Tawakkad] report.reportPeriod:', report.reportPeriod);
   window._excelReportPeriod = null;
 
-  // ── تحديد نوع الحفظ بناءً على الخطة ─────────────────────────────
-  // save_reports (paid أو تجربة نشطة): يُحفظ ويظهر للمستخدم كاملاً
-  const _isSavedForUser = planAllows('save_reports');
+  // ── كل تحليل يُحفظ دائماً — بغض النظر عن الخطة أو حالة التجربة ─────
+  // is_saved_for_user = true دائماً: التحليل سجل تاريخي لكل مستخدم
+  // قفل التفاصيل يتم في renderResults() عبر canAccessFeature() — لا هنا
+  const _isSavedForUser = true;
 
-  // أضف الـ flags للكائن (لاستخدامها في localStorage والفلترة)
-  report._is_saved_for_user = _isSavedForUser;
+  // أضف الـ flag للكائن (لاستخدامها في localStorage والفلترة)
+  report._is_saved_for_user = true;
 
   STATE.currentReport = report;
 
-  // أضف للـ STATE.savedReports فقط إذا كان المستخدم يرى التقارير المحفوظة
-  if (_isSavedForUser) {
-    STATE.savedReports.unshift(report);
-    if (typeof saveProjectReports === 'function') {
-      saveProjectReports(STATE.savedReports);
-    } else {
-      localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0, 20)));
-    }
+  // أضف للـ STATE.savedReports وalocalStorage — دائماً
+  STATE.savedReports.unshift(report);
+  if (typeof saveProjectReports === 'function') {
+    saveProjectReports(STATE.savedReports);
+  } else {
+    localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0, 20)));
   }
+  console.log('[Tawakkad][analysisSave] added to STATE.savedReports | total=%d | bizName=%s | period=%s',
+    STATE.savedReports.length, report.bizName, report.period);
 
   try {
     const token = window.__AUTH_TOKEN__;
@@ -215,9 +216,11 @@ async function runAnalysis() {
           period: report.period, revenue: report.metrics?.revenue || 0,
           total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
           net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
-          is_saved_for_user: _isSavedForUser,  // يتحكم في الظهور في التقارير المحفوظة
+          is_saved_for_user: true,  // دائماً true — كل تحليل سجل تاريخي
           report_json: report
         };
+        console.log('[Tawakkad][analysisSave] saving to Supabase reports table | user_id=%s | bizName=%s | bizType=%s | revenue=%s',
+          user.id, report.bizName, report.bizType, report.metrics?.revenue);
         // Try with all new columns; fallback gracefully if columns don't exist yet
         let { error: insertErr } = await window.sb.from('reports').insert({
           ...basePayload, report_period: report.reportPeriod || null
@@ -250,7 +253,7 @@ async function runAnalysis() {
             }
           }
         } else {
-          console.log('[Tawakkad] Supabase insert OK | is_saved_for_user:', _isSavedForUser);
+          console.log('[Tawakkad][analysisSave] ✅ Supabase insert OK | is_saved_for_user=true | bizName=%s', report.bizName);
         }
         // ملاحظة: زيادة analyses_used تتم من الـ API مباشرة — لا نكررها هنا
       }

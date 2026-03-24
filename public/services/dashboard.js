@@ -215,15 +215,9 @@ async function loadReportsFromDB() {
     const user = window.__USER__;
     if (!user) return;
 
-    // ── مساعد: هل هذا التقرير مرئي للمستخدم؟ ──────────────────────
-    const _isVisibleToUser = (r) => {
-      // عمود DB — أولوية
-      if (typeof r.is_saved_for_user === 'boolean') return r.is_saved_for_user;
-      // fallback: اقرأ من report_json إذا لم يُوجد العمود بعد
-      const rj = r.report_json || {};
-      if (typeof rj._is_saved_for_user === 'boolean') return rj._is_saved_for_user;
-      return true; // التقارير القديمة — تظهر بشكل افتراضي
-    };
+    // ── كل التحليلات تظهر للمستخدم — بغض النظر عن is_saved_for_user ───────
+    // قفل التفاصيل يتم في renderResults() عبر canAccessFeature() — لا هنا
+    const _isVisibleToUser = (_r) => true;
 
     // ── مشاريع غير الافتراضي تُحمَّل من localStorage ──────────────
     const projId = window.__CURRENT_PROJECT_ID__ || 'default';
@@ -232,11 +226,10 @@ async function loadReportsFromDB() {
       const saved = localStorage.getItem(key);
       if (saved) {
         const all = JSON.parse(saved);
-        // فلترة: أظهر فقط التقارير المحفوظة للمستخدم
-        STATE.savedReports = all.filter(r => {
-          if (typeof r._is_saved_for_user === 'boolean') return r._is_saved_for_user;
-          return true;
-        });
+        // أظهر كل التحليلات — لا فلترة بناءً على الخطة
+        STATE.savedReports = all;
+        console.log('[Tawakkad][analysisLoad] project=%s | loaded %d analyses from localStorage',
+          projId, STATE.savedReports.length);
         if (!STATE.currentReport && STATE.savedReports.length) STATE.currentReport = STATE.savedReports[0];
       }
       if (document.getElementById('savedReportsGrid')) renderSavedReports();
@@ -249,13 +242,16 @@ async function loadReportsFromDB() {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(50); // نحمّل أكثر لأننا سنفلتر بعضها
-    if (error || !data) return;
+      .limit(50);
+    if (error || !data) {
+      console.error('[Tawakkad][analysisLoad] DB query error:', error?.message);
+      return;
+    }
 
-    // فلترة: استبعد تقارير paid_one_time من القائمة المرئية
+    console.log('[Tawakkad][analysisLoad] retrieved %d analyses from DB for user_id=%s', data.length, userId);
+
+    // أظهر كل التحليلات — لا حد للعدد، لا فلترة بناءً على الخطة
     STATE.savedReports = data
-      .filter(_isVisibleToUser)
-      .slice(0, 20)
       .map(r => {
         // Restore computed ratio fields from report_json — they are NOT stored
         // as individual Supabase columns (only revenue/expenses/profit/margin/score are)
@@ -305,11 +301,12 @@ async function loadReportsFromDB() {
     if (typeof saveProjectReports === 'function') {
       saveProjectReports(STATE.savedReports);
     } else {
-      localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0,20)));
+      localStorage.setItem('tw_reports', JSON.stringify(STATE.savedReports.slice(0, 50)));
     }
-    console.log('[Tawakkad] loadReportsFromDB — loaded', STATE.savedReports.length,
-      'reports | currentReport:', STATE.currentReport?.bizName,
-      '| grossMargin from report_json:', STATE.savedReports[0]?.metrics?.grossMargin);
+    console.log('[Tawakkad][analysisLoad] ✅ STATE.savedReports=%d | currentReport=%s | grossMargin=%s',
+      STATE.savedReports.length,
+      STATE.currentReport?.bizName,
+      STATE.savedReports[0]?.metrics?.grossMargin);
 
     // إعادة رسم الكاردات بعد تحديث STATE.savedReports بـ UUIDs من Supabase
     // (ضروري لأن الكاردات قد بُنيت بـ IDs قديمة من localStorage)
@@ -322,20 +319,8 @@ function renderSavedReports() {
   const grid = document.getElementById('savedReportsGrid');
   if (!grid) return;
 
-  // فحص الخطة — سجل التقارير للخطط المدفوعة فقط
-  if (!planAllows('save_reports')) {
-    grid.innerHTML = `
-      <div style="grid-column:1/-1;text-align:center;padding:48px 24px;border:1px dashed rgba(201,168,76,0.25);border-radius:16px;background:rgba(201,168,76,0.04);">
-        <div style="font-size:40px;margin-bottom:12px;">📁</div>
-        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">سجل التقارير المحفوظة</div>
-        <p style="font-size:13px;color:#888;margin:0 0 20px;">احفظ جميع تحليلاتك وارجع إليها في أي وقت — متاح في الخطة الاحترافية</p>
-        <button onclick="showUpgradeModal('حفظ التقارير', 'paid')"
-          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
-          ترقية للخطة الاحترافية ←
-        </button>
-      </div>`;
-    return;
-  }
+  // كل المستخدمين يرون سجل تحليلاتهم — بغض النظر عن الخطة
+  // تفاصيل النتائج مقفلة عبر canAccessFeature() في renderResults()
 
   if(!STATE.savedReports.length){
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;background:var(--s1);border:1px dashed var(--border);border-radius:16px;">
