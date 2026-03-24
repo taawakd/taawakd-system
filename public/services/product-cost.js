@@ -978,10 +978,12 @@ function initProductCostPage() {
     const _bpType = window._businessProfile?.biz_type;
     console.log('[Tawakkad][initPC] after DB load — PC_STATE.products=%d | biz_type=%s',
       window.PC_STATE.products.length, _bpType);
-    if (_bpType && window.PC_STATE.products.length === 0 &&
+    const _allSuggested = window.PC_STATE.products.length === 0 ||
+      window.PC_STATE.products.every(p => p._isSuggested);
+    if (_bpType && _allSuggested &&
         typeof window.pcSuggestFromCategory === 'function') {
-      console.log('[Tawakkad][initPC] PC_STATE empty → suggesting for category=%s', _bpType);
-      window.pcSuggestFromCategory(_bpType);
+      console.log('[Tawakkad][initPC] all-suggested or empty → force-loading static products for category=%s', _bpType);
+      window.pcSuggestFromCategory(_bpType, { force: true });
     } else {
       renderProductComparison();
     }

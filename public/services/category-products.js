@@ -319,12 +319,9 @@ document.addEventListener('change', function(e) {
     console.log('[Tawakkad][category] _businessProfile.biz_type updated to=%s', newType);
   }
 
-  // إذا كانت كل المنتجات الحالية مقترحة (أو القائمة فارغة) → أعِد توليد الاقتراحات
-  const current = window.PC_STATE?.products || [];
-  const allSuggested = current.length === 0 || current.every(p => p._isSuggested);
-
-  if (allSuggested && typeof window.pcSuggestFromCategory === 'function') {
-    console.log('[Tawakkad][category] regenerating suggestions for new category=%s', newType);
+  // دائماً أعِد تحميل القائمة الثابتة عند اختيار نوع النشاط
+  if (typeof window.pcSuggestFromCategory === 'function') {
+    console.log('[Tawakkad][category] force-loading static products for category=%s', newType);
     window.pcSuggestFromCategory(newType, { force: true });
   }
 });
