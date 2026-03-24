@@ -73,7 +73,7 @@ function _renderDashboardPreview(rep) {
     scoreLock.innerHTML = `
       <span style="font-size:36px;">🔒</span>
       <span style="font-size:15px;color:#c9a84c;font-weight:700;">فتح التحليل الكامل</span>
-      <span style="font-size:12px;color:#888;">29 ر.س أو اشتراك شهري</span>`;
+      <span style="font-size:12px;color:#888;">اشترك — 79 ر.س/شهر</span>`;
     scoreLock.onclick = () => showUpgradeModal('التقرير الكامل', 'paid');
     scoreCardEl.appendChild(scoreLock);
   }
@@ -84,22 +84,19 @@ function _renderDashboardPreview(rep) {
       icon: '👀',
       title: 'وضعك يبدو جيداً…',
       body: 'لكن هناك فرص تحسين مخفية لم تراها — الأرقام التفصيلية غير ظاهرة',
-      ctaMain: 'فتح هذا التقرير — 29 ر.س',
-      ctaSub:  'اشترك — 79 ر.س/شهر',
+      ctaMain: 'اشترك والتحليل الكامل — 79 ر.س/شهر',
     };
     if (score >= 40) return {
       icon: '⚠️',
       title: 'أداء متوسط — في تفاصيل مخفية',
       body: 'التقرير يكشف أين تتسرب أرباحك بالضبط، ونقطة التعادل، والمصاريف',
-      ctaMain: 'فتح هذا التقرير — 29 ر.س',
-      ctaSub:  'اشترك — 79 ر.س/شهر',
+      ctaMain: 'اشترك واكشف التفاصيل — 79 ر.س/شهر',
     };
     return {
       icon: '🚨',
       title: 'مشروعك يخسر بدون ما تدري',
       body: 'المؤشر يشير لمشكلة حقيقية — التقرير الكامل يحدد سببها ويعطيك خطة خروج',
-      ctaMain: 'اكشف المشكلة — 29 ر.س',
-      ctaSub:  'اشترك — 79 ر.س/شهر',
+      ctaMain: 'اشترك واكشف المشكلة — 79 ر.س/شهر',
     };
   })();
 
@@ -131,12 +128,8 @@ function _renderDashboardPreview(rep) {
       <p style="font-size:11px;color:rgba(201,168,76,0.5);margin:0 0 18px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button onclick="showUpgradeModal('التقرير الكامل', 'paid')"
-          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
           ${_msg.ctaMain}
-        </button>
-        <button onclick="showUpgradeModal('الاشتراك الاحترافي', 'paid')"
-          style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-          ${_msg.ctaSub}
         </button>
       </div>
     </div>`;

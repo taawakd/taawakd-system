@@ -164,57 +164,34 @@ function showUpgradeModal(featureName, requiredPlan) {
 
       <div style="text-align:center;margin-bottom:28px;">
         <div style="font-size:36px;margin-bottom:10px;">🔒</div>
-        <h3 style="color:#fff;font-size:18px;margin:0 0 6px;">${featureName ? featureName + ' — ' : ''}هذه الميزة تحتاج ترقية</h3>
-        <p style="color:#888;font-size:13px;margin:0;">اختر الخيار المناسب لك</p>
+        <h3 style="color:#fff;font-size:18px;margin:0 0 6px;">${featureName ? featureName + ' — ' : ''}هذه الميزة تحتاج اشتراك</h3>
+        <p style="color:#888;font-size:13px;margin:0;">اشترك للوصول الكامل لجميع المميزات</p>
       </div>
 
-      <!-- خيار ١: تقرير لمرة واحدة -->
-      <div style="border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="color:#ddd;font-size:15px;font-weight:600;">فتح هذا التقرير</span>
-          <span style="color:#fff;font-size:20px;font-weight:800;">29 <span style="font-size:12px;color:#888;font-weight:400;">ر.س</span></span>
-        </div>
-        <ul style="list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px;">
-          <li style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>التقرير المالي الكامل</li>
-          <li style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات ونقطة التعادل</li>
-          <li style="font-size:12px;color:#555;display:flex;align-items:center;gap:6px;"><span style="color:#555;">✗</span>لا يشمل الحفظ أو AI CFO أو التقارير المستقبلية</li>
-        </ul>
-        <button id="btnOneTimePay"
-          style="display:block;width:100%;text-align:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">
-          فتح التقرير — 29 ر.س
-        </button>
-      </div>
-
-      <!-- خيار ٢: الاشتراك الشهري — الأفضل -->
-      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:18px;position:relative;">
+      <!-- الاشتراك الشهري — الخيار الوحيد -->
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:24px;position:relative;">
         <div style="position:absolute;top:-10px;right:16px;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;font-size:10px;font-weight:700;padding:3px 12px;border-radius:100px;">الأفضل قيمة ⭐</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="color:#e8c76a;font-size:15px;font-weight:700;">الاشتراك الشهري</span>
-          <span style="color:#fff;font-size:20px;font-weight:800;">79 <span style="font-size:12px;color:#888;font-weight:400;">ر.س/شهر</span></span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <span style="color:#e8c76a;font-size:16px;font-weight:700;">الاشتراك الشهري</span>
+          <span style="color:#fff;font-size:22px;font-weight:800;">79 <span style="font-size:13px;color:#888;font-weight:400;">ر.س/شهر</span></span>
         </div>
-        <ul style="list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px;">
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>8 تحليلات / شهر (مفتوحة بالكامل)</li>
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>AI CFO — 3 رسائل / يوم</li>
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>حفظ التقارير وتتبع الأداء</li>
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات + التوقعات الذكية</li>
-          <li style="font-size:12px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>مقارنة السوق وجميع الميزات</li>
+        <ul style="list-style:none;padding:0;margin:0 0 18px;display:flex;flex-direction:column;gap:8px;">
+          <li style="font-size:13px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>8 تحليلات / شهر (مفتوحة بالكامل)</li>
+          <li style="font-size:13px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>AI CFO — 3 رسائل / يوم</li>
+          <li style="font-size:13px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>حفظ التقارير وتتبع الأداء</li>
+          <li style="font-size:13px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>تحليل المنتجات + التوقعات الذكية</li>
+          <li style="font-size:13px;color:#ddd;display:flex;align-items:center;gap:6px;"><span style="color:#4caf82;">✓</span>مقارنة السوق وجميع الميزات</li>
         </ul>
         <a href="/landing.html#pricing" target="_blank"
-          style="display:block;text-align:center;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;">
+          style="display:block;text-align:center;background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;">
           اشترك الآن — 79 ر.س/شهر ←
         </a>
       </div>
 
       <p style="text-align:center;font-size:11px;color:#444;margin:14px 0 0;">للتواصل والاستفسار: <a href="https://wa.me/966500000000" target="_blank" style="color:#555;text-decoration:none;">WhatsApp</a></p>
     </div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); })
   document.body.appendChild(overlay);
-
-  // ربط زر "29 ر.س" مباشرة بعد إضافة الـ overlay للـ DOM
-  const btnPay = document.getElementById('btnOneTimePay');
-  if (btnPay) {
-    btnPay.addEventListener('click', function() { _onOneTimePaid(); });
-  }
 }
 window.showUpgradeModal = showUpgradeModal;
 

@@ -225,7 +225,7 @@ function renderPricingPage() {
         <p style="font-size:11px;color:rgba(201,168,76,0.5);margin:0 0 14px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
         <button onclick="showUpgradeModal('تحليل التسعير الكامل', 'paid')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-          فتح التحليل الكامل — 29 ر.س
+          اشترك وافتح التحليل الكامل — 79 ر.س/شهر
         </button>
       </div>`;
     return;
@@ -515,12 +515,8 @@ function drawHealthAdvisor(decisions) {
         <p style="font-size:13px;color:#888;margin:0 0 12px;font-style:italic;">التفاصيل الكاملة غير ظاهرة — الخطوات + التأثير المتوقع + التوصيات</p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
           <button onclick="showUpgradeModal('مستشار الصحة المالية', 'paid')"
-            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-            فتح التحليل الكامل — 29 ر.س
-          </button>
-          <button onclick="showUpgradeModal('الاشتراك الاحترافي', 'paid')"
-            style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-            اشترك — 79 ر.س/شهر
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            اشترك وافتح التحليل الكامل — 79 ر.س/شهر
           </button>
         </div>
       </div>`;
