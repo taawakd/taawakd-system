@@ -139,17 +139,19 @@ async function runAnalysis() {
     });
     const data = await resp.json();
 
-    // فحص حد الخطة
-    if (data.limit_reached) {
+    // فحص حد الخطة أو انتهاء التجربة
+    if (data.limit_reached || data.trial_expired) {
       if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
       if(document.getElementById('analyzeBtnText')) document.getElementById('analyzeBtnText').textContent = 'تحليل المشروع الآن';
       if(document.getElementById('analyzeSpin')) document.getElementById('analyzeSpin').style.display = 'none';
       btn.disabled = false;
-      const plan = window.__USER_PLAN__ || 'free';
-      const featureName = plan === 'free'
-        ? `التحليلات (استخدمت ${data.used} من ${data.limit})`
+      const _errUser = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+      console.log('[Tawakkad][analyze] blocked | plan=%s | trialActive=%s | trial_expired=%s | limit_reached=%s',
+        _errUser.plan, _errUser.isTrialActive, !!data.trial_expired, !!data.limit_reached);
+      const featureName = data.trial_expired
+        ? 'انتهت فترة التجربة المجانية'
         : `حد التحليلات الشهري (${data.used}/${data.limit})`;
-      if (typeof showUpgradeModal === 'function') showUpgradeModal(featureName, plan === 'free' ? 'pro' : 'enterprise');
+      if (typeof showUpgradeModal === 'function') showUpgradeModal(featureName, 'paid');
       else if (typeof window.showLimitModal === 'function') window.showLimitModal(data.used, data.limit);
       return;
     }
@@ -611,9 +613,13 @@ function handleExcel(input) {
 // Fix: deep-clone the results content into a self-contained PDF wrapper
 // with all colours set via explicit inline styles so html2canvas sees real values.
 async function exportPDF() {
-  // فحص الخطة — PDF للخطط المدفوعة فقط
-  if (!planAllows('pdf_export')) {
-    if (typeof showUpgradeModal === 'function') showUpgradeModal('تصدير تقرير PDF', 'pro');
+  // فحص الصلاحية — PDF متاح للمشتركين وخلال فترة التجربة
+  const _pdfUser   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _pdfAccess = window.canAccessFeature ? window.canAccessFeature(_pdfUser, 'pdf_export') : planAllows('pdf_export');
+  console.log('[Tawakkad][exportPDF] plan=%s | trialActive=%s | access=%s',
+    _pdfUser.plan, _pdfUser.isTrialActive, _pdfAccess);
+  if (!_pdfAccess) {
+    if (typeof showUpgradeModal === 'function') showUpgradeModal('تصدير تقرير PDF', 'paid');
     return;
   }
   const rep = STATE.currentReport;

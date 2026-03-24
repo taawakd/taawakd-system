@@ -6,39 +6,21 @@ async function sendCFO(quickMsg) {
   const msg = quickMsg || input.value.trim();
   if (!msg) return;
 
-  // ── فحص الخطة: AI CFO للمشتركين فقط (3 رسائل / يوم) ────────────────────
-  // canAccessFeature() في plan-config.js هو المرجع الوحيد لقرارات الصلاحية
-  const CFO_DAILY = window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 3;
+  // ── فحص الصلاحية: canAccessFeature() هو المرجع الوحيد ────────────────────
+  // المنطق: مشترك → مسموح | تجربة نشطة → مسموح | منتهية → محجوب
+  const _cfoUser   = window.getAccessUser();
+  const _cfoAccess = window.canAccessFeature(_cfoUser, 'cfo_full');
 
-  if (!window.canAccessFeature(window.getAccessUser(), 'cfo_full')) {
-    // المجانيون + one_time: لا صلاحية للـ CFO
+  console.log('[Tawakkad][CFO] plan=%s | trialActive=%s | access=%s',
+    _cfoUser.plan, _cfoUser.isTrialActive, _cfoAccess);
+
+  if (!_cfoAccess) {
     input.value = '';
     appendCFOMessage('ai',
-      '🔒 **AI CFO متاح للمشتركين فقط.**\n\n' +
-      'اشترك في الخطة المدفوعة للحصول على 3 رسائل يومياً.');
-    if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO', 'pro');
+      '🔒 **انتهت فترة التجربة المجانية.**\n\n' +
+      'اشترك في الخطة المدفوعة للوصول إلى AI CFO وجميع الميزات.');
+    if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO', 'paid');
     return;
-  }
-
-  // المشتركون: تحقق من الحد اليومي (3 رسائل/يوم) عبر localStorage
-  const _today       = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const _cfoKey      = 'tw_cfo_daily_' + _today;
-  const _cfoUsed     = parseInt(localStorage.getItem(_cfoKey) || '0', 10);
-
-  if (_cfoUsed >= CFO_DAILY) {
-    input.value = '';
-    appendCFOMessage('ai',
-      `🔒 **وصلت لحد ${CFO_DAILY} رسائل اليوم.**\n\n` +
-      'يتجدد الحد يومياً — عد غداً للاستمرار.');
-    return;
-  }
-  // تسجيل الرسالة
-  localStorage.setItem(_cfoKey, String(_cfoUsed + 1));
-  // تحذير عند آخر رسالة
-  if (_cfoUsed + 1 >= CFO_DAILY) {
-    setTimeout(() => appendCFOMessage('ai',
-      `⚠️ هذه آخر رسالة لليوم — استخدمت ${CFO_DAILY}/${CFO_DAILY}. يتجدد الغد.`
-    ), 400);
   }
 
   input.value = '';
@@ -172,12 +154,14 @@ async function sendCFO(quickMsg) {
 
     const data = await resp.json();
 
-    // ── فحص حد الخطة ──
-    if (data.limit_reached) {
+    // ── فحص حد يومي (3 رسائل/يوم للمشتركين) أو انتهاء التجربة ──
+    if (data.limit_reached || data.trial_expired) {
       removeTyping(typingId);
-      appendCFOMessage('ai',
-        `🔒 **وصلت لحد استخدام AI CFO هذا الشهر.**\n\nقم بالترقية للحصول على وصول كامل بدون قيود.`);
-      if (typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO كامل', 'pro');
+      const _limitMsg = data.trial_expired
+        ? '🔒 **انتهت فترة التجربة المجانية.**\n\nاشترك في الخطة المدفوعة للمتابعة.'
+        : `🔒 **وصلت لحد ${window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 3} رسائل AI CFO اليوم.**\n\nيتجدد الغد.`;
+      appendCFOMessage('ai', _limitMsg);
+      if (data.trial_expired && typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO', 'paid');
       return;
     }
 

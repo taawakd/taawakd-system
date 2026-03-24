@@ -84,18 +84,18 @@ function showPage(name, _fromHash) {
   if(name==='dashboard') updateDashboard();
   if(name==='analysis') _prefillFromBP();
   if(name==='reports') {
-    if (!planAllows('save_reports')) { showUpgradeModal('سجل التقارير المحفوظة', 'pro'); return; }
+    if (!planAllows('save_reports')) { showUpgradeModal('سجل التقارير المحفوظة', 'paid'); return; }
     renderSavedReports();
   }
   if(name==='benchmark') {
-    if (!planAllows('market_compare')) { showUpgradeModal('مقارنة السوق', 'pro'); return; }
+    if (!planAllows('market_compare')) { showUpgradeModal('مقارنة السوق', 'paid'); return; }
     renderBenchmarkPage();
   }
   if(name==='scenarios') {
     if (window.STATE?.currentReport) renderScenariosPage(); // preview داخل renderScenariosPage() حسب الخطة
   }
   if(name==='compare') {
-    if (!planAllows('compare_reports')) { showUpgradeModal('مقارنة التقارير', 'pro'); return; }
+    if (!planAllows('compare_reports')) { showUpgradeModal('مقارنة التقارير', 'paid'); return; }
     renderComparePage();
   }
   if(name==='actionplan') {
@@ -112,7 +112,7 @@ function showPage(name, _fromHash) {
     }
   }
   if(name==='forecast') {
-    if (!planAllows('forecast')) { showUpgradeModal('التوقعات الذكية', 'pro'); return; }
+    if (!planAllows('forecast')) { showUpgradeModal('التوقعات الذكية', 'paid'); return; }
     if (window.STATE?.currentReport) renderSmartForecast();
   }
   if(name==='healthadvisor' && window.STATE?.currentReport) renderHealthAdvisor();
@@ -221,7 +221,7 @@ window.showUpgradeModal = showUpgradeModal;
 // ── فحص الخطة قبل تنفيذ أي وظيفة ──────────────────────────
 function requirePlan(feature, featureName, requiredPlan, fn) {
   if (planAllows(feature)) { fn(); }
-  else { showUpgradeModal(featureName, requiredPlan || 'pro'); }
+  else { showUpgradeModal(featureName, requiredPlan || 'paid'); }
 }
 window.requirePlan = requirePlan;
 

@@ -165,7 +165,7 @@ function calcProductCost() {
 
 // قالب القفل المشترك للحاسبة
 function _pcLockHTML(label) {
-  return `<span style="color:var(--gray);font-size:12px;cursor:pointer;" onclick="showUpgradeModal('حاسبة التكاليف الكاملة','one_time')">🔒 ${label||''}</span>`;
+  return `<span style="color:var(--gray);font-size:12px;cursor:pointer;" onclick="showUpgradeModal('حاسبة التكاليف الكاملة', 'paid')">🔒 ${label||''}</span>`;
 }
 
 // قفل الأقسام التفصيلية عند الخطة المجانية
@@ -178,7 +178,7 @@ function _pcLockDetailSections() {
       </div>
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;">
         <span style="font-size:16px;">🔒</span>
-        <button onclick="showUpgradeModal('التفاصيل الكاملة','one_time')"
+        <button onclick="showUpgradeModal('التفاصيل الكاملة', 'paid')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           فتح التحليل الكامل
         </button>
@@ -210,8 +210,13 @@ function _pcSetResults(d) {
   const rEl = document.getElementById('res-rating');
   if (rEl) { rEl.textContent = rating; rEl.style.color = rColor; }
 
-  // ── بوابة الخطة المجانية: قفل كل الأرقام التفصيلية ──────────
-  if (!planAllows('full_report')) {
+  // ── فحص الصلاحية: مشترك أو تجربة نشطة → كامل | منتهية → مقفل ──
+  const _pcUser   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _pcAccess = window.canAccessFeature ? window.canAccessFeature(_pcUser, 'full_report') : planAllows('full_report');
+  console.log('[Tawakkad][productCost] plan=%s | trialActive=%s | access=%s',
+    _pcUser.plan, _pcUser.isTrialActive, _pcAccess);
+
+  if (!_pcAccess) {
     const _lock = (id) => { const e = document.getElementById(id); if (e) { e.innerHTML = _pcLockHTML(); e.style.color = ''; } };
     _lock('res-ing-cost'); _lock('res-op-cost-unit'); _lock('res-true-cost');
     _lock('res-profit-unit'); _lock('res-monthly-profit'); _lock('res-be-units');
@@ -361,8 +366,12 @@ function addIngredient() {
 
 // ── حفظ المنتج ─────────────────────────────────────────────────
 function saveProductCost() {
-  if (!planAllows('save_reports')) {
-    showUpgradeModal('حفظ المنتجات وتعديلها', 'pro');
+  const _sv1User   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _sv1Access = window.canAccessFeature ? window.canAccessFeature(_sv1User, 'save_reports') : planAllows('save_reports');
+  console.log('[Tawakkad][saveProduct] plan=%s | trialActive=%s | access=%s',
+    _sv1User.plan, _sv1User.isTrialActive, _sv1Access);
+  if (!_sv1Access) {
+    showUpgradeModal('حفظ المنتجات وتعديلها', 'paid');
     return;
   }
   const name = document.getElementById('pc-name')?.value?.trim();
@@ -480,8 +489,12 @@ async function pcLoadFromDB() {
 // ── تحميل منتج في النموذج ──────────────────────────────────────
 function loadProductToForm(p) {
   if (!p) return;
-  if (!planAllows('save_reports')) {
-    showUpgradeModal('تعديل المنتجات وحفظها', 'pro');
+  const _sv2User   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _sv2Access = window.canAccessFeature ? window.canAccessFeature(_sv2User, 'save_reports') : planAllows('save_reports');
+  console.log('[Tawakkad][editProduct] plan=%s | trialActive=%s | access=%s',
+    _sv2User.plan, _sv2User.isTrialActive, _sv2Access);
+  if (!_sv2Access) {
+    showUpgradeModal('تعديل المنتجات وحفظها', 'paid');
     return;
   }
   const set = (id, val) => {
@@ -532,8 +545,12 @@ function loadProductToForm(p) {
 
 // ── تكرار منتج ─────────────────────────────────────────────────
 function duplicateProduct(id) {
-  if (!planAllows('save_reports')) {
-    showUpgradeModal('تعديل المنتجات وحفظها', 'pro');
+  const _sv2User   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _sv2Access = window.canAccessFeature ? window.canAccessFeature(_sv2User, 'save_reports') : planAllows('save_reports');
+  console.log('[Tawakkad][editProduct] plan=%s | trialActive=%s | access=%s',
+    _sv2User.plan, _sv2User.isTrialActive, _sv2Access);
+  if (!_sv2Access) {
+    showUpgradeModal('تعديل المنتجات وحفظها', 'paid');
     return;
   }
   const p = PC_STATE.products.find(x => x.id === id);

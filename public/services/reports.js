@@ -499,10 +499,14 @@ function renderScenariosPage() {
   const {metrics} = STATE.currentReport;
   const scenarios = buildScenarios(metrics);
 
-  // ── Preview mode للخطة المجانية: سيناريو واحد فقط ─────────────
-  if (!planAllows('full_report')) {
+  // ── فحص الصلاحية: canAccessFeature هو المرجع الوحيد ─────────────
+  const _scenUser   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _scenAccess = window.canAccessFeature ? window.canAccessFeature(_scenUser, 'full_report') : planAllows('full_report');
+  console.log('[Tawakkad][scenarios] plan=%s | trialActive=%s | access=%s',
+    _scenUser.plan, _scenUser.isTrialActive, _scenAccess);
+
+  if (!_scenAccess) {
     const first = scenarios[0];
-    const firstMargin = metrics.revenue > 0 ? ((first.newProfit/metrics.revenue)*100).toFixed(1) : 0;
     const _lockedCard = `
       <div style="position:relative;border-radius:12px;overflow:hidden;">
         <div style="filter:blur(4px);pointer-events:none;opacity:0.2;padding:20px;border:1px solid rgba(255,255,255,0.06);border-radius:12px;background:rgba(255,255,255,0.01);">
@@ -512,9 +516,9 @@ function renderScenariosPage() {
         </div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;">
           <span style="font-size:16px;">🔒</span>
-          <button onclick="showUpgradeModal('سيناريوهات ماذا لو','one_time')"
+          <button onclick="showUpgradeModal('سيناريوهات ماذا لو','paid')"
             style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
-            اكشف هذا السيناريو
+            اشترك للوصول
           </button>
         </div>
       </div>`;
@@ -523,7 +527,7 @@ function renderScenariosPage() {
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title"><div class="card-title-icon">🎯</div>سيناريوهات "ماذا لو؟"</div>
         <div class="grid-3">
-          <!-- السيناريو الأول ظاهر -->
+          <!-- السيناريو الأول ظاهر جزئياً -->
           <div class="scenario-card">
             <div class="sc-title">${first.title}</div>
             <div class="sc-desc">${first.desc}</div>
@@ -534,17 +538,11 @@ function renderScenariosPage() {
           ${scenarios.slice(1).map(() => _lockedCard).join('')}
         </div>
         <div style="text-align:center;margin-top:16px;padding:16px;border-radius:10px;background:rgba(201,168,76,0.04);border:1px dashed rgba(201,168,76,0.2);">
-          <p style="font-size:12px;color:rgba(201,168,76,0.5);margin:0 0 12px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button onclick="showUpgradeModal('سيناريوهات ماذا لو','one_time')"
-              style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-              فتح جميع السيناريوهات — 29 ر.س
-            </button>
-            <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
-              style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-              اشترك — 79 ر.س/شهر
-            </button>
-          </div>
+          <p style="font-size:12px;color:rgba(201,168,76,0.5);margin:0 0 12px;font-style:italic;">متاح بالاشتراك أو خلال فترة التجربة</p>
+          <button onclick="showUpgradeModal('سيناريوهات ماذا لو','paid')"
+            style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            اشترك — 79 ر.س/شهر
+          </button>
         </div>
       </div>`;
     return;

@@ -54,7 +54,7 @@ function _renderDashboardPreview(rep) {
     kpiOverlay.setAttribute('data-lock-overlay', '1');
     kpiOverlay.style.cssText = 'position:absolute;inset:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(13,13,20,0.4);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;border-radius:inherit;z-index:2;';
     kpiOverlay.innerHTML = `<span style="font-size:20px;">🔒</span><span style="font-size:14px;color:#c9a84c;font-weight:600;">اضغط لرؤية النتائج</span>`;
-    kpiOverlay.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+    kpiOverlay.onclick = () => showUpgradeModal('التقرير الكامل', 'paid');
     dashKpis.appendChild(kpiOverlay);
   }
 
@@ -74,7 +74,7 @@ function _renderDashboardPreview(rep) {
       <span style="font-size:36px;">🔒</span>
       <span style="font-size:15px;color:#c9a84c;font-weight:700;">فتح التحليل الكامل</span>
       <span style="font-size:12px;color:#888;">29 ر.س أو اشتراك شهري</span>`;
-    scoreLock.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+    scoreLock.onclick = () => showUpgradeModal('التقرير الكامل', 'paid');
     scoreCardEl.appendChild(scoreLock);
   }
 
@@ -130,11 +130,11 @@ function _renderDashboardPreview(rep) {
       <p style="font-size:13px;color:#888;margin:0 0 6px;line-height:1.6;">${_msg.body}</p>
       <p style="font-size:11px;color:rgba(201,168,76,0.5);margin:0 0 18px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="showUpgradeModal('التقرير الكامل','one_time')"
+        <button onclick="showUpgradeModal('التقرير الكامل', 'paid')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
           ${_msg.ctaMain}
         </button>
-        <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
+        <button onclick="showUpgradeModal('الاشتراك الاحترافي', 'paid')"
           style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
           ${_msg.ctaSub}
         </button>
@@ -186,7 +186,7 @@ function updateDashboard() {
           <div style="font-size:32px;margin-bottom:10px;">🔮</div>
           <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">التوقعات الذكية</div>
           <p style="font-size:13px;color:#888;margin:0 0 16px;">متاحة في الخطة الاحترافية فأعلى</p>
-          <button onclick="showUpgradeModal('التوقعات الذكية','pro')"
+          <button onclick="showUpgradeModal('التوقعات الذكية', 'paid')"
             style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
             ترقية للخطة الاحترافية ←
           </button>
@@ -329,7 +329,7 @@ function renderSavedReports() {
         <div style="font-size:40px;margin-bottom:12px;">📁</div>
         <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">سجل التقارير المحفوظة</div>
         <p style="font-size:13px;color:#888;margin:0 0 20px;">احفظ جميع تحليلاتك وارجع إليها في أي وقت — متاح في الخطة الاحترافية</p>
-        <button onclick="showUpgradeModal('حفظ التقارير','pro')"
+        <button onclick="showUpgradeModal('حفظ التقارير', 'paid')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
           ترقية للخطة الاحترافية ←
         </button>

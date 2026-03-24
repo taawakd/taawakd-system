@@ -11,7 +11,7 @@ const PLAN_LABELS = {
   enterprise: 'الخطة المدفوعة',        // توافق مع الحسابات القديمة
 };
 
-const PLAN_LIMITS = { free: 3, paid: null, pro: null, enterprise: null };
+// PLAN_LIMITS removed — no free analysis limit; trial model replaces it
 
 // ── Load & render profile ──────────────────────────────────
 window.loadUserProfile = async function () {
@@ -37,7 +37,7 @@ window.loadUserProfile = async function () {
   try {
     const { data: profile, error } = await window.sb
       .from('profiles')
-      .select('full_name, plan, analyses_used, analyses_reset_at, subscription_end_date, company_name, business_type, city, phone, commercial_reg, tax_number')
+      .select('full_name, plan, analyses_used, analyses_reset_at, subscription_end_date, trial_started_at, company_name, business_type, city, phone, commercial_reg, tax_number')
       .eq('id', userId)
       .single();
 
@@ -72,10 +72,17 @@ window.loadUserProfile = async function () {
     const expiryEl  = document.getElementById('up-plan-expiry');
     const daysEl    = document.getElementById('up-plan-days');
 
+    // ── حالة الوصول: مشترك | تجربة نشطة | منتهية ──────────────────
+    const _upTrialStartedAt = profile?.trial_started_at || window.__TRIAL_STARTED_AT__ || null;
+    const _upTrialActive    = window.isTrialActive ? window.isTrialActive(_upTrialStartedAt) : false;
+    const _upIsPaid         = window.isPaidPlan ? window.isPaidPlan(plan) : plan === 'paid';
+
+    console.log('[Tawakkad][userProfile] plan=%s | trialActive=%s | trialStartedAt=%s',
+      plan, _upTrialActive, _upTrialStartedAt);
+
     if (planEl) {
       planEl.textContent = PLAN_LABELS[plan] || plan;
-      const isPaid = window.isPaidPlan ? window.isPaidPlan(plan) : (plan === 'paid' || plan === 'pro' || plan === 'enterprise');
-      planEl.style.color = isPaid ? '#5b8fcc' : 'var(--gold)';
+      planEl.style.color = _upIsPaid ? '#5b8fcc' : _upTrialActive ? 'var(--gold)' : 'var(--red)';
     }
 
     // Expiry date & days remaining
@@ -89,28 +96,41 @@ window.loadUserProfile = async function () {
         daysEl.textContent = days > 0 ? `${days} يوم` : 'منتهي';
         daysEl.style.color = days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--warn)' : 'var(--green)';
       }
+    } else if (_upIsPaid) {
+      if (expiryEl) expiryEl.textContent = 'اشتراك نشط';
+      if (daysEl)   daysEl.textContent   = '—';
+    } else if (_upTrialActive && _upTrialStartedAt) {
+      // احسب الأيام المتبقية من التجربة
+      const _trialDays = window.PLAN_CONFIG?.TRIAL_DAYS ?? 7;
+      const _elapsed   = (Date.now() - new Date(_upTrialStartedAt).getTime()) / (1000 * 60 * 60 * 24);
+      const _remaining = Math.max(0, Math.ceil(_trialDays - _elapsed));
+      if (expiryEl) expiryEl.textContent = 'تجربة مجانية';
+      if (daysEl) {
+        daysEl.textContent   = `${_remaining} يوم متبقي`;
+        daysEl.style.color   = _remaining <= 2 ? 'var(--warn)' : 'var(--gold)';
+      }
     } else {
-      const isFree = plan === 'free';
-      if (expiryEl) expiryEl.textContent = isFree ? 'فترة تجريبية' : 'غير محدد';
-      if (daysEl)   daysEl.textContent   = isFree ? '—' : '—';
-      if (daysEl && isFree) daysEl.style.color = 'var(--gray2)';
+      if (expiryEl) expiryEl.textContent = 'انتهت التجربة';
+      if (daysEl) { daysEl.textContent = 'مشترك لم يعد نشطاً'; daysEl.style.color = 'var(--red)'; }
     }
 
-    // ── Usage bar (free & pro only) ──
-    const limit = PLAN_LIMITS[plan];
-    const used  = profile?.analyses_used || 0;
-    const barWrap = document.getElementById('up-usage-bar-wrap');
-    const usageText = document.getElementById('up-usage-text');
-    const usageFill = document.getElementById('up-usage-fill');
+    // ── Usage bar (للمشتركين فقط — 8/شهر) ──────────────────────
+    const _paidLimit = window.PLAN_CONFIG?.PAID_ANALYSES_PER_MONTH ?? 8;
+    const used       = profile?.analyses_used || 0;
+    const barWrap    = document.getElementById('up-usage-bar-wrap');
+    const usageText  = document.getElementById('up-usage-text');
+    const usageFill  = document.getElementById('up-usage-fill');
 
-    if (barWrap && limit !== null) {
+    if (barWrap && _upIsPaid) {
       barWrap.style.display = 'block';
-      if (usageText) usageText.textContent = `${used} / ${limit}`;
-      const pct = Math.min((used / limit) * 100, 100);
+      if (usageText) usageText.textContent = `${used} / ${_paidLimit}`;
+      const pct = Math.min((used / _paidLimit) * 100, 100);
       if (usageFill) {
         usageFill.style.width = pct + '%';
         usageFill.style.background = pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--warn)' : 'var(--gold)';
       }
+    } else if (barWrap) {
+      barWrap.style.display = 'none';
     }
 
   } catch (e) {
@@ -220,8 +240,8 @@ window.initPlansPage = async function () {
     const limitLi  = document.querySelector(`#plan-card-${pid} .plans-features li:first-child`);
     if (amountEl) amountEl.textContent = pd.price > 0 ? pd.price : '0';
     if (limitLi) {
-      if (pid === 'free') limitLi.textContent = `✅ حتى ${pd.limit} تحليلات تجريبية (لا تتجدد)`;
-      else limitLi.textContent = '✅ تحليلات غير محدودة';
+      if (pid === 'free') limitLi.textContent = `✅ تجربة مجانية ${window.PLAN_CONFIG?.TRIAL_DAYS ?? 7} أيام (وصول كامل)`;
+      else limitLi.textContent = `✅ ${window.PLAN_CONFIG?.PAID_ANALYSES_PER_MONTH ?? 8} تحليلات/شهر`;
     }
   });
 
@@ -250,7 +270,7 @@ window.initPlansPage = async function () {
 };
 
 window.selectPlan = function (plan) {
-  // __USER_PLAN__ دائماً مُسوَّى بـ normalizePlan: 'free' | 'one_time' | 'paid'
+  // __USER_PLAN__ دائماً مُسوَّى بـ normalizePlan: 'free' | 'paid'
   const current = window.__USER_PLAN__ || 'free';
   if (plan === current) return;
 

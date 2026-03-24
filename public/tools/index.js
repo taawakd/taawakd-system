@@ -178,8 +178,13 @@ function renderPricingPage() {
     return;
   }
 
-  // ── Preview mode للخطة المجانية ──────────────────────────────
-  if (!planAllows('full_report')) {
+  // ── فحص الصلاحية (التسعير) ──────────────────────────────────
+  const _prUser   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _prAccess = window.canAccessFeature ? window.canAccessFeature(_prUser, 'full_report') : planAllows('full_report');
+  console.log('[Tawakkad][pricing] plan=%s | trialActive=%s | access=%s',
+    _prUser.plan, _prUser.isTrialActive, _prAccess);
+
+  if (!_prAccess) {
     const first = products[0];
     const firstMargin = first.price > 0 ? ((first.price - first.cost) / first.price * 100) : 0;
     const mColor = firstMargin > 30 ? 'var(--green)' : firstMargin < 10 ? 'var(--red)' : 'var(--warn)';
@@ -207,7 +212,7 @@ function renderPricingPage() {
             <div style="font-size:18px;font-weight:700;color:${mColor};">${firstMargin.toFixed(0)}%</div>
             <div style="font-size:10px;color:var(--gray);">هامش الربح</div>
           </div>
-          <button onclick="showUpgradeModal('تحليل التسعير','one_time')"
+          <button onclick="showUpgradeModal('تحليل التسعير', 'paid')"
             style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
             🔒 تأثير السعر
           </button>
@@ -218,7 +223,7 @@ function renderPricingPage() {
       <div style="text-align:center;padding:20px;border-radius:12px;background:rgba(201,168,76,0.04);border:1px dashed rgba(201,168,76,0.2);">
         <p style="font-size:13px;color:#888;margin:0 0 6px;">تحليل تأثير تغيير الأسعار على الربح، السلايدر التفاعلي، والمقارنة بين المنتجات</p>
         <p style="font-size:11px;color:rgba(201,168,76,0.5);margin:0 0 14px;font-style:italic;">التفاصيل الكاملة غير ظاهرة</p>
-        <button onclick="showUpgradeModal('تحليل التسعير الكامل','one_time')"
+        <button onclick="showUpgradeModal('تحليل التسعير الكامل', 'paid')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
           فتح التحليل الكامل — 29 ر.س
         </button>
@@ -454,8 +459,13 @@ function drawHealthAdvisor(decisions) {
   const borderColors = ['var(--gold)','var(--warn)','var(--red)'];
   const rankColors   = ['rank-1-bg','rank-2-bg','rank-3-bg'];
 
-  // ── Preview mode للخطة المجانية ──────────────────────────────
-  if (!planAllows('full_report')) {
+  // ── فحص الصلاحية (مستشار الصحة) ────────────────────────────
+  const _haUser   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _haAccess = window.canAccessFeature ? window.canAccessFeature(_haUser, 'full_report') : planAllows('full_report');
+  console.log('[Tawakkad][healthAdvisor] plan=%s | trialActive=%s | access=%s',
+    _haUser.plan, _haUser.isTrialActive, _haAccess);
+
+  if (!_haAccess) {
     const _lockCard = `
       <div style="position:relative;border-radius:12px;overflow:hidden;margin-top:10px;">
         <div style="filter:blur(3px);pointer-events:none;opacity:0.2;padding:18px;border:1px solid rgba(255,255,255,0.05);border-radius:12px;">
@@ -465,7 +475,7 @@ function drawHealthAdvisor(decisions) {
         </div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;">
           <span style="font-size:16px;">🔒</span>
-          <button onclick="showUpgradeModal('مستشار الصحة المالية','one_time')"
+          <button onclick="showUpgradeModal('مستشار الصحة المالية', 'paid')"
             style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
             اكشف الحل
           </button>
@@ -504,11 +514,11 @@ function drawHealthAdvisor(decisions) {
       <div style="text-align:center;margin-top:20px;padding:16px;border-radius:12px;background:rgba(201,168,76,0.04);border:1px dashed rgba(201,168,76,0.2);">
         <p style="font-size:13px;color:#888;margin:0 0 12px;font-style:italic;">التفاصيل الكاملة غير ظاهرة — الخطوات + التأثير المتوقع + التوصيات</p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-          <button onclick="showUpgradeModal('مستشار الصحة المالية','one_time')"
+          <button onclick="showUpgradeModal('مستشار الصحة المالية', 'paid')"
             style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
             فتح التحليل الكامل — 29 ر.س
           </button>
-          <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
+          <button onclick="showUpgradeModal('الاشتراك الاحترافي', 'paid')"
             style="background:rgba(201,168,76,0.1);color:#e8c76a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
             اشترك — 79 ر.س/شهر
           </button>

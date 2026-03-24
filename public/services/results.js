@@ -33,7 +33,7 @@ function renderResultsPreview(report) {
   const kpiLock = document.createElement('div');
   kpiLock.style.cssText = 'position:absolute;inset:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(13,13,20,0.4);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;border-radius:inherit;';
   kpiLock.innerHTML = `<span style="font-size:20px;">🔒</span><span style="font-size:14px;color:#c9a84c;font-weight:600;">اضغط لرؤية النتائج</span>`;
-  kpiLock.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+  kpiLock.onclick = () => showUpgradeModal('التقرير الكامل', 'paid');
   kpiContainer.appendChild(kpiLock);
 
   // ── حلقة مؤشر الصحة: تُرسم حقيقية + backdrop-filter overlay فوقها ─
@@ -71,8 +71,8 @@ function renderResultsPreview(report) {
     scoreLockEl.innerHTML = `
       <span style="font-size:36px;">🔒</span>
       <span style="font-size:15px;color:#c9a84c;font-weight:700;">فتح التحليل الكامل</span>
-      <span style="font-size:12px;color:#888;">29 ر.س أو اشتراك شهري</span>`;
-    scoreLockEl.onclick = () => showUpgradeModal('التقرير الكامل', 'one_time');
+      <span style="font-size:12px;color:#888;">اشترك للوصول الكامل</span>`;
+    scoreLockEl.onclick = () => showUpgradeModal('التقرير الكامل', 'paid');
     scoreCardEl.appendChild(scoreLockEl);
   }
 
@@ -125,14 +125,10 @@ function renderResultsPreview(report) {
       <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">${_scoreHint.headline}</div>
       <p style="font-size:13px;color:#888;margin:0 0 4px;line-height:1.7;">${_scoreHint.sub}</p>
       <p style="font-size:13px;color:#888;margin:0 0 6px;line-height:1.7;">${_cta.body}</p>
-      <p style="font-size:12px;color:rgba(201,168,76,0.55);margin:0 0 20px;font-style:italic;">التفاصيل الكاملة غير ظاهرة في الخطة المجانية</p>
+      <p style="font-size:12px;color:rgba(201,168,76,0.55);margin:0 0 20px;font-style:italic;">التفاصيل الكاملة متاحة بالاشتراك أو خلال فترة التجربة</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="showUpgradeModal('التقرير الكامل','one_time')"
+        <button onclick="showUpgradeModal('الاشتراك المدفوع','paid')"
           style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
-          فتح هذا التقرير — 29 ر.س
-        </button>
-        <button onclick="showUpgradeModal('الاشتراك الاحترافي','pro')"
-          style="background:rgba(201,168,76,0.12);color:#e8c76a;border:1px solid rgba(201,168,76,0.35);border-radius:10px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
           اشترك — 79 ر.س/شهر
         </button>
       </div>
@@ -175,11 +171,19 @@ function renderResultsPreview(report) {
 }
 
 function renderResults(report) {
-  if (!planAllows('full_report')) {
+  // ── ACCESS DECISION LOG ────────────────────────────────────────────────
+  const _rrUser   = window.getAccessUser ? window.getAccessUser() : { plan: window.__USER_PLAN__ || 'free', isTrialActive: false };
+  const _rrAccess = window.canAccessFeature ? window.canAccessFeature(_rrUser, 'full_report') : false;
+  console.log('[Tawakkad][renderResults] plan=%s | trialActive=%s | access=%s',
+    _rrUser.plan, _rrUser.isTrialActive, _rrAccess);
+  // ─────────────────────────────────────────────────────────────────────
+
+  if (!_rrAccess) {
+    console.log('[Tawakkad][renderResults] → locked → renderResultsPreview');
     renderResultsPreview(report);
     return;
   }
-  console.log("renderResults executed");
+  console.log('[Tawakkad][renderResults] → full report rendering');
   const {bizName, bizType, period, metrics, scoreData, alerts, scenarios, reportText, products, sectorKey} = report;
   const createdAt = report.createdAt || report.date || null;
   const resolvedSectorKey = sectorKey || getSectorKey(bizType);
@@ -252,15 +256,19 @@ function renderResults(report) {
 
   const benchEl = document.getElementById('benchmarkContainer');
   if (benchEl) {
-    if (!planAllows('market_compare')) {
+    const _benchAccess = window.canAccessFeature
+      ? window.canAccessFeature(window.getAccessUser(), 'market_compare')
+      : planAllows('market_compare');
+    console.log('[Tawakkad][marketCompare] access=%s', _benchAccess);
+    if (!_benchAccess) {
       benchEl.innerHTML = `
         <div style="text-align:center;padding:32px 20px;border:1px dashed rgba(201,168,76,0.25);border-radius:14px;background:rgba(201,168,76,0.04);">
           <div style="font-size:32px;margin-bottom:10px;">📈</div>
           <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">مقارنة بمعايير السوق</div>
-          <p style="font-size:13px;color:#888;margin:0 0 16px;">متاحة في الخطة الاحترافية فأعلى</p>
-          <button onclick="showUpgradeModal('مقارنة السوق','pro')"
+          <p style="font-size:13px;color:#888;margin:0 0 16px;">متاحة بالاشتراك أو خلال فترة التجربة</p>
+          <button onclick="showUpgradeModal('مقارنة السوق','paid')"
             style="background:linear-gradient(135deg,#e8c76a,#c9a84c);color:#000;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-            ترقية للخطة الاحترافية ←
+            اشترك للوصول ←
           </button>
         </div>`;
     } else {
@@ -387,7 +395,11 @@ function renderResults(report) {
 }
 
 function renderAIBlocks(text, containerId) {
-  if (!planAllows('full_report')) return;   // حراسة دفاعية — منع الاستدعاء المباشر
+  const _aiAccess = window.canAccessFeature
+    ? window.canAccessFeature(window.getAccessUser(), 'full_report')
+    : planAllows('full_report');
+  console.log('[Tawakkad][renderAIBlocks] access=%s', _aiAccess);
+  if (!_aiAccess) return;   // حراسة دفاعية — منع الاستدعاء المباشر
   const wrap = document.getElementById(containerId);
   wrap.innerHTML = '';
 
@@ -481,7 +493,10 @@ function renderAIBlocks(text, containerId) {
 
 // ── جدول تحليل المصاريف ──────────────────────────────────────────────
 function renderExpenseTable(metrics, containerId) {
-  if (!planAllows('full_report')) return;   // حراسة دفاعية — منع الاستدعاء المباشر
+  const _expAccess = window.canAccessFeature
+    ? window.canAccessFeature(window.getAccessUser(), 'full_report')
+    : planAllows('full_report');
+  if (!_expAccess) return;   // حراسة دفاعية — منع الاستدعاء المباشر
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   wrap.innerHTML = '';
