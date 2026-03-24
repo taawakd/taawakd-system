@@ -156,6 +156,12 @@ async function runAnalysis() {
 
     reportText = data.content?.map(i=>i.text||'').join('') || '';
 
+    // ── تحديث الخطة من الـ API (يضمن أن __USER_PLAN__ محدّث حتى بدون إعادة تحميل) ──
+    // مثال: المستخدم ترقّى بعد آخر تسجيل دخول — الـ API يعيد الخطة الحقيقية من قاعدة البيانات
+    if (data.plan) {
+      window.__USER_PLAN__ = data.plan;
+    }
+
     // ── تحليل مجاني أول: API يُخبرنا إذا كانت هذه أول تحليل لمستخدم مجاني ──
     // يُخزَّن في window.__FIRST_ANALYSIS__ ليقرأه planAllows() عند عرض النتائج
     window.__FIRST_ANALYSIS__ = data.first_analysis === true;

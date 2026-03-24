@@ -180,6 +180,7 @@ export default async function handler(req, res) {
           content: [{ type: 'text', text: cached.result_text }],
           from_cache: true,
           first_analysis: firstAnalysis,
+          plan,
           analyses_used: (profile?.analyses_used || 0) + 1,
           analyses_limit: planLimit
         });
@@ -280,6 +281,7 @@ export default async function handler(req, res) {
       content: [{ type: 'text', text: resultText }],
       from_cache: false,
       first_analysis: firstAnalysis,
+      plan,
       analyses_used: (profile?.analyses_used || 0) + 1,
       analyses_limit: planLimit
     });
