@@ -703,18 +703,33 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   // نستخدم setTimeout لضمان أن initApp() قد أدرج sidebar.html في DOM
   setTimeout(() => {
     const _plan = window.__USER_PLAN__;
-    const _planLabels = { free: 'الخطة المجانية', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية' };
+    const _planLabels = {
+      free: 'الخطة المجانية', one_time: 'تقرير مفتوح',
+      paid: 'الخطة المدفوعة', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية',
+    };
     const planEl = document.querySelector('.sb-user-plan');
     if (planEl) planEl.textContent = _planLabels[_plan] || 'الخطة المجانية';
 
     // تهيئة منتقي المشاريع للخطة المؤسسية
     if (_plan === 'enterprise' && typeof initProjectSelector === 'function') initProjectSelector();
 
-    // إظهار أقفال الخطة المجانية
-    const _locked = _plan === 'free';
-    ['sb-lock-reports','sb-lock-benchmark','sb-lock-compare','sb-lock-forecast'].forEach(id => {
+    // إظهار أقفال الشريط الجانبي بناءً على صلاحية كل ميزة
+    // canAccessFeature() هو المرجع الوحيد — يتعامل مع free / one_time / subscribed
+    // نبني كائن مستخدم بدون isFirstFreeAnalysis لأن الأقفال تعكس الخطة الدائمة لا التحليل الحالي
+    const _sidebarUser = {
+      plan: _plan || 'free',
+      isFirstFreeAnalysis: false,
+      isPaidOneTime: !!(window.STATE?.isPaidOneTime || window.STATE?.plan === 'one_time'),
+    };
+    const _sbLockMap = {
+      'sb-lock-reports'  : 'save_reports',
+      'sb-lock-benchmark': 'market_compare',
+      'sb-lock-compare'  : 'compare_reports',
+      'sb-lock-forecast' : 'forecast',
+    };
+    Object.entries(_sbLockMap).forEach(([id, feature]) => {
       const el = document.getElementById(id);
-      if (el) el.style.display = _locked ? 'inline' : 'none';
+      if (el) el.style.display = window.canAccessFeature(_sidebarUser, feature) ? 'none' : 'inline';
     });
 
     // ── إظهار زر الإدارة (مضمون بعد تحميل sidebar) ──

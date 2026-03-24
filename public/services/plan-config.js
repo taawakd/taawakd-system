@@ -54,26 +54,71 @@ window.PLAN_CONFIG = {
 window.PLAN_CONFIG.FEATURES.pro        = window.PLAN_CONFIG.FEATURES.paid;
 window.PLAN_CONFIG.FEATURES.enterprise = window.PLAN_CONFIG.FEATURES.paid;
 
-// ── هل الخطة مدفوعة باشتراك؟ ─────────────────────────────────────────────
-window.isPaidPlan = function (plan) {
-  plan = plan || window.__USER_PLAN__ || 'free';
-  return plan === 'paid' || plan === 'pro' || plan === 'enterprise';
+// ══════════════════════════════════════════════════════════════════════════
+// getAccessUser() — يبني كائن المستخدم من الحالة الراهنة للجلسة
+// يُستخدَم كمدخل لـ canAccessFeature()
+// ══════════════════════════════════════════════════════════════════════════
+window.getAccessUser = function () {
+  return {
+    // الخطة المُستردّة من قاعدة البيانات (أو 'free' كقيمة افتراضية)
+    plan: window.__USER_PLAN__ || 'free',
+
+    // هذا هو أول تحليل مجاني للمستخدم — يُعيّنه الـ API بعد نجاح التحليل
+    isFirstFreeAnalysis: window.__FIRST_ANALYSIS__ === true,
+
+    // دفع مرة واحدة في نفس الجلسة الحالية (قبل تحديث قاعدة البيانات)
+    isPaidOneTime: !!(window.STATE?.isPaidOneTime || window.STATE?.plan === 'one_time'),
+  };
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// planAllows(feature) — الدالة المركزية للتحقق من صلاحية الميزة
-// تحلّ محلّ أي منطق متفرق في بقية الملفات
+// canAccessFeature(user, feature) — دالة التحكم في الصلاحيات
+//
+// المنطق (بالترتيب):
+//   1. مشترك (paid / pro / enterprise)      → صلاحية كاملة دائماً
+//   2. دفع مرة واحدة لهذا التحليل           → ميزات one_time فقط
+//   3. مجاني في أول تحليل مجاني             → صلاحية كاملة مؤقتة (= one_time)
+//   4. مجاني وانتهى حقه المجاني             → ميزات الخطة المجانية فقط (مقفلة)
+//
+// هذه الدالة هي المرجع الوحيد لكل قرار صلاحية في التطبيق.
+// لا تُعدَّل الواجهة أو الـ Backend مباشرةً — بل تُعتمد هذه الدالة حصراً.
+// ══════════════════════════════════════════════════════════════════════════
+window.canAccessFeature = function (user, feature) {
+  const C = window.PLAN_CONFIG;
+
+  // ── 1. مشترك → صلاحية كاملة ───────────────────────────────────────────
+  if (user.plan === 'paid' || user.plan === 'pro' || user.plan === 'enterprise') {
+    const features = C.FEATURES[user.plan] || C.FEATURES.paid;
+    return features.includes(feature);
+  }
+
+  // ── 2. دفع مرة واحدة في هذه الجلسة → ميزات one_time فقط ──────────────
+  if (user.isPaidOneTime) {
+    return C.FEATURES.one_time.includes(feature);
+  }
+
+  // ── 3. مجاني في أول تحليل مجاني → نفس ميزات one_time ─────────────────
+  if (user.plan === 'free' && user.isFirstFreeAnalysis) {
+    return C.FEATURES.one_time.includes(feature);
+  }
+
+  // ── 4. مجاني وانتهى حقه / خطة غير معروفة → الميزات المجانية فقط ──────
+  const features = C.FEATURES[user.plan] || C.FEATURES.free;
+  return features.includes(feature);
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// planAllows(feature) — واجهة متوافقة مع الكود القديم
+// جميع استدعاءات planAllows() في بقية الملفات تمرّ عبر هذه الدالة
+// التي تبني كائن المستخدم تلقائياً وتستدعي canAccessFeature()
 // ══════════════════════════════════════════════════════════════════════════
 window.planAllows = function (feature) {
-  // أولوية: دفع one_time في نفس الجلسة
-  if (window.STATE?.isPaidOneTime || window.STATE?.plan === 'one_time') {
-    return (window.PLAN_CONFIG.FEATURES.one_time).includes(feature);
-  }
-  const plan = window.__USER_PLAN__ || 'free';
-  // منح وصول كامل للتحليل المجاني الأول (يُعيّنه API بعد النجاح)
-  if (plan === 'free' && window.__FIRST_ANALYSIS__ === true) {
-    return (window.PLAN_CONFIG.FEATURES.one_time).includes(feature);
-  }
-  const features = window.PLAN_CONFIG.FEATURES[plan] || window.PLAN_CONFIG.FEATURES.free;
-  return features.includes(feature);
+  return window.canAccessFeature(window.getAccessUser(), feature);
+};
+
+// ── هل الخطة مدفوعة باشتراك؟ ─────────────────────────────────────────────
+// (تُستخدَم في ai-cfo.js وأماكن أخرى تحتاج التحقق من الاشتراك فقط)
+window.isPaidPlan = function (plan) {
+  plan = plan || window.__USER_PLAN__ || 'free';
+  return plan === 'paid' || plan === 'pro' || plan === 'enterprise';
 };

@@ -72,7 +72,7 @@ window.loadUserProfile = async function () {
 
     if (planEl) {
       planEl.textContent = PLAN_LABELS[plan] || plan;
-      const isPaid = plan === 'paid' || plan === 'pro' || plan === 'enterprise';
+      const isPaid = window.isPaidPlan ? window.isPaidPlan(plan) : (plan === 'paid' || plan === 'pro' || plan === 'enterprise');
       planEl.style.color = isPaid ? '#5b8fcc' : 'var(--gold)';
     }
 

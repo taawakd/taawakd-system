@@ -7,13 +7,11 @@ async function sendCFO(quickMsg) {
   if (!msg) return;
 
   // ── فحص الخطة: AI CFO للمشتركين فقط (3 رسائل / يوم) ────────────────────
-  // القيم من PLAN_CONFIG (plan-config.js) — المصدر المركزي الوحيد
-  const userPlan   = window.__USER_PLAN__ || 'free';
-  const _isPaid    = window.isPaidPlan ? window.isPaidPlan(userPlan) : (userPlan === 'paid' || userPlan === 'pro' || userPlan === 'enterprise');
-  const CFO_DAILY  = window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 3;
+  // canAccessFeature() في plan-config.js هو المرجع الوحيد لقرارات الصلاحية
+  const CFO_DAILY = window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 3;
 
-  if (!_isPaid) {
-    // المجانيون: لا صلاحية للـ CFO
+  if (!window.canAccessFeature(window.getAccessUser(), 'cfo_full')) {
+    // المجانيون + one_time: لا صلاحية للـ CFO
     input.value = '';
     appendCFOMessage('ai',
       '🔒 **AI CFO متاح للمشتركين فقط.**\n\n' +

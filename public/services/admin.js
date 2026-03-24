@@ -299,7 +299,7 @@ async function renderAdminUsers(page = 1) {
 }
 
 function getPlanBadge(plan) {
-  if (plan === 'paid' || plan === 'pro' || plan === 'enterprise') return badge('مدفوع', 'green');
+  if (window.isPaidPlan ? window.isPaidPlan(plan) : (plan === 'paid' || plan === 'pro' || plan === 'enterprise')) return badge('مدفوع', 'green');
   return badge('مجاني', 'gray');
 }
 
