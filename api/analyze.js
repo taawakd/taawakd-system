@@ -17,6 +17,24 @@ function buildCacheKey(body) {
   return crypto.createHash('sha256').update(JSON.stringify(keyData)).digest('hex').substring(0, 16);
 }
 
+// ── ثوابت الخطط (مصدر الحقيقة الوحيد على الـ backend) ──────────────────────
+const TRIAL_DAYS              = 7;   // أيام التجربة المجانية
+const PAID_ANALYSES_PER_MONTH = 8;   // تحليل / شهر للمشتركين
+const PAID_CFO_PER_DAY        = 3;   // رسائل CFO / يوم للمشتركين
+const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000;
+const MS_1_DAY   =      24 * 60 * 60 * 1000;
+
+function normalizePlan(rawPlan) {
+  if (rawPlan === 'paid' || rawPlan === 'pro' || rawPlan === 'enterprise') return 'paid';
+  return 'free';
+}
+
+function checkTrialActive(trialStartedAt) {
+  if (!trialStartedAt) return false;
+  const elapsedDays = (Date.now() - new Date(trialStartedAt).getTime()) / (1000 * 60 * 60 * 24);
+  return elapsedDays <= TRIAL_DAYS;
+}
+
 const ALLOWED_ORIGINS = [
   'https://towkd.com',
   'https://www.towkd.com',
@@ -46,21 +64,39 @@ export default async function handler(req, res) {
   // ── قراءة الخطة والعدّادات من قاعدة البيانات ──────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, has_used_free_analysis')
+    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, trial_started_at')
     .eq('id', user.id).single();
 
-  const plan      = profile?.plan || 'free';
-  const isCFOReq  = req.body?._type === 'cfo';
-  const isPaidPlan = plan === 'paid' || plan === 'pro' || plan === 'enterprise';
+  const plan        = normalizePlan(profile?.plan || 'free');
+  const isPaid      = plan === 'paid';
+  const isCFOReq    = req.body?._type === 'cfo';
 
-  // ── ثوابت الخطط (مصدر الحقيقة الوحيد على الـ backend) ────────────────────
-  const PAID_ANALYSES_PER_MONTH = 8;   // تحليل / شهر للمشتركين
-  const PAID_CFO_PER_DAY        = 3;   // رسائل CFO / يوم للمشتركين
-  const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000;
-  const MS_1_DAY   =      24 * 60 * 60 * 1000;
+  // ── إدارة التجربة المجانية ─────────────────────────────────────────────────
+  let trialStartedAt = profile?.trial_started_at || null;
+  let isTrialActive  = checkTrialActive(trialStartedAt);
+
+  // إذا لم تبدأ التجربة بعد → ابدأها الآن (أول تفاعل مع API)
+  if (!isPaid && !trialStartedAt) {
+    const now = new Date().toISOString();
+    await supabase.from('profiles')
+      .update({ trial_started_at: now })
+      .eq('id', user.id);
+    trialStartedAt = now;
+    isTrialActive  = true;
+  }
+
+  // ── حماية عامة: منع الوصول إذا لم يكن مشتركاً ولا في تجربة نشطة ──────────
+  if (!isPaid && !isTrialActive) {
+    return res.status(403).json({
+      error: 'انتهت فترة التجربة المجانية — اشترك في الخطة المدفوعة للمتابعة',
+      trial_expired: true,
+      plan: profile?.plan || 'free',
+      trial_started_at: trialStartedAt,
+    });
+  }
 
   // ── إعادة تعيين عداد التحليلات الشهري (مشتركون فقط) ─────────────────────
-  if (isPaidPlan && !isCFOReq) {
+  if (isPaid && !isCFOReq) {
     const resetAt = profile?.analyses_reset_at ? new Date(profile.analyses_reset_at) : null;
     const now     = new Date();
     if (!resetAt || (now - resetAt) >= MS_30_DAYS) {
@@ -72,78 +108,55 @@ export default async function handler(req, res) {
   }
 
   // ── فحص حد التحليلات الشهري (مشتركون فقط — 8/شهر) ──────────────────────
-  // الخطة المجانية: لا حد للإنشاء، لكن النتائج مقفلة في الـ frontend
-  if (!isCFOReq && isPaidPlan && (profile?.analyses_used || 0) >= PAID_ANALYSES_PER_MONTH) {
+  // مستخدمو التجربة لا يخضعون لحد شهري
+  if (!isCFOReq && isPaid && (profile?.analyses_used || 0) >= PAID_ANALYSES_PER_MONTH) {
     return res.status(403).json({
       error: `وصلت لحد ${PAID_ANALYSES_PER_MONTH} تحليلات هذا الشهر — يتجدد العداد بعد 30 يوماً`,
       limit_reached: true,
       used: profile?.analyses_used || 0,
       limit: PAID_ANALYSES_PER_MONTH,
-      plan,
+      plan: profile?.plan || 'free',
     });
   }
 
   // ── منطق AI CFO ──────────────────────────────────────────────────────────
   if (isCFOReq) {
-    // المجانيون لا يملكون صلاحية الـ CFO إطلاقاً
-    if (!isPaidPlan) {
-      return res.status(403).json({
-        error: 'AI CFO متاح للمشتركين فقط — اشترك في الخطة المدفوعة',
-        limit_reached: true,
-        cfo_limit: true,
-        requires_subscription: true,
-        plan,
-      });
-    }
+    // مستخدمو التجربة: وصول كامل بدون حد
+    // مستخدمو الاشتراك: 3 رسائل / يوم
+    if (isPaid) {
+      // إعادة تعيين عداد CFO اليومي إذا مضى أكثر من 24 ساعة
+      const cfoResetAt = profile?.cfo_daily_reset_at ? new Date(profile.cfo_daily_reset_at) : null;
+      const now        = new Date();
+      let cfoUsedToday = profile?.cfo_daily_used || 0;
 
-    // إعادة تعيين عداد CFO اليومي إذا مضى أكثر من 24 ساعة
-    const cfoResetAt = profile?.cfo_daily_reset_at ? new Date(profile.cfo_daily_reset_at) : null;
-    const now        = new Date();
-    let cfoUsedToday = profile?.cfo_daily_used || 0;
+      if (!cfoResetAt || (now - cfoResetAt) >= MS_1_DAY) {
+        await supabase.from('profiles')
+          .update({ cfo_daily_used: 0, cfo_daily_reset_at: now.toISOString() })
+          .eq('id', user.id);
+        cfoUsedToday = 0;
+      }
 
-    if (!cfoResetAt || (now - cfoResetAt) >= MS_1_DAY) {
-      // يوم جديد — أعد العداد
+      if (cfoUsedToday >= PAID_CFO_PER_DAY) {
+        return res.status(403).json({
+          error: `وصلت لحد ${PAID_CFO_PER_DAY} رسائل AI CFO اليوم — يتجدد الغد`,
+          limit_reached: true,
+          cfo_limit: true,
+          used: cfoUsedToday,
+          limit: PAID_CFO_PER_DAY,
+          plan: profile?.plan || 'free',
+        });
+      }
+
+      // زيادة عداد CFO اليومي (مشتركون فقط)
       await supabase.from('profiles')
-        .update({ cfo_daily_used: 0, cfo_daily_reset_at: now.toISOString() })
+        .update({ cfo_daily_used: cfoUsedToday + 1 })
         .eq('id', user.id);
-      cfoUsedToday = 0;
     }
-
-    if (cfoUsedToday >= PAID_CFO_PER_DAY) {
-      return res.status(403).json({
-        error: `وصلت لحد ${PAID_CFO_PER_DAY} رسائل AI CFO اليوم — يتجدد الغد`,
-        limit_reached: true,
-        cfo_limit: true,
-        used: cfoUsedToday,
-        limit: PAID_CFO_PER_DAY,
-        plan,
-      });
-    }
-
-    // زيادة عداد CFO اليومي
-    await supabase.from('profiles')
-      .update({ cfo_daily_used: cfoUsedToday + 1 })
-      .eq('id', user.id);
+    // مستخدمو التجربة: لا عداد — الوصول مفتوح
   }
 
-  // ── منطق التحليل المجاني الأول (للمستخدمين المجانيين فقط) ───────────────
-  // كل مستخدم مجاني يحصل على تحليل واحد مفتوح بالكامل
-  // بعده تُقفل النتائج حتى يدفع
-  let firstAnalysis = false;
-  if (!isPaidPlan && !isCFOReq) {
-    const hasUsedFree = profile?.has_used_free_analysis ?? false;
-    if (!hasUsedFree) {
-      // هذا هو التحليل المجاني الأول — افتحه وسجّله
-      await supabase.from('profiles')
-        .update({ has_used_free_analysis: true })
-        .eq('id', user.id);
-      firstAnalysis = true;
-    }
-    // إذا كان hasUsedFree = true → firstAnalysis يبقى false → النتائج مقفلة في الـ frontend
-  }
-
-  // حد التحليلات للعرض في الـ frontend
-  const planLimit = isPaidPlan ? PAID_ANALYSES_PER_MONTH : Infinity;
+  // حد التحليلات للعرض في الـ frontend (مشتركون فقط)
+  const planLimit = isPaid ? PAID_ANALYSES_PER_MONTH : Infinity;
 
   try {
     const body = req.body;
@@ -179,10 +192,10 @@ export default async function handler(req, res) {
         return res.status(200).json({
           content: [{ type: 'text', text: cached.result_text }],
           from_cache: true,
-          first_analysis: firstAnalysis,
-          plan,
+          plan: profile?.plan || 'free',
+          trial_started_at: trialStartedAt,
           analyses_used: (profile?.analyses_used || 0) + 1,
-          analyses_limit: planLimit
+          analyses_limit: planLimit,
         });
       }
     }
@@ -280,10 +293,10 @@ export default async function handler(req, res) {
     return res.status(200).json({
       content: [{ type: 'text', text: resultText }],
       from_cache: false,
-      first_analysis: firstAnalysis,
-      plan,
+      plan: profile?.plan || 'free',
+      trial_started_at: trialStartedAt,
       analyses_used: (profile?.analyses_used || 0) + 1,
-      analyses_limit: planLimit
+      analyses_limit: planLimit,
     });
 
   } catch (e) {

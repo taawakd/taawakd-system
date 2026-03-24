@@ -216,16 +216,13 @@ async function loadReportsFromDB() {
     if (!user) return;
 
     // ── مساعد: هل هذا التقرير مرئي للمستخدم؟ ──────────────────────
-    // paid_one_time: محفوظ للـ analytics فقط — لا يظهر في التقارير المحفوظة
     const _isVisibleToUser = (r) => {
-      // عمود DB (بعد migration) — أولوية
+      // عمود DB — أولوية
       if (typeof r.is_saved_for_user === 'boolean') return r.is_saved_for_user;
-      if (typeof r.paid_one_time     === 'boolean') return !r.paid_one_time;
-      // fallback: اقرأ من report_json إذا لم تُوجد الأعمدة بعد
+      // fallback: اقرأ من report_json إذا لم يُوجد العمود بعد
       const rj = r.report_json || {};
       if (typeof rj._is_saved_for_user === 'boolean') return rj._is_saved_for_user;
-      if (typeof rj._paid_one_time     === 'boolean') return !rj._paid_one_time;
-      return true; // التقارير القديمة قبل هذه الميزة — تظهر بشكل افتراضي
+      return true; // التقارير القديمة — تظهر بشكل افتراضي
     };
 
     // ── مشاريع غير الافتراضي تُحمَّل من localStorage ──────────────
@@ -235,10 +232,9 @@ async function loadReportsFromDB() {
       const saved = localStorage.getItem(key);
       if (saved) {
         const all = JSON.parse(saved);
-        // فلترة: أخرج تقارير paid_one_time من قائمة التقارير المحفوظة
+        // فلترة: أظهر فقط التقارير المحفوظة للمستخدم
         STATE.savedReports = all.filter(r => {
           if (typeof r._is_saved_for_user === 'boolean') return r._is_saved_for_user;
-          if (typeof r._paid_one_time     === 'boolean') return !r._paid_one_time;
           return true;
         });
         if (!STATE.currentReport && STATE.savedReports.length) STATE.currentReport = STATE.savedReports[0];

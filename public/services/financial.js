@@ -158,16 +158,19 @@ async function runAnalysis() {
 
     // ── تحديث الخطة من الـ API (يضمن أن __USER_PLAN__ محدّث حتى بدون إعادة تحميل) ──
     // مثال: المستخدم ترقّى بعد آخر تسجيل دخول — الـ API يعيد الخطة الحقيقية من قاعدة البيانات
-    // نُسوِّي مباشرةً: pro / enterprise → 'paid' | one_time → 'one_time' | غيرها → 'free'
+    // نُسوِّي مباشرةً: pro / enterprise → 'paid' | غيرها → 'free'
     if (data.plan) {
       window.__USER_PLAN__ = window.normalizePlan(data.plan);
       console.log('[Tawakkad][api] raw plan=%s → normalized=%s', data.plan, window.__USER_PLAN__);
     }
 
-    // ── تحليل مجاني أول: API يُخبرنا إذا كانت هذه أول تحليل لمستخدم مجاني ──
-    // يُخزَّن في window.__FIRST_ANALYSIS__ ليقرأه planAllows() عند عرض النتائج
-    window.__FIRST_ANALYSIS__ = data.first_analysis === true;
-  } catch(e) { reportText = ''; window.__FIRST_ANALYSIS__ = false; }
+    // ── وقت بدء التجربة: API يُعيده في كل استجابة ──
+    // يُخزَّن في window.__TRIAL_STARTED_AT__ ليقرأه canAccessFeature() عند عرض النتائج
+    if (data.trial_started_at !== undefined) {
+      window.__TRIAL_STARTED_AT__ = data.trial_started_at || null;
+      console.log('[Tawakkad][api] trial_started_at=%s', window.__TRIAL_STARTED_AT__);
+    }
+  } catch(e) { reportText = ''; }
 
   console.log('[Tawakkad] runAnalysis — window._excelReportPeriod before report build:', window._excelReportPeriod);
   const report = {
@@ -180,14 +183,11 @@ async function runAnalysis() {
   window._excelReportPeriod = null;
 
   // ── تحديد نوع الحفظ بناءً على الخطة ─────────────────────────────
-  // one_time: يُحفظ في DB للـ analytics فقط — لا يظهر في "التقارير المحفوظة"
-  // save_reports (paid/pro): يُحفظ ويظهر للمستخدم كاملاً
-  const _isSavedForUser = planAllows('save_reports'); // false للمجاني + one_time
-  const _isPaidOneTime  = (window.__USER_PLAN__ || 'free') === 'one_time';
+  // save_reports (paid أو تجربة نشطة): يُحفظ ويظهر للمستخدم كاملاً
+  const _isSavedForUser = planAllows('save_reports');
 
   // أضف الـ flags للكائن (لاستخدامها في localStorage والفلترة)
   report._is_saved_for_user = _isSavedForUser;
-  report._paid_one_time     = _isPaidOneTime;
 
   STATE.currentReport = report;
 
@@ -213,7 +213,6 @@ async function runAnalysis() {
           period: report.period, revenue: report.metrics?.revenue || 0,
           total_expenses: report.metrics?.totalExpenses || 0, net_profit: report.metrics?.netProfit || 0,
           net_margin: report.metrics?.netMargin || 0, health_score: report.scoreData?.total || 0,
-          paid_one_time:     _isPaidOneTime,   // للـ analytics — لا يُعرض للمستخدم
           is_saved_for_user: _isSavedForUser,  // يتحكم في الظهور في التقارير المحفوظة
           report_json: report
         };
@@ -249,7 +248,7 @@ async function runAnalysis() {
             }
           }
         } else {
-          console.log('[Tawakkad] Supabase insert OK | paid_one_time:', _isPaidOneTime, '| is_saved_for_user:', _isSavedForUser);
+          console.log('[Tawakkad] Supabase insert OK | is_saved_for_user:', _isSavedForUser);
         }
         // ملاحظة: زيادة analyses_used تتم من الـ API مباشرة — لا نكررها هنا
       }
@@ -257,14 +256,6 @@ async function runAnalysis() {
   } catch(saveErr) { console.error('[Tawakkad] Supabase save exception:', saveErr); }
 
   if(document.getElementById('loadingOverlay')) document.getElementById('loadingOverlay').classList.remove('show');
-
-  // ── sync session state قبل العرض ───────────────────────────────
-  if ((window.__USER_PLAN__ || 'free') === 'one_time') {
-    STATE.isPaidOneTime = true;
-  }
-  if (STATE.isPaidOneTime) {
-    STATE.plan = 'one_time';
-  }
 
   renderResults(report);
   showPage('results');
@@ -294,9 +285,6 @@ function openSavedReport(id) {
   const rep = STATE.savedReports.find(r => String(r.id) === String(id));
   if(!rep) { toast('⚠️ لم يتم العثور على التقرير، حاول مرة أخرى'); return; }
   STATE.currentReport = rep;
-  // إعادة تعيين علامة التحليل المجاني الأول عند فتح تقرير محفوظ
-  // (التقارير المحفوظة تخضع للخطة الحالية فقط، لا لـ first_analysis)
-  window.__FIRST_ANALYSIS__ = false;
   renderResults(rep);
   showPage('results');
 }

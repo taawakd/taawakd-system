@@ -6,31 +6,24 @@
 window.PLAN_CONFIG = {
 
   // ── الأسعار ──────────────────────────────────────────────────────────────
-  PRICE_ONE_TIME : 29,    // ريال — فتح نتائج تحليل واحد
-  PRICE_MONTHLY  : 79,    // ريال / شهر — اشتراك كامل
+  PRICE_MONTHLY  : 79,    // ريال / شهر — الاشتراك الوحيد المتاح
 
-  // ── حدود الاستخدام ────────────────────────────────────────────────────────
-  //   free  : تحليل واحد مفتوح بالكامل (أول تحليل)، بعده النتائج مقفلة
-  //   paid  : 8 تحليلات / شهر (مفتوحة بالكامل)، 3 رسائل CFO / يوم
-  FREE_UNLOCKED_ANALYSES : 1,          // تحليل واحد مجاني مفتوح بالكامل
-  FREE_ANALYSES_LIMIT    : Infinity,   // لا حد للإنشاء — القفل في العرض فقط
-  PAID_ANALYSES_PER_MONTH: 8,          // تحليل / شهر
-  PAID_CFO_PER_DAY       : 3,          // رسائل AI CFO / يوم (مشتركون فقط)
+  // ── التجربة المجانية ─────────────────────────────────────────────────────
+  TRIAL_DAYS     : 7,     // عدد أيام التجربة المجانية الكاملة
+
+  // ── حدود الاستخدام (للمشتركين) ───────────────────────────────────────────
+  //   trial : وصول كامل بدون حدود خلال فترة التجربة
+  //   paid  : 8 تحليلات / شهر، 3 رسائل CFO / يوم
+  PAID_ANALYSES_PER_MONTH: 8,   // تحليل / شهر
+  PAID_CFO_PER_DAY       : 3,   // رسائل AI CFO / يوم (مشتركون فقط)
 
   // ── الميزات المتاحة لكل خطة ───────────────────────────────────────────────
   FEATURES: {
     free: [
-      // يقدر يشغّل التحليل — النتائج الكاملة مقفلة حتى يدفع
-      'analysis',
-    ],
-    one_time: [
-      // فتح تقرير واحد فقط
-      'analysis', 'health_score',
-      'full_report', 'basic_report', 'advanced_report',
-      'pdf_export',
+      // لا ميزات — كل شيء مقفل بعد انتهاء التجربة
     ],
     paid: [
-      // جميع الميزات — اشتراك نشط (paid / pro / enterprise كلها تُعامَل كـ paid)
+      // جميع الميزات — اشتراك نشط أو تجربة مجانية نشطة
       'analysis', 'health_score',
       'full_report', 'basic_report', 'advanced_report',
       'cfo_limited', 'cfo_full',
@@ -42,7 +35,6 @@ window.PLAN_CONFIG = {
   // ── بيانات وصفية لكل خطة ──────────────────────────────────────────────────
   PLAN_META: {
     free    : { label: 'الخطة المجانية', resultsLocked: true,  hasCFO: false, resetCycle: null      },
-    one_time: { label: 'فتح تقرير',      resultsLocked: false, hasCFO: false, resetCycle: null      },
     paid    : { label: 'الخطة المدفوعة', resultsLocked: false, hasCFO: true,  resetCycle: 'monthly' },
   },
 
@@ -51,18 +43,30 @@ window.PLAN_CONFIG = {
 // ══════════════════════════════════════════════════════════════════════════
 // normalizePlan(rawPlan) — الحقيقة الوحيدة لقيم الخطط
 //
-// قاعدة البيانات تخزّن: 'free' | 'pro' | 'enterprise' | 'one_time' | 'paid'
-// الـ Frontend يتعامل فقط مع: 'free' | 'one_time' | 'paid'
+// قاعدة البيانات تخزّن: 'free' | 'pro' | 'enterprise' | 'paid'
+// الـ Frontend يتعامل فقط مع: 'free' | 'paid'
 //
-// الحلّ: نعيد تعيين كل قيمة خارجية إلى إحدى القيم الثلاث
+// الحلّ: نعيد تعيين كل قيمة خارجية إلى إحدى القيمتين
 // ── 'pro' و 'enterprise' و 'paid'  →  'paid'  (مشترك)
-// ── 'one_time'                     →  'one_time'
 // ── أي قيمة أخرى (أو فارغة)       →  'free'
 // ══════════════════════════════════════════════════════════════════════════
 window.normalizePlan = function (rawPlan) {
   if (rawPlan === 'paid' || rawPlan === 'pro' || rawPlan === 'enterprise') return 'paid';
-  if (rawPlan === 'one_time') return 'one_time';
   return 'free';
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// isTrialActive(trialStartedAt) — هل التجربة المجانية لا تزال سارية؟
+//
+// trialStartedAt: ISO string أو null
+// يعيد true إذا كان الوقت المنقضي منذ البدء ≤ TRIAL_DAYS
+// ══════════════════════════════════════════════════════════════════════════
+window.isTrialActive = function (trialStartedAt) {
+  if (!trialStartedAt) return false;
+  const startMs  = new Date(trialStartedAt).getTime();
+  const nowMs    = Date.now();
+  const elapsedDays = (nowMs - startMs) / (1000 * 60 * 60 * 24);
+  return elapsedDays <= window.PLAN_CONFIG.TRIAL_DAYS;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -73,14 +77,11 @@ window.normalizePlan = function (rawPlan) {
 window.getAccessUser = function () {
   const rawPlan = window.__USER_PLAN__ || 'free';
   return {
-    // دائماً إحدى القيم الثلاث: 'free' | 'one_time' | 'paid'
+    // دائماً إحدى القيمتين: 'free' | 'paid'
     plan: window.normalizePlan(rawPlan),
 
-    // هذا هو أول تحليل مجاني للمستخدم — يُعيّنه الـ API بعد نجاح التحليل
-    isFirstFreeAnalysis: window.__FIRST_ANALYSIS__ === true,
-
-    // دفع مرة واحدة في نفس الجلسة الحالية (قبل تحديث قاعدة البيانات)
-    isPaidOneTime: !!(window.STATE?.isPaidOneTime || window.STATE?.plan === 'one_time'),
+    // هل التجربة المجانية نشطة؟ — يُعيَّن من API بعد نجاح التحليل أو من بيانات الجلسة
+    isTrialActive: window.isTrialActive(window.__TRIAL_STARTED_AT__ || null),
   };
 };
 
@@ -89,20 +90,18 @@ window.getAccessUser = function () {
 //
 // المنطق (بالترتيب):
 //   1. مشترك (user.plan === 'paid')      → true دائماً لكل الميزات
-//   2. دفع مرة واحدة لهذا التحليل       → ميزات one_time فقط
-//   3. مجاني في أول تحليل مجاني         → صلاحية كاملة مؤقتة (= one_time)
-//   4. مجاني وانتهى حقه المجاني         → ميزات free فقط (مقفلة)
+//   2. تجربة مجانية نشطة                 → true لكل الميزات
+//   3. منتهية التجربة / غير مشترك        → false لكل الميزات
 //
 // user.plan يجب أن يكون مُسوَّى بـ normalizePlan() قبل الاستدعاء.
 // هذه الدالة هي المرجع الوحيد لكل قرار صلاحية في التطبيق.
 // ══════════════════════════════════════════════════════════════════════════
 window.canAccessFeature = function (user, feature) {
-  const C = window.PLAN_CONFIG;
 
   // ─────────────── DEBUG LOG ────────────────────────────────────────────
   console.log(
-    '[Tawakkad][access] plan=%s | feature=%s | firstFree=%s | oneTime=%s',
-    user.plan, feature, user.isFirstFreeAnalysis, user.isPaidOneTime
+    '[Tawakkad][access] plan=%s | feature=%s | trialActive=%s',
+    user.plan, feature, user.isTrialActive
   );
   // ─────────────────────────────────────────────────────────────────────
 
@@ -112,25 +111,15 @@ window.canAccessFeature = function (user, feature) {
     return true;
   }
 
-  // ── 2. دفع مرة واحدة في هذه الجلسة → ميزات one_time فقط ──────────────
-  if (user.isPaidOneTime) {
-    const result = C.FEATURES.one_time.includes(feature);
-    console.log('[Tawakkad][access] ONE_TIME →', result, 'for', feature);
-    return result;
+  // ── 2. تجربة مجانية نشطة → true لكل الميزات ──────────────────────────
+  if (user.isTrialActive) {
+    console.log('[Tawakkad][access] TRIAL_ACTIVE → granted');
+    return true;
   }
 
-  // ── 3. مجاني في أول تحليل مجاني → نفس ميزات one_time ─────────────────
-  if (user.plan === 'free' && user.isFirstFreeAnalysis) {
-    const result = C.FEATURES.one_time.includes(feature);
-    console.log('[Tawakkad][access] FIRST_FREE →', result, 'for', feature);
-    return result;
-  }
-
-  // ── 4. مجاني وانتهى حقه / خطة غير معروفة → الميزات المجانية فقط ──────
-  const features = C.FEATURES[user.plan] || C.FEATURES.free;
-  const result = features.includes(feature);
-  console.log('[Tawakkad][access] LOCKED →', result, 'for', feature);
-  return result;
+  // ── 3. انتهت التجربة / غير مشترك → مقفل تماماً ───────────────────────
+  console.log('[Tawakkad][access] LOCKED → denied for', feature);
+  return false;
 };
 
 // ══════════════════════════════════════════════════════════════════════════

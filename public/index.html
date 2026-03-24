@@ -684,24 +684,27 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   // فحص الصلاحيات والخطة
   // نستخدم maybeSingle() بدلاً من single() لتجنب الخطأ إذا لم يكن للمستخدم صف في profiles
   try {
-    const { data: userProfile } = await sb.from('profiles').select('is_admin, plan').eq('id', session.user.id).maybeSingle();
+    const { data: userProfile } = await sb.from('profiles').select('is_admin, plan, trial_started_at').eq('id', session.user.id).maybeSingle();
     // حفظ الخطة عالمياً بعد التسوية — plan-config.js قد لا يكون محمّلاً بعد هنا
-    // لذا نُسوِّي يدوياً: pro / enterprise / paid → 'paid' | one_time → 'one_time' | غيرها → 'free'
+    // لذا نُسوِّي يدوياً: pro / enterprise / paid → 'paid' | غيرها → 'free'
     const _rawPlan = userProfile?.plan || 'free';
     const _normFn  = window.normalizePlan; // متاح إذا حُمِّل plan-config.js أولاً
-    // __USER_PLAN_RAW__ = قيمة قاعدة البيانات الأصلية (pro / enterprise / free …)
-    // __USER_PLAN__     = قيمة مُسوَّاة للـ frontend: 'free' | 'one_time' | 'paid'
-    window.__USER_PLAN_RAW__ = _rawPlan;
+    // __USER_PLAN_RAW__      = قيمة قاعدة البيانات الأصلية (pro / enterprise / free …)
+    // __USER_PLAN__          = قيمة مُسوَّاة للـ frontend: 'free' | 'paid'
+    // __TRIAL_STARTED_AT__   = وقت بدء التجربة المجانية (أو null)
+    window.__USER_PLAN_RAW__    = _rawPlan;
     window.__USER_PLAN__ = _normFn
       ? _normFn(_rawPlan)
       : (_rawPlan === 'pro' || _rawPlan === 'enterprise' || _rawPlan === 'paid')
           ? 'paid'
-          : _rawPlan === 'one_time' ? 'one_time' : 'free';
-    console.log('[Tawakkad][auth] raw plan=%s → normalized=%s', _rawPlan, window.__USER_PLAN__);
+          : 'free';
+    window.__TRIAL_STARTED_AT__ = userProfile?.trial_started_at || null;
+    console.log('[Tawakkad][auth] raw plan=%s → normalized=%s | trial_started_at=%s',
+      _rawPlan, window.__USER_PLAN__, window.__TRIAL_STARTED_AT__);
     if (userProfile?.is_admin) {
       window.__IS_ADMIN__ = true;
     }
-  } catch(e) { window.__USER_PLAN__ = 'free'; }
+  } catch(e) { window.__USER_PLAN__ = 'free'; window.__TRIAL_STARTED_AT__ = null; }
 
   // ── فحص إتمام الإعداد الأولي (Onboarding) ──────────────────────────
   try {
@@ -715,7 +718,7 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   setTimeout(() => {
     const _plan = window.__USER_PLAN__;
     const _planLabels = {
-      free: 'الخطة المجانية', one_time: 'تقرير مفتوح',
+      free: 'الخطة المجانية',
       paid: 'الخطة المدفوعة', pro: 'الخطة الاحترافية', enterprise: 'الخطة المؤسسية',
     };
     const planEl = document.querySelector('.sb-user-plan');
@@ -725,12 +728,12 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     if ((window.__USER_PLAN_RAW__ === 'enterprise') && typeof initProjectSelector === 'function') initProjectSelector();
 
     // إظهار أقفال الشريط الجانبي بناءً على صلاحية كل ميزة
-    // canAccessFeature() هو المرجع الوحيد — يتعامل مع free / one_time / subscribed
-    // نبني كائن مستخدم بدون isFirstFreeAnalysis لأن الأقفال تعكس الخطة الدائمة لا التحليل الحالي
+    // canAccessFeature() هو المرجع الوحيد — يتعامل مع free / paid + trial
     const _sidebarUser = {
       plan: _plan || 'free',
-      isFirstFreeAnalysis: false,
-      isPaidOneTime: !!(window.STATE?.isPaidOneTime || window.STATE?.plan === 'one_time'),
+      isTrialActive: typeof window.isTrialActive === 'function'
+        ? window.isTrialActive(window.__TRIAL_STARTED_AT__ || null)
+        : false,
     };
     const _sbLockMap = {
       'sb-lock-reports'  : 'save_reports',

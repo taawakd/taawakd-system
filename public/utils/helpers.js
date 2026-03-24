@@ -99,7 +99,7 @@ function showPage(name, _fromHash) {
     renderComparePage();
   }
   if(name==='actionplan') {
-    if (!planAllows('full_report')) { showUpgradeModal('خطة العمل الأسبوعية', 'one_time'); return; }
+    if (!planAllows('full_report')) { showUpgradeModal('خطة العمل الأسبوعية', 'paid'); return; }
     if (window.STATE?.currentReport) generateActionPlan();
   }
   if(name==='cashflow') prefillCashFlowFromReport();
@@ -225,20 +225,13 @@ function requirePlan(feature, featureName, requiredPlan, fn) {
 }
 window.requirePlan = requirePlan;
 
-// ── دفع مرة واحدة: فتح التقرير الكامل في نفس الجلسة ────────
+// ── خيار الدفع المرة الواحدة أُزيل — هذا الخيار لم يعد متاحاً ────────
+// الاشتراك الشهري (79 ر.س) هو الخيار الوحيد حالياً
 function _onOneTimePaid() {
-  // تحديث الحالة على مستوى الجلسة — بدون إعادة تحميل
-  window.STATE = window.STATE || {};
-  window.STATE.isPaidOneTime = true;
-  window.STATE.plan          = 'one_time';
-  window.__USER_PLAN__       = 'one_time';
-
-  // إغلاق نافذة الترقية
+  // إغلاق نافذة الترقية والتوجيه لصفحة الاشتراك
   const modal = document.getElementById('upgradeModalOverlay');
   if (modal) modal.remove();
-
-  // إعادة تصيير التقرير الكامل مباشرةً — بدون navigation أو reload
-  renderResults(STATE.currentReport);
+  window.open('/landing.html#pricing', '_blank');
 }
 window._onOneTimePaid = _onOneTimePaid;
 
