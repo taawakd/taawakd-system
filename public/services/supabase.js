@@ -21,11 +21,13 @@ async function loadBusinessProfile() {
     if (error || !data) return;
     window._businessProfile = data;
 
+    console.log('[Tawakkad][loadBusinessProfile] loaded from DB:', JSON.stringify(data));
+
     // ── تحميل المنتجات من جدول products الجديد أولاً ──────────────────
     if (typeof loadProductsFromDB === 'function') {
       await loadProductsFromDB(); // يُحدّث window._PRODUCTS و window.BP_PRODUCTS
     } else {
-      window.BP_PRODUCTS = data.products || [];
+      window.BP_PRODUCTS = data.product_costs || [];
     }
 
     // set + تشغيل input event لتفعيل تنسيق الأرقام وتحديث الإجماليات
@@ -48,6 +50,9 @@ async function loadBusinessProfile() {
     set('bp-delivery', data.var_delivery_pct);
     set('bp-marketing', data.var_marketing_pct);
     set('bp-var-other', data.var_other_pct);
+
+    console.log('[Tawakkad][loadBusinessProfile] ✅ fields populated | biz_name=%s | biz_type=%s | city=%s | product_costs=%d items',
+      data.biz_name, data.biz_type, data.city, (data.product_costs || []).length);
 
     // ── تحميل إعداد ضريبة القيمة المضافة ──────────────────────────────
     const vatEnabled = data.vat_enabled === true;
@@ -100,7 +105,7 @@ async function saveBusinessProfile() {
         var_marketing_pct:   g('bp-marketing'),
         var_other_pct:       g('bp-var-other'),
         vat_enabled:         _vatEnabledNP,
-        products: window.BP_PRODUCTS || [],
+        product_costs: window.BP_PRODUCTS || [],
       };
       if (typeof saveProjectProfile === 'function') saveProjectProfile(projId, profile);
       window.__VAT_ENABLED__ = _vatEnabledNP;
@@ -128,13 +133,15 @@ async function saveBusinessProfile() {
       var_marketing_pct:   g('bp-marketing'),
       var_other_pct:       g('bp-var-other'),
       vat_enabled:         _vatEnabledDB,
-      products: window.BP_PRODUCTS || [],
+      product_costs: window.BP_PRODUCTS || [],
     };
+    console.log('[Tawakkad][saveBusinessProfile] saving profile:', JSON.stringify(profile));
     const { error } = await window.sb.from('business_profile')
       .upsert(profile, { onConflict: 'user_id' });
     if (error) throw error;
     window.__VAT_ENABLED__ = _vatEnabledDB;
     window._businessProfile = profile;
+    console.log('[Tawakkad][saveBusinessProfile] ✅ saved to business_profile | user_id=%s', profile.user_id);
     if (statusEl) statusEl.textContent = '✅ تم الحفظ في ' + new Date().toLocaleTimeString('ar-SA');
     toast('✅ تم حفظ ملف المشروع');
   } catch(err) {
@@ -184,13 +191,17 @@ async function saveOnboarding() {
       var_delivery_pct:    0,
       var_marketing_pct:   0,
       var_other_pct:       0,
-      products:            [],
+      product_costs:       [],
     };
+
+    console.log('[Tawakkad][saveOnboarding] saving profile:', JSON.stringify(profile));
 
     // upsert في business_profile
     const { error } = await window.sb.from('business_profile')
       .upsert(profile, { onConflict: 'user_id' });
     if (error) throw error;
+    console.log('[Tawakkad][saveOnboarding] ✅ saved to business_profile | user_id=%s | biz_name=%s | biz_type=%s | city=%s',
+      user.id, name, type, profile.city);
 
     // تحديث onboarding_completed في profiles (اختياري — لا يوقف التطبيق إذا فشل)
     try {
