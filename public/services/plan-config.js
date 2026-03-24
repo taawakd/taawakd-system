@@ -30,7 +30,7 @@ window.PLAN_CONFIG = {
       'pdf_export',
     ],
     paid: [
-      // جميع الميزات
+      // جميع الميزات — اشتراك نشط (paid / pro / enterprise كلها تُعامَل كـ paid)
       'analysis', 'health_score',
       'full_report', 'basic_report', 'advanced_report',
       'cfo_limited', 'cfo_full',
@@ -41,27 +41,40 @@ window.PLAN_CONFIG = {
 
   // ── بيانات وصفية لكل خطة ──────────────────────────────────────────────────
   PLAN_META: {
-    free      : { label: 'الخطة المجانية', resultsLocked: true,  hasCFO: false, resetCycle: null      },
-    one_time  : { label: 'فتح تقرير',      resultsLocked: false, hasCFO: false, resetCycle: null      },
-    paid      : { label: 'الخطة المدفوعة', resultsLocked: false, hasCFO: true,  resetCycle: 'monthly' },
-    pro       : { label: 'الخطة المدفوعة', resultsLocked: false, hasCFO: true,  resetCycle: 'monthly' },
-    enterprise: { label: 'الخطة المدفوعة', resultsLocked: false, hasCFO: true,  resetCycle: 'monthly' },
+    free    : { label: 'الخطة المجانية', resultsLocked: true,  hasCFO: false, resetCycle: null      },
+    one_time: { label: 'فتح تقرير',      resultsLocked: false, hasCFO: false, resetCycle: null      },
+    paid    : { label: 'الخطة المدفوعة', resultsLocked: false, hasCFO: true,  resetCycle: 'monthly' },
   },
 
 };
 
-// pro / enterprise يرثان ميزات paid
-window.PLAN_CONFIG.FEATURES.pro        = window.PLAN_CONFIG.FEATURES.paid;
-window.PLAN_CONFIG.FEATURES.enterprise = window.PLAN_CONFIG.FEATURES.paid;
+// ══════════════════════════════════════════════════════════════════════════
+// normalizePlan(rawPlan) — الحقيقة الوحيدة لقيم الخطط
+//
+// قاعدة البيانات تخزّن: 'free' | 'pro' | 'enterprise' | 'one_time' | 'paid'
+// الـ Frontend يتعامل فقط مع: 'free' | 'one_time' | 'paid'
+//
+// الحلّ: نعيد تعيين كل قيمة خارجية إلى إحدى القيم الثلاث
+// ── 'pro' و 'enterprise' و 'paid'  →  'paid'  (مشترك)
+// ── 'one_time'                     →  'one_time'
+// ── أي قيمة أخرى (أو فارغة)       →  'free'
+// ══════════════════════════════════════════════════════════════════════════
+window.normalizePlan = function (rawPlan) {
+  if (rawPlan === 'paid' || rawPlan === 'pro' || rawPlan === 'enterprise') return 'paid';
+  if (rawPlan === 'one_time') return 'one_time';
+  return 'free';
+};
 
 // ══════════════════════════════════════════════════════════════════════════
 // getAccessUser() — يبني كائن المستخدم من الحالة الراهنة للجلسة
 // يُستخدَم كمدخل لـ canAccessFeature()
+// يُطبَّق normalizePlan هنا دائماً — حتى لو خُزِّن __USER_PLAN__ بقيمة خام
 // ══════════════════════════════════════════════════════════════════════════
 window.getAccessUser = function () {
+  const rawPlan = window.__USER_PLAN__ || 'free';
   return {
-    // الخطة المُستردّة من قاعدة البيانات (أو 'free' كقيمة افتراضية)
-    plan: window.__USER_PLAN__ || 'free',
+    // دائماً إحدى القيم الثلاث: 'free' | 'one_time' | 'paid'
+    plan: window.normalizePlan(rawPlan),
 
     // هذا هو أول تحليل مجاني للمستخدم — يُعيّنه الـ API بعد نجاح التحليل
     isFirstFreeAnalysis: window.__FIRST_ANALYSIS__ === true,
@@ -75,36 +88,49 @@ window.getAccessUser = function () {
 // canAccessFeature(user, feature) — دالة التحكم في الصلاحيات
 //
 // المنطق (بالترتيب):
-//   1. مشترك (paid / pro / enterprise)      → صلاحية كاملة دائماً
-//   2. دفع مرة واحدة لهذا التحليل           → ميزات one_time فقط
-//   3. مجاني في أول تحليل مجاني             → صلاحية كاملة مؤقتة (= one_time)
-//   4. مجاني وانتهى حقه المجاني             → ميزات الخطة المجانية فقط (مقفلة)
+//   1. مشترك (user.plan === 'paid')      → true دائماً لكل الميزات
+//   2. دفع مرة واحدة لهذا التحليل       → ميزات one_time فقط
+//   3. مجاني في أول تحليل مجاني         → صلاحية كاملة مؤقتة (= one_time)
+//   4. مجاني وانتهى حقه المجاني         → ميزات free فقط (مقفلة)
 //
+// user.plan يجب أن يكون مُسوَّى بـ normalizePlan() قبل الاستدعاء.
 // هذه الدالة هي المرجع الوحيد لكل قرار صلاحية في التطبيق.
-// لا تُعدَّل الواجهة أو الـ Backend مباشرةً — بل تُعتمد هذه الدالة حصراً.
 // ══════════════════════════════════════════════════════════════════════════
 window.canAccessFeature = function (user, feature) {
   const C = window.PLAN_CONFIG;
 
-  // ── 1. مشترك → صلاحية كاملة ───────────────────────────────────────────
-  if (user.plan === 'paid' || user.plan === 'pro' || user.plan === 'enterprise') {
-    const features = C.FEATURES[user.plan] || C.FEATURES.paid;
-    return features.includes(feature);
+  // ─────────────── DEBUG LOG ────────────────────────────────────────────
+  console.log(
+    '[Tawakkad][access] plan=%s | feature=%s | firstFree=%s | oneTime=%s',
+    user.plan, feature, user.isFirstFreeAnalysis, user.isPaidOneTime
+  );
+  // ─────────────────────────────────────────────────────────────────────
+
+  // ── 1. مشترك → true لكل الميزات بدون استثناء ─────────────────────────
+  if (user.plan === 'paid') {
+    console.log('[Tawakkad][access] SUBSCRIBED → granted');
+    return true;
   }
 
   // ── 2. دفع مرة واحدة في هذه الجلسة → ميزات one_time فقط ──────────────
   if (user.isPaidOneTime) {
-    return C.FEATURES.one_time.includes(feature);
+    const result = C.FEATURES.one_time.includes(feature);
+    console.log('[Tawakkad][access] ONE_TIME →', result, 'for', feature);
+    return result;
   }
 
   // ── 3. مجاني في أول تحليل مجاني → نفس ميزات one_time ─────────────────
   if (user.plan === 'free' && user.isFirstFreeAnalysis) {
-    return C.FEATURES.one_time.includes(feature);
+    const result = C.FEATURES.one_time.includes(feature);
+    console.log('[Tawakkad][access] FIRST_FREE →', result, 'for', feature);
+    return result;
   }
 
   // ── 4. مجاني وانتهى حقه / خطة غير معروفة → الميزات المجانية فقط ──────
   const features = C.FEATURES[user.plan] || C.FEATURES.free;
-  return features.includes(feature);
+  const result = features.includes(feature);
+  console.log('[Tawakkad][access] LOCKED →', result, 'for', feature);
+  return result;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -117,8 +143,7 @@ window.planAllows = function (feature) {
 };
 
 // ── هل الخطة مدفوعة باشتراك؟ ─────────────────────────────────────────────
-// (تُستخدَم في ai-cfo.js وأماكن أخرى تحتاج التحقق من الاشتراك فقط)
+// (تُستخدَم في أماكن تحتاج التحقق من الاشتراك فقط — مثل ai-cfo.js)
 window.isPaidPlan = function (plan) {
-  plan = plan || window.__USER_PLAN__ || 'free';
-  return plan === 'paid' || plan === 'pro' || plan === 'enterprise';
+  return window.normalizePlan(plan || window.__USER_PLAN__ || 'free') === 'paid';
 };

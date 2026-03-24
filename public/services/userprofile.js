@@ -61,11 +61,13 @@ window.loadUserProfile = async function () {
       if (upAvatarBig) upAvatarBig.textContent = profile.full_name.charAt(0).toUpperCase();
     }
 
-    // ── Cache plan globally for plans page ──
-    window.__USER_PLAN__ = profile?.plan || 'free';
+    // ── Cache plan globally (normalized + raw) ──
+    const _rawPlanUp = profile?.plan || 'free';
+    window.__USER_PLAN_RAW__ = _rawPlanUp;
+    window.__USER_PLAN__     = window.normalizePlan(_rawPlanUp);
 
-    // ── Subscription info ──
-    const plan = profile?.plan || 'free';
+    // ── Subscription info — use raw plan for label display ──
+    const plan = window.__USER_PLAN__;
     const planEl    = document.getElementById('up-plan-name');
     const expiryEl  = document.getElementById('up-plan-expiry');
     const daysEl    = document.getElementById('up-plan-days');
@@ -184,7 +186,10 @@ window.initPlansPage = async function () {
     try {
       const userId = window.__USER__?.id || window.__USER__;
       const { data } = await window.sb.from('profiles').select('plan').eq('id', userId).single();
-      if (data?.plan) window.__USER_PLAN__ = data.plan;
+      if (data?.plan) {
+        window.__USER_PLAN_RAW__ = data.plan;
+        window.__USER_PLAN__     = window.normalizePlan(data.plan);
+      }
     } catch(e) { /* تجاهل — نستخدم الافتراضي */ }
   }
 
@@ -224,8 +229,9 @@ window.initPlansPage = async function () {
   const badge = document.getElementById('plans-current-badge');
   if (badge) badge.textContent = _PLAN_LABELS_MAP[plan] || plan;
 
-  // ── 5. تمييز البطاقة الحالية (نعامل pro/enterprise كـ paid) ───
-  const displayPlan = (plan === 'pro' || plan === 'enterprise') ? 'paid' : plan;
+  // ── 5. تمييز البطاقة الحالية ────────────────────────────────
+  // __USER_PLAN__ دائماً مُسوَّى: 'free' | 'one_time' | 'paid'
+  const displayPlan = plan;
   ['free', 'paid'].forEach(p => {
     const card = document.getElementById('plan-card-' + p);
     const btn  = document.getElementById('plan-btn-' + p);
@@ -244,9 +250,9 @@ window.initPlansPage = async function () {
 };
 
 window.selectPlan = function (plan) {
-  const current    = window.__USER_PLAN__ || 'free';
-  const displayCur = (current === 'pro' || current === 'enterprise') ? 'paid' : current;
-  if (plan === displayCur) return;
+  // __USER_PLAN__ دائماً مُسوَّى بـ normalizePlan: 'free' | 'one_time' | 'paid'
+  const current = window.__USER_PLAN__ || 'free';
+  if (plan === current) return;
 
   if (plan === 'free') {
     if (typeof toast === 'function') toast('📬 تواصل معنا على واتساب لتعديل خطتك');

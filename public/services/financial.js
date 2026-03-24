@@ -158,8 +158,10 @@ async function runAnalysis() {
 
     // ── تحديث الخطة من الـ API (يضمن أن __USER_PLAN__ محدّث حتى بدون إعادة تحميل) ──
     // مثال: المستخدم ترقّى بعد آخر تسجيل دخول — الـ API يعيد الخطة الحقيقية من قاعدة البيانات
+    // نُسوِّي مباشرةً: pro / enterprise → 'paid' | one_time → 'one_time' | غيرها → 'free'
     if (data.plan) {
-      window.__USER_PLAN__ = data.plan;
+      window.__USER_PLAN__ = window.normalizePlan(data.plan);
+      console.log('[Tawakkad][api] raw plan=%s → normalized=%s', data.plan, window.__USER_PLAN__);
     }
 
     // ── تحليل مجاني أول: API يُخبرنا إذا كانت هذه أول تحليل لمستخدم مجاني ──

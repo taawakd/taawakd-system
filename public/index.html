@@ -685,8 +685,19 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   // نستخدم maybeSingle() بدلاً من single() لتجنب الخطأ إذا لم يكن للمستخدم صف في profiles
   try {
     const { data: userProfile } = await sb.from('profiles').select('is_admin, plan').eq('id', session.user.id).maybeSingle();
-    // حفظ الخطة عالمياً (يستخدمها AI CFO وغيره)
-    window.__USER_PLAN__ = userProfile?.plan || 'free';
+    // حفظ الخطة عالمياً بعد التسوية — plan-config.js قد لا يكون محمّلاً بعد هنا
+    // لذا نُسوِّي يدوياً: pro / enterprise / paid → 'paid' | one_time → 'one_time' | غيرها → 'free'
+    const _rawPlan = userProfile?.plan || 'free';
+    const _normFn  = window.normalizePlan; // متاح إذا حُمِّل plan-config.js أولاً
+    // __USER_PLAN_RAW__ = قيمة قاعدة البيانات الأصلية (pro / enterprise / free …)
+    // __USER_PLAN__     = قيمة مُسوَّاة للـ frontend: 'free' | 'one_time' | 'paid'
+    window.__USER_PLAN_RAW__ = _rawPlan;
+    window.__USER_PLAN__ = _normFn
+      ? _normFn(_rawPlan)
+      : (_rawPlan === 'pro' || _rawPlan === 'enterprise' || _rawPlan === 'paid')
+          ? 'paid'
+          : _rawPlan === 'one_time' ? 'one_time' : 'free';
+    console.log('[Tawakkad][auth] raw plan=%s → normalized=%s', _rawPlan, window.__USER_PLAN__);
     if (userProfile?.is_admin) {
       window.__IS_ADMIN__ = true;
     }
@@ -710,8 +721,8 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     const planEl = document.querySelector('.sb-user-plan');
     if (planEl) planEl.textContent = _planLabels[_plan] || 'الخطة المجانية';
 
-    // تهيئة منتقي المشاريع للخطة المؤسسية
-    if (_plan === 'enterprise' && typeof initProjectSelector === 'function') initProjectSelector();
+    // تهيئة منتقي المشاريع للخطة المؤسسية (نقرأ القيمة الخام — enterprise لم تُسوَّ إلى paid)
+    if ((window.__USER_PLAN_RAW__ === 'enterprise') && typeof initProjectSelector === 'function') initProjectSelector();
 
     // إظهار أقفال الشريط الجانبي بناءً على صلاحية كل ميزة
     // canAccessFeature() هو المرجع الوحيد — يتعامل مع free / one_time / subscribed

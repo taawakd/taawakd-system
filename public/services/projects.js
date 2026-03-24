@@ -460,8 +460,9 @@ function confirmDeleteProject(id) {
 // ═══════════════════════════════════════
 
 function initProjectSelector() {
-  const plan = window.__USER_PLAN__ || 'free';
-  if (plan !== 'enterprise') return;
+  // نستخدم القيمة الخام من قاعدة البيانات — 'enterprise' لم تُسوَّ إلى 'paid'
+  const rawPlan = window.__USER_PLAN_RAW__ || window.__USER_PLAN__ || 'free';
+  if (rawPlan !== 'enterprise') return;
 
   // تعيين المشروع النشط عالمياً
   window.__CURRENT_PROJECT_ID__ = getActiveProjectId();
