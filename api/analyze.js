@@ -68,9 +68,10 @@ export default async function handler(req, res) {
   // ── قراءة الخطة والعدّادات من قاعدة البيانات ──────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, trial_started_at, trial_daily_used, trial_daily_reset_at')
+    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, trial_started_at, trial_daily_used, trial_daily_reset_at, is_admin')
     .eq('id', user.id).single();
 
+  const isAdmin     = !!profile?.is_admin;  // مشرف النظام — يتجاوز جميع الفحوصات
   const plan        = normalizePlan(profile?.plan || 'free');
   const isPaid      = plan === 'paid';
   const isCFOReq    = req.body?._type === 'cfo';
@@ -90,7 +91,7 @@ export default async function handler(req, res) {
   }
 
   // ── حماية عامة: منع الوصول إذا لم يكن مشتركاً ولا في تجربة نشطة ──────────
-  if (!isPaid && !isTrialActive) {
+  if (!isAdmin && !isPaid && !isTrialActive) {
     return res.status(403).json({
       error: 'انتهت فترة التجربة المجانية — اشترك في الخطة المدفوعة للمتابعة',
       trial_expired: true,
@@ -101,7 +102,7 @@ export default async function handler(req, res) {
   }
 
   // ── حد التحليلات اليومي لمستخدمي التجربة (1 تحليل / يوم) ────────────────
-  if (!isPaid && isTrialActive && !isCFOReq) {
+  if (!isAdmin && !isPaid && isTrialActive && !isCFOReq) {
     const trialDailyResetAt = profile?.trial_daily_reset_at
       ? new Date(profile.trial_daily_reset_at) : null;
     const now = new Date();
@@ -132,7 +133,7 @@ export default async function handler(req, res) {
   }
 
   // ── إعادة تعيين عداد التحليلات الشهري (مشتركون فقط) ─────────────────────
-  if (isPaid && !isCFOReq) {
+  if (!isAdmin && isPaid && !isCFOReq) {
     const resetAt = profile?.analyses_reset_at ? new Date(profile.analyses_reset_at) : null;
     const now     = new Date();
     if (!resetAt || (now - resetAt) >= MS_30_DAYS) {
@@ -144,8 +145,8 @@ export default async function handler(req, res) {
   }
 
   // ── فحص حد التحليلات الشهري (مشتركون فقط — 8/شهر) ──────────────────────
-  // مستخدمو التجربة لا يخضعون لحد شهري
-  if (!isCFOReq && isPaid && (profile?.analyses_used || 0) >= PAID_ANALYSES_PER_MONTH) {
+  // مستخدمو التجربة والأدمن لا يخضعون لحد شهري
+  if (!isAdmin && !isCFOReq && isPaid && (profile?.analyses_used || 0) >= PAID_ANALYSES_PER_MONTH) {
     return res.status(403).json({
       error: `وصلت لحد ${PAID_ANALYSES_PER_MONTH} تحليلات هذا الشهر — يتجدد في بداية دورة اشتراكك أو أضف تحليلاً إضافياً بـ ${ONE_TIME_PRICE_PAID} ريال`,
       limit_reached: true,
@@ -157,8 +158,8 @@ export default async function handler(req, res) {
   }
 
   // ── منطق AI CFO ──────────────────────────────────────────────────────────
-  if (isCFOReq) {
-    // مشتركون: 5 رسائل / يوم | تجربة مجانية: 3 رسائل / يوم
+  if (isCFOReq && !isAdmin) {
+    // مشتركون: 5 رسائل / يوم | تجربة مجانية: 3 رسائل / يوم | أدمن: بلا حدود
     const cfoDayLimit = isPaid ? PAID_CFO_PER_DAY : TRIAL_CFO_PER_DAY;
 
     // إعادة تعيين عداد CFO اليومي إذا مضى أكثر من 24 ساعة
