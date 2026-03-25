@@ -18,9 +18,13 @@ function buildCacheKey(body) {
 }
 
 // ── ثوابت الخطط (مصدر الحقيقة الوحيد على الـ backend) ──────────────────────
-const TRIAL_DAYS              = 7;   // أيام التجربة المجانية
-const PAID_ANALYSES_PER_MONTH = 8;   // تحليل / شهر للمشتركين
-const PAID_CFO_PER_DAY        = 3;   // رسائل CFO / يوم للمشتركين
+const TRIAL_DAYS               = 7;   // أيام التجربة المجانية
+const TRIAL_ANALYSES_PER_DAY   = 1;   // تحليل / يوم خلال التجربة
+const TRIAL_CFO_PER_DAY        = 3;   // رسائل CFO / يوم خلال فترة التجربة
+const PAID_ANALYSES_PER_MONTH  = 8;   // تحليل / شهر للمشتركين
+const PAID_CFO_PER_DAY         = 5;   // رسائل CFO / يوم للمشتركين
+const ONE_TIME_PRICE_PAID      = 19;  // ريال — تحليل إضافي للمشترك
+const ONE_TIME_PRICE_FREE      = 29;  // ريال — تحليل واحد لغير المشترك
 const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000;
 const MS_1_DAY   =      24 * 60 * 60 * 1000;
 
@@ -64,7 +68,7 @@ export default async function handler(req, res) {
   // ── قراءة الخطة والعدّادات من قاعدة البيانات ──────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, trial_started_at')
+    .select('analyses_used, plan, analyses_reset_at, cfo_daily_used, cfo_daily_reset_at, trial_started_at, trial_daily_used, trial_daily_reset_at')
     .eq('id', user.id).single();
 
   const plan        = normalizePlan(profile?.plan || 'free');
@@ -92,7 +96,39 @@ export default async function handler(req, res) {
       trial_expired: true,
       plan: profile?.plan || 'free',
       trial_started_at: trialStartedAt,
+      one_time_price: ONE_TIME_PRICE_FREE,  // 29 ريال لغير المشترك
     });
+  }
+
+  // ── حد التحليلات اليومي لمستخدمي التجربة (1 تحليل / يوم) ────────────────
+  if (!isPaid && isTrialActive && !isCFOReq) {
+    const trialDailyResetAt = profile?.trial_daily_reset_at
+      ? new Date(profile.trial_daily_reset_at) : null;
+    const now = new Date();
+    let trialDailyUsed = profile?.trial_daily_used || 0;
+
+    // إعادة تعيين العداد إذا مضى أكثر من 24 ساعة
+    if (!trialDailyResetAt || (now - trialDailyResetAt) >= MS_1_DAY) {
+      await supabase.from('profiles')
+        .update({ trial_daily_used: 0, trial_daily_reset_at: now.toISOString() })
+        .eq('id', user.id);
+      trialDailyUsed = 0;
+    }
+
+    if (trialDailyUsed >= TRIAL_ANALYSES_PER_DAY) {
+      return res.status(403).json({
+        error: `وصلت لحد ${TRIAL_ANALYSES_PER_DAY} تحليل يومي خلال فترة التجربة — يتجدد الغد`,
+        trial_daily_limit: true,
+        used: trialDailyUsed,
+        limit: TRIAL_ANALYSES_PER_DAY,
+        plan: profile?.plan || 'free',
+      });
+    }
+
+    // زيادة عداد التحليلات اليومي للتجربة
+    await supabase.from('profiles')
+      .update({ trial_daily_used: trialDailyUsed + 1 })
+      .eq('id', user.id);
   }
 
   // ── إعادة تعيين عداد التحليلات الشهري (مشتركون فقط) ─────────────────────
@@ -111,48 +147,47 @@ export default async function handler(req, res) {
   // مستخدمو التجربة لا يخضعون لحد شهري
   if (!isCFOReq && isPaid && (profile?.analyses_used || 0) >= PAID_ANALYSES_PER_MONTH) {
     return res.status(403).json({
-      error: `وصلت لحد ${PAID_ANALYSES_PER_MONTH} تحليلات هذا الشهر — يتجدد العداد بعد 30 يوماً`,
+      error: `وصلت لحد ${PAID_ANALYSES_PER_MONTH} تحليلات هذا الشهر — يتجدد في بداية دورة اشتراكك أو أضف تحليلاً إضافياً بـ ${ONE_TIME_PRICE_PAID} ريال`,
       limit_reached: true,
       used: profile?.analyses_used || 0,
       limit: PAID_ANALYSES_PER_MONTH,
       plan: profile?.plan || 'free',
+      one_time_price: ONE_TIME_PRICE_PAID,  // 19 ريال للمشترك
     });
   }
 
   // ── منطق AI CFO ──────────────────────────────────────────────────────────
   if (isCFOReq) {
-    // مستخدمو التجربة: وصول كامل بدون حد
-    // مستخدمو الاشتراك: 3 رسائل / يوم
-    if (isPaid) {
-      // إعادة تعيين عداد CFO اليومي إذا مضى أكثر من 24 ساعة
-      const cfoResetAt = profile?.cfo_daily_reset_at ? new Date(profile.cfo_daily_reset_at) : null;
-      const now        = new Date();
-      let cfoUsedToday = profile?.cfo_daily_used || 0;
+    // مشتركون: 5 رسائل / يوم | تجربة مجانية: 3 رسائل / يوم
+    const cfoDayLimit = isPaid ? PAID_CFO_PER_DAY : TRIAL_CFO_PER_DAY;
 
-      if (!cfoResetAt || (now - cfoResetAt) >= MS_1_DAY) {
-        await supabase.from('profiles')
-          .update({ cfo_daily_used: 0, cfo_daily_reset_at: now.toISOString() })
-          .eq('id', user.id);
-        cfoUsedToday = 0;
-      }
+    // إعادة تعيين عداد CFO اليومي إذا مضى أكثر من 24 ساعة
+    const cfoResetAt = profile?.cfo_daily_reset_at ? new Date(profile.cfo_daily_reset_at) : null;
+    const now        = new Date();
+    let cfoUsedToday = profile?.cfo_daily_used || 0;
 
-      if (cfoUsedToday >= PAID_CFO_PER_DAY) {
-        return res.status(403).json({
-          error: `وصلت لحد ${PAID_CFO_PER_DAY} رسائل AI CFO اليوم — يتجدد الغد`,
-          limit_reached: true,
-          cfo_limit: true,
-          used: cfoUsedToday,
-          limit: PAID_CFO_PER_DAY,
-          plan: profile?.plan || 'free',
-        });
-      }
-
-      // زيادة عداد CFO اليومي (مشتركون فقط)
+    if (!cfoResetAt || (now - cfoResetAt) >= MS_1_DAY) {
       await supabase.from('profiles')
-        .update({ cfo_daily_used: cfoUsedToday + 1 })
+        .update({ cfo_daily_used: 0, cfo_daily_reset_at: now.toISOString() })
         .eq('id', user.id);
+      cfoUsedToday = 0;
     }
-    // مستخدمو التجربة: لا عداد — الوصول مفتوح
+
+    if (cfoUsedToday >= cfoDayLimit) {
+      return res.status(403).json({
+        error: `وصلت لحد ${cfoDayLimit} رسائل AI CFO اليوم — يتجدد الغد`,
+        limit_reached: true,
+        cfo_limit: true,
+        used: cfoUsedToday,
+        limit: cfoDayLimit,
+        plan: profile?.plan || 'free',
+      });
+    }
+
+    // زيادة عداد CFO اليومي (مشتركون + تجربة مجانية)
+    await supabase.from('profiles')
+      .update({ cfo_daily_used: cfoUsedToday + 1 })
+      .eq('id', user.id);
   }
 
   // حد التحليلات للعرض في الـ frontend (مشتركون فقط)

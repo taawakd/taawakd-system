@@ -5,12 +5,18 @@
 -- التاريخ: 2026-03
 -- ══════════════════════════════════════════════════════════════════
 
--- paid_one_time: صح إذا دفع المستخدم 29 ريال لتقرير واحد
+-- أسعار الدفع المنفرد (مصدر الحقيقة: api/analyze.js و plan-config.js):
+--   مشترك (plan = paid/pro/enterprise): 19 ريال
+--   غير مشترك (plan = free / تجربة منتهية): 29 ريال
+
+-- paid_one_time: صح إذا دفع المستخدم لتقرير واحد (19 أو 29 ريال حسب الخطة)
 -- is_saved_for_user: صح إذا يجب أن يظهر التقرير في "التقارير المحفوظة"
 
 ALTER TABLE reports
-  ADD COLUMN IF NOT EXISTS paid_one_time     BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS is_saved_for_user BOOLEAN NOT NULL DEFAULT TRUE;
+  ADD COLUMN IF NOT EXISTS paid_one_time     BOOLEAN        NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS is_saved_for_user BOOLEAN        NOT NULL DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS one_time_price    NUMERIC(10,2)  DEFAULT NULL;
+-- one_time_price: القيمة المدفوعة (19 للمشترك، 29 لغير المشترك) — NULL إذا لم يكن دفعاً منفرداً
 
 -- التقارير القديمة قبل هذه الميزة: كلها مرئية للمستخدم (القيمة الافتراضية صحيحة)
 -- لا نحتاج UPDATE على البيانات القديمة

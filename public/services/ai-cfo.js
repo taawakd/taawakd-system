@@ -154,12 +154,23 @@ async function sendCFO(quickMsg) {
 
     const data = await resp.json();
 
-    // ── فحص حد يومي (3 رسائل/يوم للمشتركين) أو انتهاء التجربة ──
+    // ── فحص حد يومي أو انتهاء التجربة ──
     if (data.limit_reached || data.trial_expired) {
       removeTyping(typingId);
-      const _limitMsg = data.trial_expired
-        ? '🔒 **انتهت فترة التجربة المجانية.**\n\nاشترك في الخطة المدفوعة للمتابعة.'
-        : `🔒 **وصلت لحد ${window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 3} رسائل AI CFO اليوم.**\n\nيتجدد الغد.`;
+      let _limitMsg;
+      if (data.trial_expired) {
+        _limitMsg = '🔒 **انتهت فترة التجربة المجانية (7 أيام).**\n\nاشترك في الخطة المدفوعة للمتابعة.';
+      } else if (data.cfo_limit) {
+        // حدد الرسالة حسب الخطة الحالية
+        const _cfoPlan   = window.normalizePlan(window.__USER_PLAN__ || 'free');
+        const _isTrial   = window.isTrialActive(window.__TRIAL_STARTED_AT__ || null);
+        const _cfoLimit  = _cfoPlan === 'paid'
+          ? (window.PLAN_CONFIG?.PAID_CFO_PER_DAY ?? 5)
+          : (window.PLAN_CONFIG?.TRIAL_CFO_PER_DAY ?? 3);
+        _limitMsg = `🔒 **وصلت لحد ${_cfoLimit} رسائل AI CFO اليوم.**\n\nيتجدد الغد.`;
+      } else {
+        _limitMsg = '🔒 وصلت للحد المسموح — حاول لاحقاً.';
+      }
       appendCFOMessage('ai', _limitMsg);
       if (data.trial_expired && typeof showUpgradeModal === 'function') showUpgradeModal('AI CFO', 'paid');
       return;
