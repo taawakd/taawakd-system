@@ -59,6 +59,14 @@ window.loadUserProfile = async function () {
     if (profile?.full_name) {
       if (upName) upName.textContent = profile.full_name;
       if (upAvatarBig) upAvatarBig.textContent = profile.full_name.charAt(0).toUpperCase();
+
+      // ── مزامنة اسم الشريط الجانبي مع الاسم الحقيقي من قاعدة البيانات ──
+      // يُحدَّث window.__USER_DISPLAY_NAME__ حتى تتزامن الصفحات اللاحقة أيضاً
+      window.__USER_DISPLAY_NAME__ = profile.full_name;
+      const _sbNameEl2   = document.getElementById('sbName');
+      const _sbAvatarEl2 = document.getElementById('sbAvatar');
+      if (_sbNameEl2)   _sbNameEl2.textContent   = profile.full_name;
+      if (_sbAvatarEl2) _sbAvatarEl2.textContent = profile.full_name.charAt(0).toUpperCase();
     }
 
     // ── Cache plan globally (normalized + raw) ──

@@ -679,12 +679,13 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     }
   });
 
-  // إظهار اسم المستخدم في الواجهة
-  const name = session.user?.user_metadata?.full_name
+  // ── حفظ الاسم عالمياً — سيُطبَّق على الشريط الجانبي لاحقاً بعد تحميله ──
+  // (لا نبحث عن #sbName هنا لأن sidebar.html ربما لم يُحمَّل بعد)
+  window.__USER_DISPLAY_NAME__ = (
+    session.user?.user_metadata?.full_name
     || session.user?.email?.split('@')[0]
-    || 'مستخدم';
-  const greetEl = document.getElementById('userName');
-  if (greetEl) greetEl.textContent = name;
+    || 'مستخدم'
+  );
 
   // فحص الصلاحيات والخطة
   // نستخدم maybeSingle() بدلاً من single() لتجنب الخطأ إذا لم يكن للمستخدم صف في profiles
@@ -748,6 +749,15 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     };
     const planEl = document.querySelector('.sb-user-plan');
     if (planEl) planEl.textContent = _planLabels[_plan] || 'الخطة المجانية';
+
+    // ── تعيين اسم المستخدم وصورته الرمزية في الشريط الجانبي ──────────────
+    // نُطبِّق هنا لأن sidebar.html مضمون التحميل بعد 800ms
+    // #sbName    = حقل الاسم | #sbAvatar = الحرف الأول من الاسم
+    const _sbNameEl   = document.getElementById('sbName');
+    const _sbAvatarEl = document.getElementById('sbAvatar');
+    const _displayName = window.__USER_DISPLAY_NAME__ || 'مستخدم';
+    if (_sbNameEl)   _sbNameEl.textContent   = _displayName;
+    if (_sbAvatarEl) _sbAvatarEl.textContent = _displayName.charAt(0).toUpperCase();
 
     // تهيئة منتقي المشاريع للخطة المؤسسية (نقرأ القيمة الخام — enterprise لم تُسوَّ إلى paid)
     if ((window.__USER_PLAN_RAW__ === 'enterprise') && typeof initProjectSelector === 'function') initProjectSelector();
