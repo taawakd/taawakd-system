@@ -663,6 +663,9 @@ async function exportPDF() {
   const marginColor = netMargin > 15 ? '#16a34a' : netMargin < 5 ? '#dc2626' : '#d97706';
   const dateStr     = rep.reportPeriod || (rep.createdAt ? new Date(rep.createdAt).toLocaleDateString('ar-SA') : '');
   const f = n => (n || 0).toLocaleString('ar-SA', { maximumFractionDigits: 0 });
+  // تعريف محلي لرمز الريال — نستخدم نصاً عادياً داخل PDF لأن html2canvas لا يدعم SVG inline
+  // eslint-disable-next-line no-shadow
+  const SAR = 'ر.س';
 
   // ── التنبيهات ──
   const alertsHtml = (alerts || []).slice(0, 8).map(a => {
@@ -842,10 +845,10 @@ async function exportPDF() {
     <!-- KPIs -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
       ${[
-        { val: f(revenue)+' ﷼', label: 'الإيرادات', color: '#1a1a1a' },
-        { val: (netProfit>=0?'+':'')+f(netProfit)+' ﷼', label: 'صافي الربح', color: profitColor },
+        { val: f(revenue)+' '+SAR, label: 'الإيرادات', color: '#1a1a1a' },
+        { val: (netProfit>=0?'+':'')+f(netProfit)+' '+SAR, label: 'صافي الربح', color: profitColor },
         { val: netMargin+'%', label: 'هامش الربح', color: marginColor },
-        { val: f(totalExpenses)+' ﷼', label: 'إجمالي المصاريف', color: '#1a1a1a' },
+        { val: f(totalExpenses)+' '+SAR, label: 'إجمالي المصاريف', color: '#1a1a1a' },
       ].map(k => `<div style="background:#ffffff;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
         <div style="font-size:15px;font-weight:700;color:${k.color};">${k.val}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:5px;">${k.label}</div>
