@@ -94,14 +94,29 @@ async function runAnalysis() {
 
   const productsText = products.length ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n') : 'لا توجد بيانات منتجات.';
 
+  // ── تسمية حقل COGS بناءً على نوع النشاط لمنع تسرب مصطلحات المطعم ──────────
+  // الأنشطة الغذائية: food_cost | الخدمية: service_cost | التجارية: cogs
+  const _foodSectors    = new Set(['restaurant','cafe','bakery','cloud_kitchen','drive_thru','food_truck','juice_kiosk']);
+  const _serviceSectors = new Set(['barber','beauty','clinic','laundry','carwash','services','services_co','tech','logistics','fitness','hotel']);
+  const _cogsKey = _foodSectors.has(sectorKey)
+    ? 'food_cost'
+    : _serviceSectors.has(sectorKey)
+      ? 'service_cost'
+      : 'cogs';   // retail / grocery / pharmacy / perfumes / ecom / dates / other
+
+  // ── إجمالي العملاء الشهريين = مجموع كميات المنتجات ────────────────────────
+  // لا نقسم على موظفين أو أيام — المجموع المباشر هو العدد الصحيح
+  const totalMonthlyCustomers = products.reduce((s, p) => s + (p.qty || 0), 0);
+
   const prompt = JSON.stringify({
     business_type: bizType || 'غير محدد',
     business_name: bizName,
     period: period,
     team_size: employees,
     revenue: revenue,
-    food_cost: cogs,
-    food_cost_percent: grossMargin,
+    [_cogsKey]: cogs,
+    [_cogsKey + '_percent']: cogsPct,          // نسبة COGS من الإيرادات (صحيحة — ليست grossMargin)
+    gross_margin_percent: grossMargin,           // هامش الربح الإجمالي (مكمّل لـ cogsPct)
     salary: salaries,
     salary_percent: salPct,
     rent: rent,
@@ -113,8 +128,8 @@ async function runAnalysis() {
     total_expenses: totalExpenses,
     net_profit: netProfit,
     profit_margin: netMargin,
-    gross_margin: grossMargin,
     health_score: scoreData ? scoreData.total : null,
+    ...(totalMonthlyCustomers > 0 ? { monthly_customers: totalMonthlyCustomers } : {}),
     products: productsText || null,
     notes: notes || null,
     ...(hasDelivery ? {

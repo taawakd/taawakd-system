@@ -444,10 +444,26 @@ async function renderHealthAdvisor() {
 function defaultDecisions(rep) {
   const m = rep.metrics;
   const decisions = [];
-  if(m.cogsPct > 45)
-    decisions.push({rank:1,title:'تكلفة البضاعة مرتفعة',why:`تكلفة البضاعة ${m.cogsPct}% من إيراداتك — أعلى من المعدل الطبيعي بـ ${(m.cogsPct-40).toFixed(0)}%`,steps:['راجع عقود الموردين الحاليين','ابحث عن موردين بديلين','فاوض على خصم كمية'],impact:`تخفيض 5% يوفر ${fmt(m.revenue*0.05)} ${SAR} شهرياً`});
-  if(m.netMargin < 10)
-    decisions.push({rank:decisions.length+1,title:'هامش الربح منخفض',why:`هامش ${m.netMargin}% أقل من المعدل الطبيعي ${m.bizType?.includes('مطعم')?'15-25%':'10-20%'}`,steps:['حدّد المنتجات ذات الهامش المنخفض','ارفع أسعارها 5-8%','أوقف المنتجات الخاسرة'],impact:`رفع الهامش 3% يضيف ${fmt(m.revenue*0.03)} ${SAR} شهرياً`});
+
+  // ── استخدام معايير القطاع الفعلي بدلاً من hardcoded 'مطعم' ──────────────────
+  const _sk = rep.sectorKey || (typeof getSectorKey === 'function' ? getSectorKey(rep.bizType) : null);
+  const _bench = _sk && (window.BENCHMARKS || BENCHMARKS)[_sk]
+    ? (window.BENCHMARKS || BENCHMARKS)[_sk]
+    : (window.BENCHMARKS || BENCHMARKS).services || {};
+  const _cogsBenchMax  = _bench?.cogsPct?.max  || 40;
+  const _marginBenchMin = _bench?.netMargin?.min || 10;
+  const _normalMargin   = _bench?.netMargin
+    ? `${_bench.netMargin.min}-${_bench.netMargin.max}%`
+    : '10-20%';
+
+  // تسمية حقل التكلفة حسب نوع النشاط
+  const _foodSectors2    = new Set(['restaurant','cafe','bakery','cloud_kitchen','drive_thru','food_truck','juice_kiosk']);
+  const _cogsLabel2 = _foodSectors2.has(_sk) ? 'تكلفة الخامات' : 'تكلفة الإنتاج / الخدمات';
+
+  if(m.cogsPct > _cogsBenchMax)
+    decisions.push({rank:1,title:`${_cogsLabel2} مرتفعة`,why:`${_cogsLabel2} ${m.cogsPct}% من إيراداتك — أعلى من المعدل الطبيعي بـ ${(m.cogsPct - _cogsBenchMax).toFixed(0)}%`,steps:['راجع عقود الموردين الحاليين','ابحث عن موردين بديلين','فاوض على خصم كمية'],impact:`تخفيض 5% يوفر ${fmt(m.revenue*0.05)} ${SAR} شهرياً`});
+  if(m.netMargin < _marginBenchMin)
+    decisions.push({rank:decisions.length+1,title:'هامش الربح منخفض',why:`هامش ${m.netMargin}% أقل من المعدل الطبيعي لقطاعك (${_normalMargin})`,steps:['حدّد المنتجات ذات الهامش المنخفض','ارفع أسعارها 5-8%','أوقف المنتجات الخاسرة'],impact:`رفع الهامش 3% يضيف ${fmt(m.revenue*0.03)} ${SAR} شهرياً`});
   if(m.salPct > 35)
     decisions.push({rank:decisions.length+1,title:'الرواتب مرتفعة',why:`الرواتب ${m.salPct}% من الإيرادات — أعلى من المعدل`,steps:['راجع جداول الدوام','حدّد ساعات الذروة','فكّر في أتمتة بعض المهام'],impact:`تخفيض 10% يوفر ${fmt(m.salaries*0.1)} ${SAR} شهرياً`});
   if(decisions.length === 0)
