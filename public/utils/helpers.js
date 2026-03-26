@@ -8,13 +8,48 @@
 const SAR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" class="sar-icon" aria-label="ر.س" role="img"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>`;
 window.SAR = SAR;
 
-// تحويل قيمة نصية إلى رقم (يتعامل مع الفواصل العربية والإنجليزية)
-const parseNum = v => parseFloat(String(v||'').replace(/[,،\s]/g,'')) || 0;
+// ── تحويل الأرقام العربية-الهندية والفارسية إلى غربية ─────────────────────
+// ٠١٢٣٤٥٦٧٨٩  (U+0660–U+0669)  →  0123456789
+// ۰۱۲۳۴۵۶۷۸۹  (U+06F0–U+06F9)  →  0123456789
+function toWesternDigits(s) {
+  return String(s || '')
+    .replace(/[٠-٩]/g, d => d.charCodeAt(0) - 0x0660)
+    .replace(/[۰-۹]/g, d => d.charCodeAt(0) - 0x06F0);
+}
+window.toWesternDigits = toWesternDigits;
+
+// تحويل قيمة نصية إلى رقم (يتعامل مع الأرقام العربية + الفواصل)
+const parseNum = v => parseFloat(toWesternDigits(v).replace(/[,،\s]/g,'')) || 0;
 window.parseNum = parseNum;
 
 // قراءة قيمة input بالـ id وتحويلها لرقم
 const getN = id => parseNum(document.getElementById(id)?.value);
 window.getN = getN;
+
+// ── تحويل تلقائي عند الكتابة في أي حقل رقمي ─────────────────────────────
+// يعمل على: type="number" | class="num-input" | class="input" | حقول نموذج التحليل
+document.addEventListener('input', function(e) {
+  const el = e.target;
+  if (!el || el.tagName !== 'INPUT') return;
+  const isNumField = el.type === 'number'
+    || el.classList.contains('num-input')
+    || el.classList.contains('input')
+    || el.closest('.prod-row')         // صفوف المنتجات في نموذج التحليل
+    || el.closest('#bp-prod-cost')
+    || el.closest('#bp-prod-price')
+    || el.id?.startsWith('f-')         // حقول نموذج التحليل الرئيسي
+    || el.id?.startsWith('bp-')
+    || el.id?.startsWith('cf-')
+    || el.id?.startsWith('pc-');
+  if (!isNumField) return;
+  const val = el.value;
+  const converted = toWesternDigits(val);
+  if (converted !== val) {
+    const pos = el.selectionStart;  // حفظ موضع المؤشر
+    el.value = converted;
+    try { el.setSelectionRange(pos, pos); } catch(_) {}
+  }
+}, true); // capture phase لضمان التنفيذ قبل أي listener آخر
 
 // تنسيق الأرقام الكبيرة (مليون = م، ألف = ك)
 const fmt = n => {
