@@ -689,13 +689,13 @@ async function exportPDF() {
     const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
     return `<tr style="background:${bg};">
       <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#374151;font-size:12px;">${r.label}</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1a1a1a;font-size:12px;">${f(r.val)} ر</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1a1a1a;font-size:12px;">${f(r.val)} ${SAR}</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#6b7280;font-size:12px;">${pRev}%</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:600;">${pExp}%</td>
     </tr>`;
   }).join('') + `<tr style="background:#f3f4f6;font-weight:700;">
     <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#1a1a1a;font-size:12px;">إجمالي المصاريف</td>
-    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-size:12px;">${f(totalExpenses)} ر</td>
+    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-size:12px;">${f(totalExpenses)} ${SAR}</td>
     <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;">${revenue > 0 ? ((totalExpenses/revenue)*100).toFixed(1) : '—'}%</td>
     <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:700;">100%</td>
   </tr>`;
@@ -750,11 +750,11 @@ async function exportPDF() {
   const breakevenHtml = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
       <div style="background:#f8fafc;border-radius:8px;padding:12px;text-align:center;border:1px solid #e5e7eb;">
-        <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${f(bePoint)} ر</div>
+        <div style="font-size:16px;font-weight:700;color:#1a1a1a;">${f(bePoint)} ${SAR}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:4px;">نقطة التعادل</div>
       </div>
       <div style="background:#f8fafc;border-radius:8px;padding:12px;text-align:center;border:1px solid #e5e7eb;">
-        <div style="font-size:16px;font-weight:700;color:${beColor};">${beDiff >= 0 ? '+' : ''}${f(beDiff)} ر</div>
+        <div style="font-size:16px;font-weight:700;color:${beColor};">${beDiff >= 0 ? '+' : ''}${f(beDiff)} ${SAR}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:4px;">${beGood ? 'فوق نقطة التعادل' : 'تحت نقطة التعادل'}</div>
       </div>
     </div>
@@ -777,9 +777,9 @@ async function exportPDF() {
     const bg        = i % 2 === 0 ? '#ffffff' : '#f9fafb';
     return `<tr style="background:${bg};">
       <td style="padding:7px 8px;border:1px solid #e5e7eb;font-size:12px;color:#374151;">${s.title}</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:12px;font-weight:600;color:${s.newProfit>=0?'#16a34a':'#dc2626'};">${f(s.newProfit)} ر</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:12px;font-weight:600;color:${s.newProfit>=0?'#16a34a':'#dc2626'};">${f(s.newProfit)} ${SAR}</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:12px;color:#6b7280;">${newMargin}%</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:12px;color:#16a34a;font-weight:600;">+${f(delta)} ر</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:12px;color:#16a34a;font-weight:600;">+${f(delta)} ${SAR}</td>
     </tr>`;
   }).join('') : '';
 
@@ -800,8 +800,8 @@ async function exportPDF() {
         const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
         return `<tr style="background:${bg};">
           <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#1a1a1a;">${p.name||''}</td>
-          <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${f(p.price)} ر</td>
-          <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${f(p.cost)} ر</td>
+          <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${f(p.price)} ${SAR}</td>
+          <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${f(p.cost)} ${SAR}</td>
           <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;">${p.qty||0}</td>
           <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:${mc};">${m}%</td>
         </tr>`;

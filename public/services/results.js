@@ -582,7 +582,7 @@ function renderExpenseTable(metrics, containerId) {
     // عمود المبلغ
     const tdVal = document.createElement('td');
     tdVal.style.cssText = 'padding:10px;font-weight:700;color:var(--white);font-size:13px;white-space:nowrap;';
-    tdVal.textContent = fmt(r.val) + ' ر';
+    tdVal.innerHTML = fmt(r.val) + ' ' + (window.SAR || 'ر.س');
 
     // عمود % من الإيرادات
     const tdPctRev = document.createElement('td');
@@ -610,7 +610,7 @@ function renderExpenseTable(metrics, containerId) {
   tdTotalLabel.textContent = 'إجمالي المصاريف';
   const tdTotalVal = document.createElement('td');
   tdTotalVal.style.cssText = 'padding:10px;font-weight:800;color:var(--gold);font-size:14px;white-space:nowrap;';
-  tdTotalVal.textContent = fmt(totalExpenses) + ' ر';
+  tdTotalVal.innerHTML = fmt(totalExpenses) + ' ' + (window.SAR || 'ر.س');
   const tdTotalPctRev = document.createElement('td');
   tdTotalPctRev.style.cssText = 'padding:10px;font-weight:700;color:var(--warn);font-size:12px;';
   tdTotalPctRev.textContent = (revenue > 0 ? ((totalExpenses / revenue) * 100).toFixed(1) : '—') + '%';
