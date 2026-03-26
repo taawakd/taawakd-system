@@ -82,7 +82,11 @@ function showPage(name, _fromHash) {
   }
 
   if(name==='dashboard') updateDashboard();
-  if(name==='analysis') _prefillFromBP();
+  if(name==='analysis') {
+    _prefillFromBP();
+    // إظهار أزرار الاستيراد إذا كانت هناك منتجات محفوظة
+    if (typeof window._updateImportBtn === 'function') window._updateImportBtn();
+  }
   if(name==='reports') {
     if (!planAllows('save_reports')) { showUpgradeModal('سجل التقارير المحفوظة', 'paid'); return; }
     renderSavedReports();
