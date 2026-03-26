@@ -621,6 +621,11 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
   }
 
   // ✅ جلسة مؤكّدة — أخفِ شاشة التحميل
+  // ── قيم افتراضية متفائلة قبل جلب الملف الشخصي ──────────────────────────
+  // نضبطها هنا لمنع ظهور أقفال الاشتراك خلال الـ 200-500ms الأولى (race condition)
+  // ستُستبدل بالقيم الحقيقية بعد اكتمال جلب profiles أدناه
+  window.__USER_PLAN__        = window.__USER_PLAN__        || 'free';
+  window.__TRIAL_STARTED_AT__ = window.__TRIAL_STARTED_AT__ || new Date().toISOString();
   hideLoader();
 
   // ✅ جلسة موجودة — خزّن التوكن للاستخدام في API calls
