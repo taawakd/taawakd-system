@@ -1667,21 +1667,41 @@
     <div style="grid-column:1/-1">
       <div class="card" style="padding:24px">
         <div class="card-title" style="margin-bottom:20px"><div class="card-title-icon"><img src="/assets/icons/diamond.png" class="custom-icon" alt=""></div>معلومات الاشتراك</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
-            <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">الخطة الحالية</div>
-            <div id="up-plan-name" style="font-size:20px;font-weight:700;color:var(--gold)">—</div>
+
+        <!-- شريط الحالة العلوي -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="up-plan-icon" style="font-size:26px">💎</div>
+            <div>
+              <div id="up-plan-name" style="font-size:17px;font-weight:700;color:var(--gold)">جارٍ التحميل…</div>
+              <div id="up-plan-status-label" style="font-size:12px;color:var(--gray2);margin-top:3px">—</div>
+            </div>
           </div>
-          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
-            <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">تاريخ الانتهاء</div>
-            <div id="up-plan-expiry" style="font-size:17px;font-weight:700;color:var(--white)">—</div>
+          <div id="up-plan-badge" style="font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px;background:rgba(122,118,112,0.15);color:var(--gray2)">—</div>
+        </div>
+
+        <!-- كروت التفاصيل الأربعة -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:10px;color:var(--gray2);margin-bottom:6px;letter-spacing:.5px">تاريخ البداية</div>
+            <div id="up-plan-start" style="font-size:13px;font-weight:700;color:var(--white)">—</div>
           </div>
-          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
-            <div style="font-size:11px;color:var(--gray2);margin-bottom:8px">المتبقي</div>
-            <div id="up-plan-days" style="font-size:20px;font-weight:700;color:var(--green)">—</div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:10px;color:var(--gray2);margin-bottom:6px;letter-spacing:.5px">تاريخ الانتهاء</div>
+            <div id="up-plan-expiry" style="font-size:13px;font-weight:700;color:var(--white)">—</div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:10px;color:var(--gray2);margin-bottom:6px;letter-spacing:.5px">الأيام المتبقية</div>
+            <div id="up-plan-days" style="font-size:22px;font-weight:800;color:var(--green)">—</div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:10px;color:var(--gray2);margin-bottom:6px;letter-spacing:.5px">التحليلات المستخدمة</div>
+            <div id="up-plan-used" style="font-size:22px;font-weight:800;color:var(--gold)">—</div>
           </div>
         </div>
-        <div id="up-usage-bar-wrap" style="margin-top:20px;display:none">
+
+        <!-- شريط الاستخدام (مشتركون) -->
+        <div id="up-usage-bar-wrap" style="margin-top:16px;display:none">
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--gray2);margin-bottom:6px">
             <span>التحليلات المستخدمة هذا الشهر</span>
             <span id="up-usage-text">0 / 0</span>
@@ -1690,8 +1710,9 @@
             <div id="up-usage-fill" style="height:100%;background:var(--gold);border-radius:4px;transition:width .5s ease;width:0%"></div>
           </div>
         </div>
+
         <div style="margin-top:20px;text-align:center">
-          <button onclick="showPage('plans')" style="background:var(--gold-d);border:1px solid var(--gold-b);color:var(--gold);border-radius:10px;padding:10px 28px;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit">⚡ ترقية الخطة</button>
+          <button id="up-upgrade-btn" onclick="showPage('plans')" style="background:var(--gold-d);border:1px solid var(--gold-b);color:var(--gold);border-radius:10px;padding:10px 28px;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit">⚡ ترقية الخطة</button>
         </div>
       </div>
     </div>

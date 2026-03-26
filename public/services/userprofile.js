@@ -76,47 +76,78 @@ window.loadUserProfile = async function () {
     const _upTrialStartedAt = profile?.trial_started_at || window.__TRIAL_STARTED_AT__ || null;
     const _upTrialActive    = window.isTrialActive ? window.isTrialActive(_upTrialStartedAt) : false;
     const _upIsPaid         = window.isPaidPlan ? window.isPaidPlan(plan) : plan === 'paid';
+    const _trialDays        = window.PLAN_CONFIG?.TRIAL_DAYS ?? 7;
 
     console.log('[Tawakkad][userProfile] plan=%s | trialActive=%s | trialStartedAt=%s',
       plan, _upTrialActive, _upTrialStartedAt);
 
-    if (planEl) {
-      planEl.textContent = PLAN_LABELS[plan] || plan;
-      planEl.style.color = _upIsPaid ? '#5b8fcc' : _upTrialActive ? 'var(--gold)' : 'var(--red)';
-    }
+    // ── مساعد تنسيق التاريخ بالعربية ──────────────────────────────
+    const _fmtDate = (d) => d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Expiry date & days remaining
-    const endDate = profile?.subscription_end_date;
-    if (endDate) {
-      const end   = new Date(endDate);
-      const now   = new Date();
-      const days  = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-      if (expiryEl) expiryEl.textContent = end.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
-      if (daysEl) {
-        daysEl.textContent = days > 0 ? `${days} يوم` : 'منتهي';
-        daysEl.style.color = days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--warn)' : 'var(--green)';
+    // ── عناصر الواجهة الجديدة ──────────────────────────────────────
+    const iconEl        = document.getElementById('up-plan-icon');
+    const statusLblEl   = document.getElementById('up-plan-status-label');
+    const badgeEl       = document.getElementById('up-plan-badge');
+    const startEl       = document.getElementById('up-plan-start');
+    const usedCardEl    = document.getElementById('up-plan-used');
+    const upgradeBtn    = document.getElementById('up-upgrade-btn');
+
+    // ── الحالة: مشترك ──────────────────────────────────────────────
+    if (_upIsPaid) {
+      if (planEl)     { planEl.textContent = PLAN_LABELS[profile?.plan] || 'الخطة المدفوعة'; planEl.style.color = '#5b8fcc'; }
+      if (iconEl)       iconEl.textContent = '⭐';
+      if (statusLblEl)  statusLblEl.textContent = 'اشتراك نشط';
+      if (badgeEl)    { badgeEl.textContent = 'مدفوع'; badgeEl.style.background = 'rgba(91,143,204,0.15)'; badgeEl.style.color = '#5b8fcc'; badgeEl.style.border = '1px solid rgba(91,143,204,0.3)'; }
+
+      const endDate = profile?.subscription_end_date;
+      if (startEl)    startEl.textContent = _upTrialStartedAt ? _fmtDate(new Date(_upTrialStartedAt)) : '—';
+      if (endDate) {
+        const end  = new Date(endDate);
+        const days = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+        if (expiryEl) expiryEl.textContent = _fmtDate(end);
+        if (daysEl) { daysEl.textContent = days > 0 ? days : 'منتهي'; daysEl.style.color = days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--warn)' : 'var(--green)'; }
+      } else {
+        if (expiryEl) expiryEl.textContent = 'اشتراك شهري متجدد';
+        if (daysEl)   { daysEl.textContent = '∞'; daysEl.style.color = 'var(--green)'; }
       }
-    } else if (_upIsPaid) {
-      if (expiryEl) expiryEl.textContent = 'اشتراك نشط';
-      if (daysEl)   daysEl.textContent   = '—';
+      if (upgradeBtn) upgradeBtn.style.display = 'none'; // مشترك لا يحتاج زر الترقية
+
+    // ── الحالة: تجربة مجانية نشطة ──────────────────────────────────
     } else if (_upTrialActive && _upTrialStartedAt) {
-      // احسب الأيام المتبقية من التجربة
-      const _trialDays = window.PLAN_CONFIG?.TRIAL_DAYS ?? 7;
-      const _elapsed   = (Date.now() - new Date(_upTrialStartedAt).getTime()) / (1000 * 60 * 60 * 24);
-      const _remaining = Math.max(0, Math.ceil(_trialDays - _elapsed));
-      if (expiryEl) expiryEl.textContent = 'تجربة مجانية';
-      if (daysEl) {
-        daysEl.textContent   = `${_remaining} يوم متبقي`;
-        daysEl.style.color   = _remaining <= 2 ? 'var(--warn)' : 'var(--gold)';
-      }
+      const _trialStart   = new Date(_upTrialStartedAt);
+      const _trialEndDate = new Date(_trialStart.getTime() + _trialDays * 24 * 60 * 60 * 1000);
+      const _elapsed      = (Date.now() - _trialStart.getTime()) / (1000 * 60 * 60 * 24);
+      const _remaining    = Math.max(0, Math.ceil(_trialDays - _elapsed));
+
+      if (planEl)     { planEl.textContent = 'تجربة مجانية'; planEl.style.color = 'var(--gold)'; }
+      if (iconEl)       iconEl.textContent = '🎁';
+      if (statusLblEl)  statusLblEl.textContent = `${_remaining} يوم متبقي من ${_trialDays} أيام`;
+      if (badgeEl)    { badgeEl.textContent = 'تجريبي'; badgeEl.style.background = 'rgba(200,164,90,0.12)'; badgeEl.style.color = 'var(--gold)'; badgeEl.style.border = '1px solid rgba(200,164,90,0.3)'; }
+      if (startEl)      startEl.textContent = _fmtDate(_trialStart);
+      if (expiryEl)     expiryEl.textContent = _fmtDate(_trialEndDate);
+      if (daysEl)     { daysEl.textContent = _remaining; daysEl.style.color = _remaining <= 2 ? 'var(--red)' : _remaining <= 4 ? 'var(--warn)' : 'var(--green)'; }
+
+    // ── الحالة: انتهت التجربة ───────────────────────────────────────
     } else {
-      if (expiryEl) expiryEl.textContent = 'انتهت التجربة';
-      if (daysEl) { daysEl.textContent = 'مشترك لم يعد نشطاً'; daysEl.style.color = 'var(--red)'; }
+      const _expiredDate = _upTrialStartedAt
+        ? new Date(new Date(_upTrialStartedAt).getTime() + _trialDays * 24 * 60 * 60 * 1000)
+        : null;
+
+      if (planEl)     { planEl.textContent = 'منتهية التجربة'; planEl.style.color = 'var(--red)'; }
+      if (iconEl)       iconEl.textContent = '🔒';
+      if (statusLblEl)  statusLblEl.textContent = 'انتهت التجربة المجانية — يرجى الاشتراك للمتابعة';
+      if (badgeEl)    { badgeEl.textContent = 'غير نشط'; badgeEl.style.background = 'rgba(220,50,50,0.1)'; badgeEl.style.color = 'var(--red)'; badgeEl.style.border = '1px solid rgba(220,50,50,0.25)'; }
+      if (startEl)      startEl.textContent = _upTrialStartedAt ? _fmtDate(new Date(_upTrialStartedAt)) : '—';
+      if (expiryEl)   { expiryEl.textContent = _expiredDate ? _fmtDate(_expiredDate) : '—'; expiryEl.style.color = 'var(--red)'; }
+      if (daysEl)     { daysEl.textContent = '0'; daysEl.style.color = 'var(--red)'; }
     }
 
-    // ── Usage bar (للمشتركين فقط — 8/شهر) ──────────────────────
+    // ── التحليلات المستخدمة ─────────────────────────────────────────
     const _paidLimit = window.PLAN_CONFIG?.PAID_ANALYSES_PER_MONTH ?? 8;
     const used       = profile?.analyses_used || 0;
+    if (usedCardEl)   usedCardEl.textContent = _upIsPaid ? `${used} / ${_paidLimit}` : used;
+
+    // ── شريط الاستخدام (مشتركون فقط) ──────────────────────────────
     const barWrap    = document.getElementById('up-usage-bar-wrap');
     const usageText  = document.getElementById('up-usage-text');
     const usageFill  = document.getElementById('up-usage-fill');
