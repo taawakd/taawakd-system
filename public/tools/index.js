@@ -631,9 +631,18 @@ async function addBPProduct() {
   }
 }
 
-function removeBPProduct(i) {
+async function removeBPProduct(i) {
+  const prod = BP_PRODUCTS[i];
   BP_PRODUCTS.splice(i, 1);
   renderBPProducts();
+
+  // حذف من قاعدة البيانات و window._PRODUCTS حتى لا يُعاد تحميله عند الـ refresh
+  if (prod?.id && typeof deleteProductFromDB === 'function') {
+    await deleteProductFromDB(prod.id);
+  } else if (prod?.name) {
+    // منتج جديد لم يُحفظ بعد — أزله من _PRODUCTS بالاسم
+    window._PRODUCTS = (window._PRODUCTS || []).filter(p => p.name !== prod.name);
+  }
 }
 
 function importBPProducts(input) {
