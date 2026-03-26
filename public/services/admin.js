@@ -42,6 +42,7 @@ window.switchAdminTab = function(tab) {
   if (tab === 'plans')     renderAdminPlans();
   if (tab === 'logs')      renderAdminLogs(1, 'all');
   if (tab === 'insights')  renderAdminInsights();
+  if (tab === 'support')   renderAdminSupport(1, 'all');
 };
 
 // ── Init ───────────────────────────────────────────────────────────────────
@@ -1038,3 +1039,79 @@ window.runInsightsAnalysis = async function() {
 };
 
 window.renderAdminInsights = renderAdminInsights;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. SUPPORT QUESTIONS — أسئلة دعم العملاء
+// ═══════════════════════════════════════════════════════════════════════════
+window._sqCurrentFilter = 'all';
+
+async function renderAdminSupport(page = 1, filter = 'all') {
+  window._sqCurrentFilter = filter;
+
+  // تحديث أزرار الفلتر النشطة
+  ['all', 'unmatched', 'matched'].forEach(function (f) {
+    const btn = document.getElementById('sq-filter-' + f);
+    if (btn) btn.classList.toggle('active', f === filter);
+  });
+
+  const tbody = document.getElementById('sq-tbody');
+  const pag   = document.getElementById('sq-pag');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">جارٍ التحميل…</td></tr>';
+
+  const data = await adminFetch('getSupportQuestions', { filter, page, limit: 50 });
+  if (!data) return;
+
+  // تحديث الإحصائيات
+  const el = (id) => document.getElementById(id);
+  if (el('sq-stat-total'))     el('sq-stat-total').textContent     = data.stats?.total     ?? '—';
+  if (el('sq-stat-unmatched')) el('sq-stat-unmatched').textContent = data.stats?.unmatched ?? '—';
+  if (el('sq-stat-matched'))   el('sq-stat-matched').textContent   = data.stats?.matched   ?? '—';
+
+  // بناء الجدول
+  if (!data.questions || data.questions.length === 0) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">لا توجد أسئلة بعد</td></tr>';
+    if (pag) pag.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  data.questions.forEach(function (q) {
+    const date = new Date(q.created_at).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const badge = q.matched
+      ? '<span style="background:rgba(80,200,100,0.15);color:#4ec874;border:1px solid rgba(80,200,100,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">✅ مجابة</span>'
+      : '<span style="background:rgba(220,50,50,0.12);color:#e05555;border:1px solid rgba(220,50,50,0.25);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">❓ بلا إجابة</span>';
+    const keyword = q.matched_question
+      ? `<span style="font-family:monospace;font-size:11px;color:var(--gold);background:rgba(200,164,90,0.1);padding:2px 8px;border-radius:6px">${q.matched_question}</span>`
+      : '<span style="color:var(--gray2);font-size:12px">—</span>';
+
+    html += `<tr>
+      <td style="font-size:13px;max-width:340px;word-break:break-word">${q.message.replace(/</g,'&lt;')}</td>
+      <td style="text-align:center">${badge}</td>
+      <td style="text-align:center">${keyword}</td>
+      <td style="font-size:11px;color:var(--gray2)">${date}</td>
+      <td style="text-align:center">
+        <button class="btn-sm" style="color:var(--red);padding:3px 8px" onclick="adminDeleteSupportQ('${q.id}')">🗑</button>
+      </td>
+    </tr>`;
+  });
+
+  if (tbody) tbody.innerHTML = html;
+
+  // Pagination
+  if (pag) {
+    const totalPages = Math.ceil(data.total / 50);
+    let pagHtml = '';
+    for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+      pagHtml += `<button class="btn-sm ${i === page ? 'active' : ''}" onclick="renderAdminSupport(${i},'${filter}')">${i}</button>`;
+    }
+    pag.innerHTML = pagHtml;
+  }
+}
+
+window.adminDeleteSupportQ = async function (id) {
+  if (!confirm('حذف هذا السجل؟')) return;
+  const data = await adminFetch('deleteSupportQuestion', { id });
+  if (data?.ok) { toast('🗑 تم الحذف'); renderAdminSupport(1, window._sqCurrentFilter); }
+};
+
+window.renderAdminSupport = renderAdminSupport;

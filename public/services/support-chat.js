@@ -83,25 +83,54 @@
 
   // ══════════════════════════════════════════════════════════════════════
   // _scMatchFAQ(msg) — البحث في قائمة الأسئلة الشائعة
-  // يعيد نص الإجابة أو null إذا لم تُوجد مطابقة
+  // يعيد { answer, matched, matchedKeyword } بدلاً من null/string
   // ══════════════════════════════════════════════════════════════════════
   function _scMatchFAQ(msg) {
     var normalized = msg.toLowerCase().trim();
-    console.log('[Tawakkad][SupportChat] سؤال المستخدم:', normalized);
 
     for (var i = 0; i < FAQ.length; i++) {
       var entry = FAQ[i];
       for (var j = 0; j < entry.q.length; j++) {
         var keyword = entry.q[j].toLowerCase();
         if (normalized.includes(keyword)) {
-          console.log('[Tawakkad][SupportChat] مطابقة وجدت — السؤال:', entry.q[j], '| الإجابة:', entry.a.substring(0, 60) + '...');
-          return entry.a;
+          console.log('[Tawakkad][SupportChat] FAQ matched — keyword:', entry.q[j]);
+          return { answer: entry.a, matched: true, matchedKeyword: entry.q[j] };
         }
       }
     }
 
-    console.log('[Tawakkad][SupportChat] لم تُوجد مطابقة للسؤال:', normalized);
-    return null;
+    console.log('[Tawakkad][SupportChat] FAQ not matched — message:', normalized);
+    return { answer: null, matched: false, matchedKeyword: null };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // _scTrack(msg, matched, matchedKeyword)
+  // يحفظ السؤال في جدول support_unanswered عبر Supabase
+  // ══════════════════════════════════════════════════════════════════════
+  function _scTrack(msg, matched, matchedKeyword) {
+    try {
+      var sb  = window.sb;
+      var uid = window.__USER__?.id || null;
+      if (!sb) return; // Supabase غير جاهز — تجاهل بصمت
+
+      var record = {
+        message:          msg,
+        matched:          matched,
+        matched_question: matchedKeyword || null,
+      };
+      // أضف user_id فقط إذا كان متاحاً (تجنب خطأ RLS)
+      if (uid) record.user_id = uid;
+
+      sb.from('support_unanswered').insert(record).then(function (res) {
+        if (res.error) {
+          console.warn('[Tawakkad][SupportChat] track insert error:', res.error.message);
+        } else {
+          console.log('[Tawakkad][SupportChat] tracked — matched:', matched, '| msg:', msg.substring(0, 60));
+        }
+      });
+    } catch (e) {
+      console.warn('[Tawakkad][SupportChat] track exception:', e);
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -143,10 +172,13 @@
     // تأخير بسيط لطبيعية التجربة (لا يوجد AI فعلي)
     setTimeout(function () {
       _scSetTyping(false);
-      var answer = _scMatchFAQ(msg);
+      var result = _scMatchFAQ(msg);
 
-      if (answer) {
-        _scAppendMsg('bot', answer);
+      // ── حفظ السؤال في قاعدة البيانات (في الخلفية — لا يؤثر على الرد) ──
+      _scTrack(msg, result.matched, result.matchedKeyword);
+
+      if (result.matched) {
+        _scAppendMsg('bot', result.answer);
       } else {
         _scAppendMsg('bot', 'لم أستطع فهم سؤالك. 🙏\nتواصل مع الدعم عبر واتساب وسنساعدك مباشرة.');
         _scAppendWhatsApp();

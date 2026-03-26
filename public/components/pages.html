@@ -1064,6 +1064,7 @@
     <button class="admin-tab-btn"        id="atab-plans"     onclick="switchAdminTab('plans')">💎 الخطط</button>
     <button class="admin-tab-btn"        id="atab-logs"      onclick="switchAdminTab('logs')">🗂 Logs</button>
     <button class="admin-tab-btn"        id="atab-insights"  onclick="switchAdminTab('insights')">📊 تحليلات السوق</button>
+    <button class="admin-tab-btn"        id="atab-support"   onclick="switchAdminTab('support')">💬 دعم العملاء</button>
   </div>
 
   <!-- ── Overview ─────────────────────────────────────────── -->
@@ -1252,6 +1253,55 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ── Support Questions ─────────────────────────────────── -->
+  <div class="admin-section hidden" id="asec-support">
+    <div style="margin-top:20px">
+
+      <!-- إحصائيات سريعة -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--gray2);margin-bottom:6px">إجمالي الأسئلة</div>
+          <div id="sq-stat-total" style="font-size:26px;font-weight:800;color:var(--white)">—</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--gray2);margin-bottom:6px">غير مجاب عنها</div>
+          <div id="sq-stat-unmatched" style="font-size:26px;font-weight:800;color:var(--red)">—</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--gray2);margin-bottom:6px">أجاب عنها الـ FAQ</div>
+          <div id="sq-stat-matched" style="font-size:26px;font-weight:800;color:var(--green)">—</div>
+        </div>
+      </div>
+
+      <!-- فلاتر + تحديث -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn-sm active" id="sq-filter-all"       onclick="renderAdminSupport(1,'all')">🗂 الكل</button>
+        <button class="btn-sm"        id="sq-filter-unmatched" onclick="renderAdminSupport(1,'unmatched')">❓ غير مجابة</button>
+        <button class="btn-sm"        id="sq-filter-matched"   onclick="renderAdminSupport(1,'matched')">✅ مجابة</button>
+        <button class="btn-sm" onclick="renderAdminSupport(1, window._sqCurrentFilter||'all')" style="margin-right:auto">🔄 تحديث</button>
+      </div>
+
+      <!-- جدول الأسئلة -->
+      <div style="overflow-x:auto">
+        <table class="admin-table" style="width:100%">
+          <thead>
+            <tr>
+              <th>الرسالة</th>
+              <th style="width:90px">الحالة</th>
+              <th style="width:160px">الكلمة المطابِقة</th>
+              <th style="width:140px">التاريخ</th>
+              <th style="width:60px">حذف</th>
+            </tr>
+          </thead>
+          <tbody id="sq-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--gray2)">جارٍ التحميل…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="sq-pag" style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div>
+    </div>
   </div>
 
 </div><!-- end page-admin -->

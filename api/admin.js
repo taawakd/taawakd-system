@@ -549,6 +549,49 @@ export default async function handler(req, res) {
         });
       }
 
+      // ── Support: أسئلة الدعم (مطابقة وغير مطابقة) ─────────────
+      case 'getSupportQuestions': {
+        const { filter = 'all', page = 1, limit: lim = 50 } = payload;
+        const offset = (page - 1) * lim;
+
+        let query = supabase
+          .from('support_unanswered')
+          .select('id, user_id, message, matched, matched_question, created_at', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(offset, offset + lim - 1);
+
+        if (filter === 'unmatched') query = query.eq('matched', false);
+        if (filter === 'matched')   query = query.eq('matched', true);
+
+        const { data: questions, count, error: sqErr } = await query;
+        if (sqErr) throw sqErr;
+
+        // إحصائيات سريعة
+        const [{ count: totalCount }, { count: unmatchedCount }] = await Promise.all([
+          supabase.from('support_unanswered').select('*', { count: 'exact', head: true }),
+          supabase.from('support_unanswered').select('*', { count: 'exact', head: true }).eq('matched', false),
+        ]);
+
+        return res.json({
+          questions: questions || [],
+          total: count || 0,
+          stats: {
+            total:     totalCount     || 0,
+            unmatched: unmatchedCount || 0,
+            matched:   (totalCount - unmatchedCount) || 0,
+          },
+        });
+      }
+
+      // ── Support: حذف سجل سؤال ──────────────────────────────────
+      case 'deleteSupportQuestion': {
+        const { id: sqId } = payload;
+        if (!sqId) return res.status(400).json({ error: 'id مطلوب' });
+        const { error: delErr } = await supabase.from('support_unanswered').delete().eq('id', sqId);
+        if (delErr) throw delErr;
+        return res.json({ ok: true });
+      }
+
       default:
         return res.status(400).json({ error: `إجراء غير معروف: ${action}` });
     }
