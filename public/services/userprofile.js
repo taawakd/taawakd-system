@@ -39,40 +39,46 @@ window.loadUserProfile = async function () {
       .from('profiles')
       .select('full_name, plan, analyses_used, analyses_reset_at, subscription_end_date, trial_started_at, company_name, business_type, city, phone, commercial_reg, tax_number')
       .eq('id', userId)
-      .single();
+      .maybeSingle(); // maybeSingle returns null data (no error) when row doesn't exist
+
+    console.log('[Tawakkad][loadUserProfile] profile response:', JSON.stringify({ profile, error }));
 
     if (error) throw error;
+    // profile may be null if no row exists yet — treat as new free user
+    const _safeProfile = profile || {};
 
     // Personal fields
-    _setVal('up-full-name',  profile?.full_name    || '');
-    _setVal('up-company',    profile?.company_name || '');
-    _setVal('up-city',       profile?.city         || '');
-    _setVal('up-phone',      profile?.phone        || '');
-    _setVal('up-crn',        profile?.commercial_reg || '');
-    _setVal('up-vat',        profile?.tax_number   || '');
+    _setVal('up-full-name',  _safeProfile.full_name    || '');
+    _setVal('up-company',    _safeProfile.company_name || '');
+    _setVal('up-city',       _safeProfile.city         || '');
+    _setVal('up-phone',      _safeProfile.phone        || '');
+    _setVal('up-crn',        _safeProfile.commercial_reg || '');
+    _setVal('up-vat',        _safeProfile.tax_number   || '');
 
     // Activity select
     const actEl = document.getElementById('up-activity');
-    if (actEl && profile?.business_type) actEl.value = profile.business_type;
+    if (actEl && _safeProfile.business_type) actEl.value = _safeProfile.business_type;
 
     // Update display name if we got it from DB
-    if (profile?.full_name) {
-      if (upName) upName.textContent = profile.full_name;
-      if (upAvatarBig) upAvatarBig.textContent = profile.full_name.charAt(0).toUpperCase();
+    if (_safeProfile.full_name) {
+      if (upName) upName.textContent = _safeProfile.full_name;
+      if (upAvatarBig) upAvatarBig.textContent = _safeProfile.full_name.charAt(0).toUpperCase();
 
       // ── مزامنة اسم الشريط الجانبي مع الاسم الحقيقي من قاعدة البيانات ──
       // يُحدَّث window.__USER_DISPLAY_NAME__ حتى تتزامن الصفحات اللاحقة أيضاً
-      window.__USER_DISPLAY_NAME__ = profile.full_name;
+      window.__USER_DISPLAY_NAME__ = _safeProfile.full_name;
       const _sbNameEl2   = document.getElementById('sbName');
       const _sbAvatarEl2 = document.getElementById('sbAvatar');
-      if (_sbNameEl2)   _sbNameEl2.textContent   = profile.full_name;
-      if (_sbAvatarEl2) _sbAvatarEl2.textContent = profile.full_name.charAt(0).toUpperCase();
+      if (_sbNameEl2)   _sbNameEl2.textContent   = _safeProfile.full_name;
+      if (_sbAvatarEl2) _sbAvatarEl2.textContent = _safeProfile.full_name.charAt(0).toUpperCase();
     }
 
     // ── Cache plan globally (normalized + raw) ──
-    const _rawPlanUp = profile?.plan || 'free';
+    const _rawPlanUp = _safeProfile.plan || 'free';
     window.__USER_PLAN_RAW__ = _rawPlanUp;
-    window.__USER_PLAN__     = window.normalizePlan(_rawPlanUp);
+    window.__USER_PLAN__     = (typeof window.normalizePlan === 'function')
+      ? window.normalizePlan(_rawPlanUp)
+      : (_rawPlanUp === 'pro' || _rawPlanUp === 'enterprise' || _rawPlanUp === 'paid') ? 'paid' : 'free';
 
     // ── Subscription info — use raw plan for label display ──
     const plan = window.__USER_PLAN__;
@@ -81,7 +87,7 @@ window.loadUserProfile = async function () {
     const daysEl    = document.getElementById('up-plan-days');
 
     // ── حالة الوصول: مشترك | تجربة نشطة | منتهية ──────────────────
-    const _upTrialStartedAt = profile?.trial_started_at || window.__TRIAL_STARTED_AT__ || null;
+    const _upTrialStartedAt = _safeProfile.trial_started_at || window.__TRIAL_STARTED_AT__ || null;
     const _upTrialActive    = window.isTrialActive ? window.isTrialActive(_upTrialStartedAt) : false;
     const _upIsPaid         = window.isPaidPlan ? window.isPaidPlan(plan) : plan === 'paid';
     const _trialDays        = window.PLAN_CONFIG?.TRIAL_DAYS ?? 7;
@@ -102,12 +108,12 @@ window.loadUserProfile = async function () {
 
     // ── الحالة: مشترك ──────────────────────────────────────────────
     if (_upIsPaid) {
-      if (planEl)     { planEl.textContent = PLAN_LABELS[profile?.plan] || 'الخطة المدفوعة'; planEl.style.color = '#5b8fcc'; }
+      if (planEl)     { planEl.textContent = PLAN_LABELS[_safeProfile.plan] || 'الخطة المدفوعة'; planEl.style.color = '#5b8fcc'; }
       if (iconEl)       iconEl.textContent = '⭐';
       if (statusLblEl)  statusLblEl.textContent = 'اشتراك نشط';
       if (badgeEl)    { badgeEl.textContent = 'مدفوع'; badgeEl.style.background = 'rgba(91,143,204,0.15)'; badgeEl.style.color = '#5b8fcc'; badgeEl.style.border = '1px solid rgba(91,143,204,0.3)'; }
 
-      const endDate = profile?.subscription_end_date;
+      const endDate = _safeProfile.subscription_end_date;
       if (startEl)    startEl.textContent = _upTrialStartedAt ? _fmtDate(new Date(_upTrialStartedAt)) : '—';
       if (endDate) {
         const end  = new Date(endDate);
@@ -152,7 +158,7 @@ window.loadUserProfile = async function () {
 
     // ── التحليلات المستخدمة ─────────────────────────────────────────
     const _paidLimit = window.PLAN_CONFIG?.PAID_ANALYSES_PER_MONTH ?? 8;
-    const used       = profile?.analyses_used || 0;
+    const used       = _safeProfile.analyses_used || 0;
     if (usedCardEl)   usedCardEl.textContent = _upIsPaid ? `${used} / ${_paidLimit}` : used;
 
     // ── شريط الاستخدام (مشتركون فقط) ──────────────────────────────
@@ -173,7 +179,17 @@ window.loadUserProfile = async function () {
     }
 
   } catch (e) {
-    console.warn('userprofile: could not load profile', e);
+    console.warn('[Tawakkad][loadUserProfile] error loading profile:', e);
+    // Clear the loading placeholder so UI doesn't stay stuck on "جارٍ التحميل…"
+    const _planNameEl = document.getElementById('up-plan-name');
+    const _planBadge  = document.getElementById('up-plan-badge');
+    const _planStatus = document.getElementById('up-plan-status-label');
+    if (_planNameEl && _planNameEl.textContent === 'جارٍ التحميل…') {
+      _planNameEl.textContent = window.__USER_PLAN__ === 'paid' ? 'الخطة المدفوعة' : 'الخطة المجانية';
+      _planNameEl.style.color = window.__USER_PLAN__ === 'paid' ? '#5b8fcc' : 'var(--gold)';
+    }
+    if (_planBadge  && _planBadge.textContent  === '—') _planBadge.textContent  = window.__USER_PLAN__ === 'paid' ? 'مدفوع' : 'مجاني';
+    if (_planStatus && _planStatus.textContent === '—') _planStatus.textContent = 'تعذّر تحميل التفاصيل';
   }
 };
 
