@@ -354,7 +354,7 @@ var _BIZ_TERMINOLOGY = {
   dates:         { cogsLabel:'تكلفة التمور والتغليف',            cogsShort:'تكلفة البضاعة',  productLabel:'منتج',         suppliersLabel:'الموردين والمزارعين', inventoryLabel:'مخزون التمور',           wasteLabel:'التالف والفاقد',      revenueLabel:'إيرادات المبيعات'  },
 
   // ── خدمات شخصية ──
-  barber:        { cogsLabel:'تكلفة الخدمات ومستلزمات التشغيل', cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول المواعيد والخدمات',   wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
+  barber:        { cogsLabel:'تكلفة الخدمات والمواد',           cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول المواعيد والخدمات',   wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
   beauty:        { cogsLabel:'تكلفة الخدمات ومستحضرات التجميل', cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول المواعيد والخدمات',   wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
   clinic:        { cogsLabel:'تكلفة الخدمات الطبية واللوازم',   cogsShort:'تكلفة الخدمات', productLabel:'جلسة / خدمة',  suppliersLabel:'الموردين الطبيين',  inventoryLabel:'جدول المواعيد الطبية',     wasteLabel:'المواعيد الفارغة',    revenueLabel:'إيرادات العيادة'   },
   laundry:       { cogsLabel:'تكلفة الخدمات ومواد التنظيف',     cogsShort:'تكلفة الخدمات', productLabel:'خدمة',         suppliersLabel:'مورّدي المستلزمات', inventoryLabel:'جدول الطلبات والتسليم',    wasteLabel:'الوقت الضائع',        revenueLabel:'إيرادات الخدمات'   },
