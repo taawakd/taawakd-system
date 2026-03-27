@@ -72,9 +72,9 @@ async function runAnalysis() {
   const notes = document.getElementById('f-notes').value;
   const products = collectProducts();
 
+  // getSectorKey يُعيد null إذا لم يُطابق أي قطاع — لا يُعيد 'restaurant' أبداً
   const sectorKey = getSectorKey(bizType);
-  // ✅ إصلاح 1: استخدام sectorKey المعرّف بدلاً من resolvedSectorKey غير المعرّف
-  const bench = BENCHMARKS[sectorKey];
+  console.log('[Tawakkad][runAnalysis] bizType=%s → sectorKey=%s', bizType, sectorKey);
 
   // ── ضريبة القيمة المضافة (VAT) — يُقرأ من vat-config.js ─────────────────
   // الأرباح لا تتغير: revenue و totalExpenses يمثلان الأسعار بدون ضريبة
@@ -142,15 +142,40 @@ async function runAnalysis() {
         avg_order_value: delAvgOrder
       }
     } : {}),
+    sector_key: sectorKey || null,
     request: 'حلل بيانات المشروع وأعطني التشخيص ونقاط القوة والمشاكل وأفضل 3 إجراءات لتحسين الربح مع أرقام محددة'
   }, null, 2);
+
+  // ── System prompt مخصص لنوع النشاط (يمنع تسرب مصطلحات قطاع آخر) ──────────
+  // يُرسَل كـ messages[0] مع role:'system' حتى يستخرجه analyze.js ويضعه كـ system field
+  // هذا يضمن أن النموذج يحلل النشاط بالمعايير الصحيحة لقطاعه دون افتراض قطاع المطاعم
+  const _bizSectorDesc = sectorKey
+    ? `نشاط: ${bizType} | قطاع: ${sectorKey}`
+    : `نشاط: ${bizType || 'غير محدد'}`;
+  const _analysisSystemPrompt =
+`أنت مستشار مالي خبير في المشاريع السعودية الصغيرة والمتوسطة.
+${_bizSectorDesc}
+
+تعليمات إلزامية — لا تتجاهلها:
+• حلّل البيانات بناءً على طبيعة "${bizType}" فقط — استخدم مصطلحات ومعايير هذا القطاع.
+• إذا ظهر حقل service_cost → فهو تكلفة الخدمة / المستلزمات (لا علاقة له بالطعام).
+• إذا ظهر حقل food_cost → فهو تكلفة الخامات الغذائية (للمطاعم والمقاهي فقط).
+• إذا ظهر حقل cogs → فهو تكلفة البضاعة التجارية.
+• ❌ محظور تماماً: استخدام مصطلحات قطاع المطاعم (وجبات / طعام / قائمة / مطبخ) إلا إذا كان النشاط مطعماً أو مقهى فعلاً.
+• تحدث بالعربية. اذهب مباشرةً للتشخيص والتوصيات بدون مقدمات.`;
 
   let reportText = '';
   try {
     const resp = await fetch('/api/analyze', {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+(window.__AUTH_TOKEN__||'')},
-      body:JSON.stringify({ model:"gpt-4o-mini", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+      body:JSON.stringify({
+        model:"gpt-4o-mini", max_tokens:1000,
+        messages:[
+          { role:'system', content: _analysisSystemPrompt },
+          { role:'user',   content: prompt }
+        ]
+      })
     });
     const data = await resp.json();
 

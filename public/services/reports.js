@@ -954,3 +954,11 @@ function initProdsSection() {
   if (typeof window._updateImportBtn === 'function') window._updateImportBtn();
 }
 window.initProdsSection = initProdsSection;
+
+// ── تصدير الدوال المشتركة إلى window ────────────────────────────────────────
+// getSectorKey: تُستخدم في financial.js, tools/index.js, ai-cfo.js لتحديد القطاع
+// generateAlerts: تُستخدم في financial.js لتوليد التنبيهات المرتبطة بالقطاع
+// calcScore: تُستخدم في financial.js لحساب مؤشر الصحة المالية
+window.getSectorKey    = getSectorKey;
+window.generateAlerts  = generateAlerts;
+window.calcScore       = calcScore;
