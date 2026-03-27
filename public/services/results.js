@@ -278,7 +278,7 @@ function renderResults(report) {
     }
   }
   renderAlerts(alerts, 'resultAlerts');
-  renderExpenseTable(metrics, 'resultExpenses');
+  renderExpenseTable(metrics, 'resultExpenses', bizType);
 
   const fixedCosts = (metrics.rent||0)+(metrics.salaries||0)+(metrics.marketing||0)+(metrics.other||0)+(metrics.utilities||0);
   const beNetProfit = metrics.netProfit !== undefined ? metrics.netProfit : (revenue - (cogs||0) - fixedCosts);
@@ -492,7 +492,7 @@ function renderAIBlocks(text, containerId) {
 }
 
 // ── جدول تحليل المصاريف ──────────────────────────────────────────────
-function renderExpenseTable(metrics, containerId) {
+function renderExpenseTable(metrics, containerId, bizType) {
   const _expAccess = window.canAccessFeature
     ? window.canAccessFeature(window.getAccessUser(), 'full_report')
     : planAllows('full_report');
@@ -500,6 +500,13 @@ function renderExpenseTable(metrics, containerId) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   wrap.innerHTML = '';
+
+  // ── تسمية COGS بناءً على نوع النشاط — تمنع ظهور "تكلفة البضاعة" في الخدمات ──
+  const _terms    = (typeof window.getBizTerminology === 'function' && bizType)
+    ? window.getBizTerminology(bizType)
+    : null;
+  const _cogsLabel = _terms?.cogsLabel || 'تكلفة البضاعة / الإنتاج';
+  console.log('[Tawakkad][expenseTable] bizType=%s → cogsLabel="%s"', bizType, _cogsLabel);
 
   const m = metrics || {};
   const revenue       = m.revenue       ?? 0;
@@ -513,7 +520,7 @@ function renderExpenseTable(metrics, containerId) {
   const totalExpenses = m.totalExpenses ?? (cogs + rent + salaries + marketing + utilities + other + delCommission);
 
   const rows = [
-    { label: 'تكلفة البضاعة / الإنتاج', val: cogs,          icon: '🛒' },
+    { label: _cogsLabel,                  val: cogs,          icon: '🛒' },
     { label: 'الإيجار',                  val: rent,          icon: '🏠' },
     { label: 'الرواتب والأجور',          val: salaries,      icon: '👥' },
     { label: 'التسويق والإعلان',         val: marketing,     icon: '📣' },

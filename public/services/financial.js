@@ -692,6 +692,12 @@ async function exportPDF() {
   // eslint-disable-next-line no-shadow
   const SAR = 'ر.س';
 
+  // ── تسمية COGS بناءً على نوع النشاط (للـ PDF) ──────────────────────────────
+  // يمنع ظهور "تكلفة البضاعة / الإنتاج" في تقارير الأنشطة الخدمية
+  const _pdfCogsLabel = (typeof window.getBizTerminology === 'function' && bizType)
+    ? (window.getBizTerminology(bizType)?.cogsLabel || 'تكلفة البضاعة / الإنتاج')
+    : 'تكلفة البضاعة / الإنتاج';
+
   // ── التنبيهات ──
   const alertsHtml = (alerts || []).slice(0, 8).map(a => {
     const icon   = a.type === 'danger' ? '🔴' : a.type === 'warning' ? '🟡' : '🟢';
@@ -702,7 +708,7 @@ async function exportPDF() {
 
   // ── المصاريف (جميع البنود مع ?? 0 للتوافق مع التقارير القديمة) ──
   const expensesRows = [
-    { label: 'تكلفة البضاعة / الإنتاج',     val: cogs          },
+    { label: _pdfCogsLabel,                  val: cogs          },
     { label: 'الإيجار',                       val: rent          },
     { label: 'الرواتب والأجور',               val: salaries      },
     { label: 'التسويق والإعلان',              val: marketing     },
