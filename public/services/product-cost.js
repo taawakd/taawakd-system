@@ -475,9 +475,14 @@ async function pcLoadFromDB() {
     }
 
     // 2. Pre-populate بالمنتجات من جدول products إذا لم تكن موجودة في PC_STATE
+    //    أو كانت تحتوي فقط على مقترحات تلقائية (_isSuggested) — كي لا تحجب منتجات المنيو المستوردة
     if (typeof loadProductsFromDB === 'function') {
       const dbProds = await loadProductsFromDB();
-      if (dbProds.length && PC_STATE.products.length === 0) {
+      const _hasOnlySuggested = PC_STATE.products.length === 0 ||
+        PC_STATE.products.every(p => p._isSuggested);
+      console.log('[Tawakkad][pcLoadFromDB] dbProds=%d | PC_STATE=%d | hasOnlySuggested=%s',
+        dbProds.length, PC_STATE.products.length, _hasOnlySuggested);
+      if (dbProds.length && _hasOnlySuggested) {
         // تحويل products → PC_STATE format (بدون مكونات، فقط الأساسيات)
         // نوع المنتج: من category المخزن، وإذا فارغ → نوع الفئة الافتراضي (لا 'طعام' ثابت)
         const _bpTypeForLoad = window._businessProfile?.biz_type;
@@ -489,8 +494,8 @@ async function pcLoadFromDB() {
         PC_STATE.products = dbProds.map(p => ({
           id:          p.id,
           name:        p.name,
-          salePrice:   p.selling_price,
-          trueCost:    p.cost,
+          salePrice:   parseFloat(p.selling_price) || 0,
+          trueCost:    parseFloat(p.cost) || 0,
           type:        p.category || _catDefault,
           ingredients: [],
           opCosts:     {},
@@ -596,20 +601,32 @@ function renderProductComparison() {
     return;
   }
 
+  // سجّل بيانات المنتجات قبل الرسم للمساعدة في تشخيص أي خلل
+  console.log('[Tawakkad][renderProductComparison] PC_STATE.products (%d):', PC_STATE.products.length,
+    JSON.stringify(PC_STATE.products.map(p => ({ name: p.name, salePrice: p.salePrice, type: p.type, _isSuggested: p._isSuggested }))));
+
+  // نوع الافتراضي لأي منتج لا يحمل نوعاً (بناءً على نوع النشاط)
+  const _rcDefaultType = typeof window.getCategoryDefaultType === 'function'
+    ? window.getCategoryDefaultType(window._businessProfile?.biz_type)
+    : 'خدمة';
+
   // احسب بيانات كل منتج
   const computed = PC_STATE.products.map(p => {
-    const ingCost   = (p.ingredients || []).reduce((s, i) => s + (i.total || i.qty * i.unitCost || 0), 0);
-    const opTotal   = p.opCosts ? Object.values(p.opCosts).reduce((s, v) => s + (v || 0), 0) : 0;
-    const sales     = p.monthlySales || 0;
-    const rev       = p.salePrice * sales;
-    const sharePct  = p.projectTotalSales > 0 ? rev / p.projectTotalSales : 0;
-    const opShare   = opTotal * sharePct;
-    const opUnit    = sales > 0 ? opShare / sales : 0;
-    const trueCost  = ingCost + opUnit;
-    const profit    = p.salePrice - trueCost;
-    const margin    = p.salePrice > 0 ? (profit / p.salePrice * 100) : 0;
-    const mProfit   = profit * sales;
-    return { ...p, ingCost, trueCost, profit, margin, mProfit };
+    // تطبيع salePrice وtype بشكل دفاعي — تمنع NaN/undefined في العرض
+    const sp       = parseFloat(p.salePrice ?? p.price ?? 0) || 0;
+    const pType    = p.type || _rcDefaultType;
+    const ingCost  = (p.ingredients || []).reduce((s, i) => s + (i.total || i.qty * i.unitCost || 0), 0);
+    const opTotal  = p.opCosts ? Object.values(p.opCosts).reduce((s, v) => s + (v || 0), 0) : 0;
+    const sales    = p.monthlySales || 0;
+    const rev      = sp * sales;
+    const sharePct = p.projectTotalSales > 0 ? rev / p.projectTotalSales : 0;
+    const opShare  = opTotal * sharePct;
+    const opUnit   = sales > 0 ? opShare / sales : 0;
+    const trueCost = ingCost + opUnit;
+    const profit   = sp - trueCost;
+    const margin   = sp > 0 ? (profit / sp * 100) : 0;
+    const mProfit  = profit * sales;
+    return { ...p, salePrice: sp, type: pType, ingCost, trueCost, profit, margin, mProfit };
   }).sort((a, b) => b.margin - a.margin);
 
   const medals = ['🥇', '🥈', '🥉'];
@@ -974,18 +991,22 @@ function initProductCostPage() {
   // ④ اعرض المقارنة المحفوظة
   renderProductComparison();
 
-  // ⑤ حاول التحميل من Supabase (ثم حدّث المقارنة — واقترح بناءً على الفئة إذا كانت القائمة فارغة)
+  // ⑤ حاول التحميل من Supabase (ثم حدّث المقارنة — واقترح بناءً على الفئة فقط إذا كانت القائمة فارغة تماماً)
   pcLoadFromDB().then(() => {
     const _bpType = window._businessProfile?.biz_type;
     console.log('[Tawakkad][initPC] after DB load — PC_STATE.products=%d | biz_type=%s',
       window.PC_STATE.products.length, _bpType);
-    const _allSuggested = window.PC_STATE.products.length === 0 ||
-      window.PC_STATE.products.every(p => p._isSuggested);
-    if (_bpType && _allSuggested &&
+    // اقترح منتجات فقط إذا كانت القائمة فارغة تماماً — لا تستبدل المنتجات الحقيقية المستوردة من المنيو
+    const _isEmpty = window.PC_STATE.products.length === 0;
+    const _allSuggested = !_isEmpty && window.PC_STATE.products.every(p => p._isSuggested);
+    if (_bpType && _isEmpty &&
         typeof window.pcSuggestFromCategory === 'function') {
-      console.log('[Tawakkad][initPC] all-suggested or empty → force-loading static products for category=%s', _bpType);
+      console.log('[Tawakkad][initPC] empty → generating static suggestions for category=%s', _bpType);
       window.pcSuggestFromCategory(_bpType, { force: true });
     } else {
+      if (_allSuggested) {
+        console.log('[Tawakkad][initPC] only-suggested products after DB load — keeping (no real DB products found)');
+      }
       renderProductComparison();
     }
   });

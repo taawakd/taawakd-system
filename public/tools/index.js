@@ -1288,6 +1288,9 @@ async function saveMenuProducts() {
       return;
     }
 
+    console.log('[Tawakkad][saveMenuProducts] saving %d new products:', newProducts.length,
+      JSON.stringify(newProducts.map(p => ({ name: p.name, selling_price: p.selling_price, category: p.category }))));
+
     // ─ الحفظ في جدول products في Supabase ───────────────────────────
     if (typeof upsertProductsToDB === 'function') {
       const { error } = await upsertProductsToDB(newProducts);
@@ -1296,6 +1299,19 @@ async function saveMenuProducts() {
         toast('❌ فشل الحفظ: ' + (error.message || 'خطأ غير معروف'));
         return;
       }
+    }
+
+    // ─ إعادة تعيين PC_STATE إذا كانت تحتوي فقط على مقترحات تلقائية ──
+    // يضمن أن "حاسبة التكلفة" ستعيد تحميل المنتجات الحقيقية من قاعدة البيانات
+    if (window.PC_STATE &&
+        (window.PC_STATE.products.length === 0 ||
+         window.PC_STATE.products.every(p => p._isSuggested))) {
+      console.log('[Tawakkad][saveMenuProducts] clearing suggested-only PC_STATE so DB products load on next visit');
+      window.PC_STATE.products = [];
+      try {
+        const _key = typeof _pcStorageKey === 'function' ? _pcStorageKey() : 'tw_product_costs';
+        localStorage.removeItem(_key);
+      } catch(_) {}
     }
 
     // ─ مزامنة BP_PRODUCTS من الكاش الجديد ───────────────────────────
