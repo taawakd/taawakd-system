@@ -843,10 +843,12 @@ async function exportPDF() {
     </table>` : '';
 
   // ── تحليل الذكاء الاصطناعي ──
-  const cleanAI = (reportText || '').replace(/\[SECTION:[^\]]+\]/g,'').replace(/\[\/SECTION\]/g,'').trim();
+  // نُزيل SECTION tags أولاً ثم نُمرر النص عبر _cleanAIText لإزالة Markdown
+  const _rawAI  = (reportText || '').replace(/\[SECTION:[^\]]+\]/g,'').replace(/\[\/SECTION\]/g,'').trim();
+  const cleanAI = (typeof window._cleanAIText === 'function') ? window._cleanAIText(_rawAI) : _rawAI;
   const aiHtml = cleanAI ? `
-    <h3 style="font-size:15px;font-weight:700;color:#1e40af;margin:0 0 10px 0;">🤖 تحليل الذكاء الاصطناعي</h3>
-    <p style="font-size:12px;color:#374151;line-height:1.9;white-space:pre-wrap;margin:0;">${cleanAI}</p>` : '';
+    <h3 style="font-size:15px;font-weight:700;color:#1e40af;margin:0 0 10px 0;direction:rtl;text-align:right;">🤖 تحليل الذكاء الاصطناعي</h3>
+    <p style="font-size:12px;color:#374151;line-height:1.9;white-space:pre-wrap;margin:0;direction:rtl;text-align:right;unicode-bidi:embed;">${cleanAI}</p>` : '';
 
   // ══════════════════════════════
   // HTML الكامل للتقرير
@@ -953,6 +955,9 @@ async function exportPDF() {
   wrapper.innerHTML = htmlContent;
   document.body.appendChild(wrapper);
 
+  // انتظر تحميل الخطوط (IBM Plex Sans Arabic) قبل التقاط الصورة
+  // بدون هذا قد يستخدم html2canvas خطاً احتياطياً لا يدعم العربية
+  try { await document.fonts.ready; } catch(_) {}
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => requestAnimationFrame(r));
 
@@ -960,6 +965,14 @@ async function exportPDF() {
     const canvas = await window.html2canvas(wrapper, {
       scale: 2, useCORS: true, allowTaint: true,
       backgroundColor: '#f1f5f9', logging: false, width: 806,
+      onclone: (clonedDoc) => {
+        // تأكد من أن المستند المستنسخ يحافظ على اتجاه RTL والخط العربي
+        clonedDoc.documentElement.setAttribute('dir', 'rtl');
+        clonedDoc.documentElement.setAttribute('lang', 'ar');
+        const style = clonedDoc.createElement('style');
+        style.textContent = "* { font-family: 'IBM Plex Sans Arabic', Arial, sans-serif !important; }";
+        clonedDoc.head.appendChild(style);
+      },
     });
 
     const { jsPDF } = window.jspdf;

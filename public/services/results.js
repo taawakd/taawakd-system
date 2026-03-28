@@ -2,6 +2,26 @@
 // ✅ المرحلة 3-A: استخراج renderResults + renderAIBlocks من financial.js
 // ============================================================
 
+// ── مُنظِّف نص الذكاء الاصطناعي ─────────────────────────────────────────────
+// يُزيل رموز Markdown (**, ###, ---, `, *item) ويُصلح الفراغات الزائدة
+// يُستخدَم في UI وPDF لضمان نص عربي نظيف وقابل للقراءة
+function _cleanAIText(text) {
+  if (!text) return '';
+  return text
+    .replace(/^#{1,6}\s+/gm, '')          // ### عناوين → بدون رمز
+    .replace(/\*{2,3}([^*\n]+)\*{2,3}/g, '$1') // **bold** / ***bold*** → نص عادي
+    .replace(/_{2,3}([^_\n]+)_{2,3}/g, '$1')   // __bold__ → نص عادي
+    .replace(/\*([^*\n]+)\*/g, '$1')       // *italic* → نص عادي
+    .replace(/`{1,3}([^`]+)`{1,3}/g, '$1')// `code` → نص عادي
+    .replace(/^[-*+]\s+/gm, '• ')         // - item → • item (أوضح للعربية)
+    .replace(/^={3,}\s*$/gm, '')          // === → حذف
+    .replace(/^-{3,}\s*$/gm, '')          // --- → حذف
+    .replace(/^_{3,}\s*$/gm, '')          // ___ → حذف
+    .replace(/\n{3,}/g, '\n\n')           // فراغات زائدة → سطر مزدوج
+    .trim();
+}
+window._cleanAIText = _cleanAIText;
+
 function renderResultsPreview(report) {
   const {bizName, bizType, period, metrics, scoreData} = report;
   const createdAt = report.createdAt || report.date || null;
@@ -420,8 +440,8 @@ function renderAIBlocks(text, containerId) {
   if (!sections.length) {
     // No sections — render AI-generated text safely via DOM nodes (no innerHTML)
     const div = document.createElement('div');
-    div.style.cssText = 'font-size:14px;line-height:1.9;color:var(--gray2);';
-    const lines = text.split('\n');
+    div.style.cssText = 'font-size:14px;line-height:1.9;color:var(--gray2);direction:rtl;text-align:right;unicode-bidi:embed;';
+    const lines = _cleanAIText(text).split('\n');
     lines.forEach((line, idx) => {
       div.appendChild(document.createTextNode(line));    // ← createTextNode
       if (idx < lines.length - 1) div.appendChild(document.createElement('br'));
@@ -433,7 +453,7 @@ function renderAIBlocks(text, containerId) {
   // Build each section using DOM so AI-generated Arabic never touches innerHTML
   sections.forEach((s, i) => {
     const title   = s[1].trim();
-    const content = s[2].trim();
+    const content = _cleanAIText(s[2].trim());
     const lines   = content.split('\n').filter(l => l.trim());
     const isGood  = title === 'نقاط القوة';
     const isBad   = title === 'نقاط الخطر';
@@ -469,6 +489,7 @@ function renderAIBlocks(text, containerId) {
         iconEl.textContent = isGood ? '✓' : isBad ? '!' : '→'; // hardcoded
 
         const textEl = document.createElement('span');
+        textEl.style.cssText = 'direction:rtl;unicode-bidi:embed;';
         textEl.textContent = l.replace(/^[-•\d.]\s*/, '');      // ← textContent (was innerHTML)
 
         li.appendChild(iconEl);
@@ -479,7 +500,7 @@ function renderAIBlocks(text, containerId) {
     } else {
       // Plain-text section — render via text nodes with <br> for line breaks
       const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = 'font-size:14px;line-height:1.9;color:var(--gray2);';
+      contentDiv.style.cssText = 'font-size:14px;line-height:1.9;color:var(--gray2);direction:rtl;text-align:right;unicode-bidi:embed;';
       lines.forEach((line, idx) => {
         contentDiv.appendChild(document.createTextNode(line));   // ← createTextNode
         if (idx < lines.length - 1) contentDiv.appendChild(document.createElement('br'));
