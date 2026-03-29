@@ -271,8 +271,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'ANTHROPIC_API_KEY غير مضبوط في متغيرات البيئة — أضفه في Vercel Dashboard' });
     }
 
-    // CFO calls: hard token cap enforces the 120–150 word output rule
-    const maxTokens = isCFO ? 350 : 1024;
+    // CFO calls: enough room for full structured response without truncation
+    const maxTokens = isCFO ? 1500 : 1024;
 
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
