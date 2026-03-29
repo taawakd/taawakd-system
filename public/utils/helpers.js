@@ -18,8 +18,30 @@ function toWesternDigits(s) {
 }
 window.toWesternDigits = toWesternDigits;
 
-// تحويل قيمة نصية إلى رقم (يتعامل مع الأرقام العربية + الفواصل)
-const parseNum = v => parseFloat(toWesternDigits(v).replace(/[,،\s]/g,'')) || 0;
+// تحويل قيمة نصية إلى رقم — يدعم:
+// • الفاصلة العشرية النقطية:   0.5  → 0.5
+// • الفاصلة العشرية بالفاصلة: 0,5  → 0.5  |  10,75 → 10.75
+// • فاصلة الآلاف:              1,000 → 1000 |  1,000,000 → 1000000
+// • الأرقام العربية والفارسية:  ٥٫٢٥ → 5.25
+//
+// قاعدة التمييز:
+//   فاصلة واحدة + 1 أو 2 رقم في النهاية = فاصلة عشرية  (0,5  / 10,75)
+//   أي شيء آخر                           = فاصلة آلاف تُحذف (1,000 / 1,000,000)
+function parseNum(v) {
+  let s = toWesternDigits(String(v ?? ''))
+    .trim()
+    .replace(/\s/g, '')       // أزل المسافات
+    .replace(/،/g, ',');      // الفاصلة العربية → غربية للتوحيد
+
+  const commas = (s.match(/,/g) || []).length;
+  if (commas === 1 && /,\d{1,2}$/.test(s)) {
+    s = s.replace(',', '.');  // فاصلة عشرية → نقطة
+  } else {
+    s = s.replace(/,/g, '');  // فواصل الآلاف → احذف
+  }
+
+  return parseFloat(s) || 0;
+}
 window.parseNum = parseNum;
 
 // قراءة قيمة input بالـ id وتحويلها لرقم
@@ -86,13 +108,24 @@ function showMsg(id, msg, type='error') {
 }
 window.showMsg = showMsg;
 
-// تهيئة حقول الأرقام (تنسيق تلقائي بالفواصل)
+// تهيئة حقول الأرقام — تدعم الأعداد الصحيحة (1,000) والعشرية (0.5 / 10.75)
 function initNumInputs() {
   document.querySelectorAll('.num-input').forEach(el => {
     el.addEventListener('input', function() {
-      const raw = this.value.replace(/[^0-9]/g,'');
-      if(!raw){this.value='';return;}
-      this.value = parseInt(raw,10).toLocaleString('en');
+      const val = this.value;
+
+      // إذا احتوت القيمة على نقطة عشرية → أبقِ الصياغة الحرة (لا تنسيق آلاف)
+      if (val.includes('.')) {
+        // أزل أي حرف غير رقم أو نقطة، وضمان نقطة واحدة فقط
+        const parts = val.replace(/[^0-9.]/g, '').split('.');
+        this.value = parts[0] + '.' + parts.slice(1).join('');
+        return;
+      }
+
+      // للأعداد الصحيحة: أزل غير الأرقام ثم نسّق بفواصل الآلاف
+      const raw = val.replace(/[^0-9]/g, '');
+      if (!raw) { this.value = ''; return; }
+      this.value = parseInt(raw, 10).toLocaleString('en');
     });
   });
 }

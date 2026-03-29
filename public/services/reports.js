@@ -76,9 +76,17 @@ function addProdRow() {
   c.appendChild(r);
   r.querySelectorAll('.num-input').forEach(el=>{
     el.addEventListener('input',function(){
-      const raw=this.value.replace(/[^0-9]/g,'');
-      if(!raw){this.value='';return;}
-      this.value=parseInt(raw,10).toLocaleString('en');
+      const val = this.value;
+      // إذا احتوت القيمة على نقطة عشرية → ادعم الإدخال العشري مباشرة (0.5 / 10.75)
+      if (val.includes('.')) {
+        const parts = val.replace(/[^0-9.]/g,'').split('.');
+        this.value = parts[0] + '.' + parts.slice(1).join('');
+        return;
+      }
+      // للأعداد الصحيحة: نسّق بفواصل الآلاف
+      const raw = val.replace(/[^0-9]/g,'');
+      if (!raw) { this.value=''; return; }
+      this.value = parseInt(raw,10).toLocaleString('en');
     });
   });
 }
