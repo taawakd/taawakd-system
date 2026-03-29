@@ -768,7 +768,7 @@ async function exportPDF() {
     return `<tr style="background:${bg};">
       <td style="padding:7px 8px;border:1px solid #e5e7eb;font-size:12px;color:#374151;">${label}</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:12px;color:#6b7280;">${min}%–${max}%</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:700;font-size:12px;color:${statusColor};">${val.toFixed(1)}%</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:700;font-size:12px;color:${statusColor};">${val.toFixed(1)}% من الإيرادات</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;color:${statusColor};">${statusText}</td>
     </tr>`;
   }).join('') : '';
@@ -880,7 +880,7 @@ async function exportPDF() {
       ${[
         { val: f(revenue)+' '+SAR, label: 'الإيرادات', color: '#1a1a1a' },
         { val: (netProfit>=0?'+':'')+f(netProfit)+' '+SAR, label: 'صافي الربح', color: profitColor },
-        { val: netMargin+'%', label: 'هامش الربح', color: marginColor },
+        { val: netMargin+'% من الإيرادات', label: 'هامش الربح', color: marginColor },
         { val: f(totalExpenses)+' '+SAR, label: 'إجمالي المصاريف', color: '#1a1a1a' },
       ].map(k => `<div style="background:#ffffff;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
         <div style="font-size:15px;font-weight:700;color:${k.color};">${k.val}</div>
@@ -1167,6 +1167,7 @@ function buildCFOSystemPrompt(ctx) {
 لا تتوفر بيانات مشروع محددة حالياً. أجب على الأسئلة المالية فقط بهذا الهيكل الإلزامي:
 ## التشخيص | ## السبب الحقيقي | ## أخطر 3 مشاكل | ## قرارات مباشرة | ## الأثر المتوقع
 ❌ لا مقدمات. ❌ لا جمل عامة ("وضعك جيد"). ❌ لا LaTeX (\\frac \\text $).
+❌ لا نسبة مئوية بدون مصدرها: اكتب دائماً (X% من الإيرادات) أو (X% من المصاريف).
 ✅ كل جملة = رقم أو قرار. ✅ عربية مباشرة. ✅ أكمل كل قسم قبل الانتقال للتالي.`;
     }
     // لا يوجد تقارير لكن يوجد ملف مشروع — استخدم بياناته
@@ -1215,6 +1216,7 @@ function buildCFOSystemPrompt(ctx) {
 ❌ لا تكرر الأرقام بدون تفسير سببها وأثرها.
 ❌ لا مقدمات. لا خاتمات. لا جمل عامة ("وضعك جيد"، "هناك فرص").
 ❌ لا قسم منقوص أو جملة غير مكتملة.
+❌ لا نسبة مئوية بدون مصدرها الصريح — يجب: (X% من الإيرادات) أو (X% من مبيعات التطبيقات) أو (X% من إجمالي المصاريف).
 ✅ استخدم البيانات الواردة أعلاه حصراً. لا أرقام افتراضية.
 ✅ إذا كان ${_bpTerms.productLabel} موجوداً في البيانات: حلّله فوراً بأرقامه.
 ✅ تحدث بالعربية. استخدم **bold** للأرقام والقرارات المهمة.
@@ -1372,8 +1374,8 @@ ${basicLines}\n`;
 - الفترة: ${latest.period}
 - النشاط: ${latest.bizType}
 - الإيرادات: ${fmtN(latest.revenue)} ريال
-- صافي الربح: ${fmtN(latest.profit)} ريال (${latest.margin ?? '—'}%)
-- هامش إجمالي: ${latest.grossMargin ?? '—'}%
+- صافي الربح: ${fmtN(latest.profit)} ريال (${latest.margin ?? '—'}% من الإيرادات)
+- هامش إجمالي: ${latest.grossMargin ?? '—'}% من الإيرادات
 - المصاريف الكلية: ${fmtN(latest.totalExpenses)} ريال
 
 ══ تفاصيل المصاريف — أرقام ثابتة لا تُعدَّل إلا بطلب صريح ══
@@ -1508,6 +1510,7 @@ ${trendText}
 ❌ يُمنع: العبارات العامة الفارغة مثل "وضعك جيد" / "هناك فرص" / "استمر" / "أحسنت".
 ❌ يُمنع: مقدمات ترحيبية أو خاتمات تشجيعية.
 ❌ يُمنع: أي قسم منقوص أو جملة غير مكتملة — أكمل كل قسم قبل الانتقال للتالي.
+❌ يُمنع: نسبة مئوية بدون تحديد مصدرها الصريح — يجب دائماً: (X% من الإيرادات) أو (X% من مبيعات التطبيقات) أو (X% من إجمالي المصاريف).
 ✅ يجب: كل استنتاج بصيغة (رقم → سبب → نتيجة) حتى لو في جملة واحدة.
 ✅ يجب: الأقسام الخمسة كلها موجودة وكاملة في كل رد.
 ✅ يجب: استخدام الأرقام من البيانات أعلاه حصراً — لا أرقام افتراضية.

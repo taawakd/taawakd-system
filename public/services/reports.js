@@ -286,7 +286,7 @@ function renderBenchmarkItems(metrics, bench, container) {
         </div>
         <div style="text-align:center;margin:0 12px;">
           <div class="bench-yours" style="color:${status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)'};">${parseFloat(val).toFixed(1)}%</div>
-          <div style="font-size:10px;color:var(--gray);">لديك</div>
+          <div style="font-size:10px;color:var(--gray);">من الإيرادات</div>
         </div>
         <div class="bench-badge ${badgeClass}">${badgeText}</div>
       </div>`;
@@ -325,7 +325,7 @@ function renderBenchmarkPage() {
       ${hasData ? `
       <div style="text-align:center;margin:0 16px;">
         <div class="bench-yours" style="color:${status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)'};">${parseFloat(val).toFixed(1)}%</div>
-        <div style="font-size:10px;color:var(--gray);">مشروعك</div>
+        <div style="font-size:10px;color:var(--gray);">من الإيرادات</div>
       </div>
       <div class="bench-badge ${badgeClass}">${status==='good'?'✓ طبيعي':status==='warn'?'⚠ قريب':'✗ خارج النطاق'}</div>
       ` : `<div style="font-size:12px;color:var(--gray);">أجرِ تحليلاً لرؤية مقارنة مشروعك</div>`}
@@ -355,7 +355,7 @@ function generateAlerts(data, sectorKey) {
   // ── التنبيهات الذكية الأساسية ─────────────────────────────────────
   // 1. هامش الربح < 5%
   if (netProfit >= 0 && netMargin < 5)
-    alerts.push({ type:'danger', icon:'⛔', msg:`غير مجدٍ — هامش الربح ${nm}% يعني أنك تعمل لصالح الآخرين. راجع تكاليفك الثابتة فوراً` });
+    alerts.push({ type:'danger', icon:'⛔', msg:`غير مجدٍ — هامش الربح ${nm}% من الإيرادات يعني أنك تعمل لصالح الآخرين. راجع تكاليفك الثابتة فوراً` });
 
   // 2. الإيجار > 20%
   if (rentPct > 20)
@@ -363,30 +363,30 @@ function generateAlerts(data, sectorKey) {
 
   // 3. الرواتب > 50%
   if (salPct > 50)
-    alerts.push({ type:'danger', icon:'⚙️', msg:`خلل تشغيلي — الرواتب ${sal}% تستهلك كل القيمة المضافة. ابحث عن حلول أتمتة أو إعادة هيكلة` });
+    alerts.push({ type:'danger', icon:'⚙️', msg:`خلل تشغيلي — الرواتب ${sal}% من الإيرادات تستهلك كل القيمة المضافة. ابحث عن حلول أتمتة أو إعادة هيكلة` });
 
   // 4. التسويق > 20% (ما عدا العطور التي معدلها 20-40%)
   if (mktPct > 20 && sectorKey !== 'perfumes')
-    alerts.push({ type:'warn', icon:'🔥', msg:`حرق مال — الإنفاق التسويقي ${mkt}% مرتفع جداً نسبةً للإيرادات. راجع كفاءة قنوات التسويق` });
+    alerts.push({ type:'warn', icon:'🔥', msg:`حرق مال — الإنفاق التسويقي ${mkt}% من الإيرادات مرتفع جداً. راجع كفاءة قنوات التسويق` });
 
   // ── تنبيهات المعايير القطاعية ─────────────────────────────────────
   if (bench.rentPct && rentPct > bench.rentPct.max * 1.2 && rentPct <= 20)
-    alerts.push({ type:'warn', icon:'🏠', msg:`الإيجار ${rnt}% أعلى من المعدل الطبيعي لنشاطك (${bench.rentPct.min}–${bench.rentPct.max}%)` });
+    alerts.push({ type:'warn', icon:'🏠', msg:`الإيجار ${rnt}% من الإيرادات أعلى من المعدل الطبيعي لنشاطك (${bench.rentPct.min}–${bench.rentPct.max}%)` });
 
   if (bench.salPct && salPct > bench.salPct.max * 1.1 && salPct <= 50)
-    alerts.push({ type:'warn', icon:'👥', msg:`الرواتب ${sal}% أعلى من المعدل الطبيعي لنشاطك (${bench.salPct.min}–${bench.salPct.max}%)` });
+    alerts.push({ type:'warn', icon:'👥', msg:`الرواتب ${sal}% من الإيرادات أعلى من المعدل الطبيعي لنشاطك (${bench.salPct.min}–${bench.salPct.max}%)` });
 
   if (bench.cogsPct && cogsPct > bench.cogsPct.max * 1.1)
-    alerts.push({ type:'warn', icon:'📦', msg:`${bench.cogsPct.label} ${cogs}% أعلى من المعدل الطبيعي لنشاطك (${bench.cogsPct.min}–${bench.cogsPct.max}%)` });
+    alerts.push({ type:'warn', icon:'📦', msg:`${bench.cogsPct.label} ${cogs}% من الإيرادات أعلى من المعدل الطبيعي لنشاطك (${bench.cogsPct.min}–${bench.cogsPct.max}%)` });
 
   if (bench.mktPct && mktPct > bench.mktPct.max * 1.3 && sectorKey !== 'perfumes')
-    alerts.push({ type:'warn', icon:'📢', msg:`التسويق ${mkt}% أعلى من المعدل الطبيعي لنشاطك (${bench.mktPct.min}–${bench.mktPct.max}%)` });
+    alerts.push({ type:'warn', icon:'📢', msg:`التسويق ${mkt}% من الإيرادات أعلى من المعدل الطبيعي لنشاطك (${bench.mktPct.min}–${bench.mktPct.max}%)` });
 
   // ── تنبيه إيجابي ──────────────────────────────────────────────────
   if (netMargin >= bench.netMargin?.max)
-    alerts.push({ type:'good', icon:'🌟', msg:`هامش الربح ${nm}% ممتاز ويتجاوز المعدل العلوي لنشاطك (${bench.netMargin.max}%) — استمر في هذا المسار` });
+    alerts.push({ type:'good', icon:'🌟', msg:`هامش الربح ${nm}% من الإيرادات ممتاز ويتجاوز المعدل العلوي لنشاطك (${bench.netMargin.max}%) — استمر في هذا المسار` });
   else if (netMargin >= 20 && netProfit >= 0)
-    alerts.push({ type:'good', icon:'✅', msg:`هامش الربح ${nm}% جيد جداً — المشروع في وضع صحي` });
+    alerts.push({ type:'good', icon:'✅', msg:`هامش الربح ${nm}% من الإيرادات جيد جداً — المشروع في وضع صحي` });
 
   return alerts;
 }
