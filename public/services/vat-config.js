@@ -5,61 +5,84 @@
 // القواعد الأساسية:
 // ─────────────────
 // • النسبة ثابتة: 15%
-// • window.__VAT_ENABLED__ = true/false — يُعيَّن من supabase.js عند تحميل ملف المشروع
-// • الأرباح تُحسب دائماً بدون ضريبة (ex-VAT)
-// • الضريبة تُتتبع بشكل منفصل: vatOutput و vatInput و netVAT
+// • window.__VAT_ENABLED__ = true/false — يُعيَّن من supabase.js أو toggle المستخدم
+// • PRICES_INCLUDE_VAT = true (افتراضي) → الأسعار المُدخَلة شاملة للضريبة
+//   → نخرج الضريبة بقسمة الإيراد على 1.15 للحصول على صافي الإيراد
 //
-// الصيغ:
-// ──────
-//   المستخدم يُدخل الأرقام بدون ضريبة (أسعار صافية)
-//   vatOutput = revenue × 0.15          ← ضريبة المبيعات (على الزبائن)
-//   vatInput  = totalExpenses × 0.15    ← ضريبة المشتريات (المسترجعة)
-//   netVAT    = vatOutput - vatInput    ← المستحق لهيئة الزكاة والضريبة
-//   الربح     = revenue - totalExpenses ← لا تتغير بالضريبة أبداً
+// الصيغ (وضع الشامل — الافتراضي):
+// ──────────────────────────────────
+//   المستخدم يُدخل الإيراد الإجمالي (شامل الضريبة)
+//   vatAmount    = grossRevenue - (grossRevenue / 1.15)
+//   netRevenue   = grossRevenue / 1.15
+//   vatPct       = vatAmount / grossRevenue × 100
+//   netProfit    = netRevenue - totalExpenses
 // ══════════════════════════════════════════════════════════════════════════
 
 window.VAT_CONFIG = {
-  RATE: 0.15,         // 15% — ثابت بموجب نظام الزكاة والضريبة والجمارك
-  RATE_PCT: 15,       // للعرض في الـ UI
+  RATE:              0.15,   // 15% — ثابت بموجب نظام الزكاة والضريبة والجمارك
+  RATE_PCT:          15,     // للعرض في الـ UI
+  PRICES_INCLUDE_VAT: true,  // الافتراضي: الأسعار المُدخَلة شاملة للضريبة
 };
 
 // ── هل الضريبة مفعّلة للمشروع الحالي؟ ──────────────────────────────────
-// يُقرأ من window.__VAT_ENABLED__ الذي يُعيَّنه supabase.js
+// يُقرأ من window.__VAT_ENABLED__ الذي يُعيَّنه supabase.js أو toggle المستخدم
 window.vatIsEnabled = function () {
   return window.__VAT_ENABLED__ === true;
 };
 
-// ── حساب ضريبة المبيعات (Output VAT) ────────────────────────────────────
-// revenue: الإيراد الصافي بدون ضريبة (المُدخَل من المستخدم)
-// → تُضاف الضريبة فوق السعر: vatOutput = revenue × 15%
-window.calcVATOutput = function (revenue) {
-  if (!window.vatIsEnabled()) return 0;
-  return revenue * window.VAT_CONFIG.RATE;
+// ── هل الوضع "شامل الضريبة"؟ (الافتراضي نعم) ──────────────────────────
+window.vatIsInclusive = function () {
+  return window.vatIsEnabled() && (window.VAT_CONFIG.PRICES_INCLUDE_VAT !== false);
 };
 
-// ── حساب ضريبة المشتريات (Input VAT) ────────────────────────────────────
-// totalExpenses: إجمالي المصاريف بدون ضريبة (المُدخَلة من المستخدم)
-// → تُضاف الضريبة فوق التكلفة: vatInput = totalExpenses × 15%
-window.calcVATInput = function (totalExpenses) {
-  if (!window.vatIsEnabled()) return 0;
-  return totalExpenses * window.VAT_CONFIG.RATE;
-};
-
-// ── صافي الضريبة المستحقة لهيئة الزكاة والضريبة والجمارك ───────────────
-// netVAT = vatOutput - vatInput
-// إذا موجب → مديون للهيئة | إذا سالب → مسترجع من الهيئة
-window.calcNetVAT = function (vatOutput, vatInput) {
-  if (!window.vatIsEnabled()) return 0;
-  return vatOutput - vatInput;
+// ── حساب الضريبة والإيراد الصافي (وضع الشامل) ──────────────────────────
+// grossRevenue: الإيراد الإجمالي كما أدخله المستخدم (شامل الضريبة)
+// الإخراج: { netRevenue, vatAmount, vatPct }
+window.calcVATInclusive = function (grossRevenue) {
+  if (!window.vatIsInclusive() || !(grossRevenue > 0)) {
+    return { netRevenue: grossRevenue, vatAmount: 0, vatPct: 0 };
+  }
+  const netRevenue = grossRevenue / (1 + window.VAT_CONFIG.RATE);  // ÷ 1.15
+  const vatAmount  = grossRevenue - netRevenue;
+  const vatPct     = grossRevenue > 0 ? parseFloat(((vatAmount / grossRevenue) * 100).toFixed(2)) : 0;
+  return { netRevenue, vatAmount, vatPct };
 };
 
 // ── حساب جميع أرقام الضريبة دفعة واحدة ─────────────────────────────────
-// الإدخال: revenue (ex-VAT), totalExpenses (ex-VAT)
-// الإخراج: { vatEnabled, vatOutput, vatInput, netVAT }
-window.calcVAT = function (revenue, totalExpenses) {
-  const enabled    = window.vatIsEnabled();
-  const vatOutput  = enabled ? revenue       * window.VAT_CONFIG.RATE : 0;
-  const vatInput   = enabled ? totalExpenses * window.VAT_CONFIG.RATE : 0;
-  const netVAT     = enabled ? vatOutput - vatInput : 0;
-  return { vatEnabled: enabled, vatOutput, vatInput, netVAT };
+// الإدخال: grossRevenue (شامل الضريبة إذا PRICES_INCLUDE_VAT=true)
+// الإخراج: { vatEnabled, vatInclusive, grossRevenue, netRevenue, vatAmount, vatPct }
+window.calcVAT = function (grossRevenue, totalExpenses) {
+  const enabled   = window.vatIsEnabled();
+  const inclusive = enabled && (window.VAT_CONFIG.PRICES_INCLUDE_VAT !== false);
+
+  if (!enabled) {
+    return {
+      vatEnabled: false, vatInclusive: false,
+      grossRevenue, netRevenue: grossRevenue,
+      vatAmount: 0, vatPct: 0,
+      // compat fields (old API)
+      vatOutput: 0, vatInput: 0, netVAT: 0,
+    };
+  }
+
+  if (inclusive) {
+    const { netRevenue, vatAmount, vatPct } = window.calcVATInclusive(grossRevenue);
+    return {
+      vatEnabled: true, vatInclusive: true,
+      grossRevenue, netRevenue, vatAmount, vatPct,
+      // compat fields
+      vatOutput: vatAmount, vatInput: (totalExpenses || 0) * window.VAT_CONFIG.RATE,
+      netVAT: vatAmount - ((totalExpenses || 0) * window.VAT_CONFIG.RATE),
+    };
+  }
+
+  // وضع الحصري (exclusive) — الأسعار بدون ضريبة
+  const vatOutput = grossRevenue * window.VAT_CONFIG.RATE;
+  const vatInput  = (totalExpenses || 0) * window.VAT_CONFIG.RATE;
+  return {
+    vatEnabled: true, vatInclusive: false,
+    grossRevenue, netRevenue: grossRevenue,
+    vatAmount: vatOutput, vatPct: window.VAT_CONFIG.RATE_PCT,
+    vatOutput, vatInput, netVAT: vatOutput - vatInput,
+  };
 };

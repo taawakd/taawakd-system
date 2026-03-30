@@ -39,7 +39,8 @@ function _renderDashboardPreview(rep) {
   const dkProfit = document.getElementById('dk-profit');
   const dkMargin = document.getElementById('dk-margin');
   const dkHealth = document.getElementById('dk-health');
-  if (dkRev)    { dkRev.textContent    = fmt(m.revenue    || 0); dkRev.className    = 'kpi-val neu'; }
+  // عرض الإيراد الإجمالي (شامل ض.ق.م) إذا كانت الضريبة مفعّلة، وإلا الإيراد الصافي
+  if (dkRev)    { dkRev.textContent    = fmt(m.grossRevenue || m.revenue || 0); dkRev.className    = 'kpi-val neu'; }
   if (dkProfit) { dkProfit.textContent = fmt(m.netProfit  || 0); dkProfit.className = 'kpi-val ' + (m.netProfit >= 0 ? 'pos' : 'neg'); }
   if (dkMargin) { dkMargin.textContent = (m.netMargin || 0).toFixed(1) + '%'; dkMargin.className = 'kpi-val ' + (m.netMargin > 15 ? 'pos' : m.netMargin < 5 ? 'neg' : 'warn'); }
   if (dkHealth) { dkHealth.textContent = score + '/100'; dkHealth.className = 'kpi-val ' + scoreCls; }
@@ -147,7 +148,7 @@ function updateDashboard() {
 
   const m = rep.metrics;
 
-  document.getElementById('dk-rev').textContent = fmt(m.revenue)+' ﷼';
+  document.getElementById('dk-rev').textContent = fmt(m.grossRevenue || m.revenue)+' ﷼';
 
   const pk = document.getElementById('dk-profit');
   pk.textContent = (m.netProfit>=0?'+':'')+fmt(m.netProfit)+' ﷼';
@@ -326,7 +327,7 @@ function renderSavedReports() {
   const canSeeNumbers = planAllows('full_report');
   grid.innerHTML = STATE.savedReports.map((r,i)=>{
     const m = r.metrics;
-    const revDisplay    = canSeeNumbers ? `${fmt(m.revenue)} ${SAR}`                                                        : '🔒';
+    const revDisplay    = canSeeNumbers ? `${fmt(m.grossRevenue || m.revenue)} ${SAR}`                                      : '🔒';
     const profitCls     = canSeeNumbers ? (m.netProfit>=0?'pos':'neg')                                                      : '';
     const profitDisplay = canSeeNumbers ? `${m.netProfit>=0?'+':''}${fmt(m.netProfit)} ${SAR}`                              : '🔒';
     return `<div class="card" style="cursor:pointer;transition:all 0.2s;animation:fadeUp 0.4s ease ${i*0.06}s forwards;opacity:0;" onmouseenter="this.style.borderColor='var(--gold-b)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="openSavedReport('${r.id}')">

@@ -833,8 +833,13 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
     chartInstance: null,
     chartMode: 'net'
   };
-  // VAT disabled by default — يُحدَّث من supabase.js عند تحميل ملف المشروع
-  window.__VAT_ENABLED__ = window.__VAT_ENABLED__ || false;
+  // VAT مفعّل افتراضياً (الأسعار تشمل 15%) — يُحدَّث من supabase.js أو toggle المستخدم
+  window.__VAT_ENABLED__ = window.__VAT_ENABLED__ ?? true;
+  // تزامن checkbox الـ VAT مع الحالة الافتراضية عند تحميل الصفحة
+  document.addEventListener('DOMContentLoaded', function () {
+    const vatToggle = document.getElementById('vat-toggle');
+    if (vatToggle) vatToggle.checked = window.__VAT_ENABLED__ === true;
+  });
 </script>
 
 <!-- Services (order matters: supabase → products → plan-config → helpers → dashboard → results → reports → ai-cfo → financial) -->

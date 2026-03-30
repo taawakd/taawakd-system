@@ -34,11 +34,21 @@ function liveCalc() {
   const delNet       = getN('f-del-net');
   const delCommission = delTotal > 0 ? Math.max(0, delTotal - delNet) : 0;
   const exp  = cogs+getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other')+delCommission;
-  const profit = rev - exp;
-  const margin = pct(profit, rev);
+
+  // ── ضريبة القيمة المضافة (VAT) — حساب صافي الإيراد للحسابات الداخلية ─────
+  // vatResult.netRevenue = grossRevenue ÷ 1.15 إذا VAT مفعّل (وضع شامل)
+  const vatResult = (typeof window.calcVATInclusive === 'function')
+    ? window.calcVATInclusive(rev)
+    : { netRevenue: rev, vatAmount: 0, vatPct: 0 };
+  const vatEnabled = window.__VAT_ENABLED__ === true;
+  const netRev  = vatEnabled ? vatResult.netRevenue : rev;
+  const vatAmt  = vatEnabled ? vatResult.vatAmount  : 0;
+
+  const profit = netRev - exp;
+  const margin = pct(profit, netRev);
   // نقطة التعادل = التكاليف الثابتة ÷ نسبة هامش المساهمة
   const fixedCostsLive = getN('f-rent')+getN('f-sal')+getN('f-utilities')+getN('f-mkt')+getN('f-other');
-  const contribRatioLive = rev > 0 ? (rev - cogs) / rev : 1;
+  const contribRatioLive = netRev > 0 ? (netRev - cogs) / netRev : 1;
   const be = contribRatioLive > 0 ? Math.round(fixedCostsLive / contribRatioLive) : 0;
 
   const setEl = (id, text, color) => {
@@ -52,6 +62,16 @@ function liveCalc() {
   setEl('lv-profit',    (profit>0?'+':profit<0?'-':'') + fmt(Math.abs(profit)) + ' ﷼', profit>0 ? 'var(--green)' : profit<0 ? 'var(--red)' : 'var(--gray2)');
   setEl('lv-margin',    margin + '%', margin>=15 ? 'var(--green)' : margin>=0 ? 'var(--gold)' : 'var(--red)');
   setEl('lv-be',        fmt(be) + ' ﷼', 'var(--white)');
+
+  // ── عرض / إخفاء صف الضريبة في شريط النتائج الحية ──────────────────────────
+  const vatRow = document.getElementById('lv-vat-row');
+  const vatBar = document.getElementById('lv-vat-bar');
+  const vatSpan = document.getElementById('lv-vat');  // الـ span بجانب الـ toggle
+  if (vatRow)  vatRow.style.display  = (vatEnabled && vatAmt > 0) ? 'block' : 'none';
+  if (vatBar)  vatBar.textContent    = vatAmt > 0 ? fmt(Math.round(vatAmt)) + ' ﷼' : '';
+  if (vatSpan) vatSpan.textContent   = (vatEnabled && rev > 0)
+    ? fmt(Math.round(vatAmt)) + ' ﷼ (' + vatResult.vatPct.toFixed(1) + '%)'
+    : '';
 
   // backward compat — العناصر القديمة إن وجدت
   setEl('lv-exp',    fmt(exp) + ' ﷼');

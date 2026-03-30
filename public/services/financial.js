@@ -55,15 +55,30 @@ async function runAnalysis() {
   const delAvgOrder   = delOrders > 0 ? Math.round(delTotal / delOrders) : 0;
   const hasDelivery   = delTotal > 0;
   const totalExpenses = cogs+rent+salaries+marketing+other+utilities+delCommission;
-  const netProfit = revenue-totalExpenses;
-  const netMargin = parseFloat(pct(netProfit,revenue));
-  const grossMargin = parseFloat(pct(revenue-cogs, revenue));
-  const rentPct = parseFloat(pct(rent,revenue));
-  const salPct = parseFloat(pct(salaries,revenue));
-  const cogsPct      = parseFloat(pct(cogs,revenue));
-  const mktPct       = parseFloat(pct(marketing,revenue));
-  const utilitiesPct = parseFloat(pct(utilities,revenue));
-  const otherPct     = parseFloat(pct(other,revenue));
+
+  // ── ضريبة القيمة المضافة (VAT) — الوضع الشامل (الأسعار تشمل 15%) ─────────
+  // grossRevenue = ما أدخله المستخدم (شامل الضريبة)
+  // netRevenue   = grossRevenue ÷ 1.15 → المبلغ الفعلي للإيراد بعد خصم الضريبة
+  // vatAmount    = grossRevenue - netRevenue → مبلغ الضريبة
+  // جميع حسابات الربح والهامش والنسب تعتمد على netRevenue
+  const grossRevenue = revenue;
+  const _vatCalc = (typeof window.calcVAT === 'function')
+    ? window.calcVAT(grossRevenue, totalExpenses)
+    : { vatEnabled: false, vatInclusive: false, grossRevenue, netRevenue: grossRevenue, vatAmount: 0, vatPct: 0, vatOutput: 0, vatInput: 0, netVAT: 0 };
+  const { vatEnabled, vatInclusive, netRevenue, vatAmount, vatPct: vatPctValue,
+          vatOutput, vatInput, netVAT } = _vatCalc;
+  // الأساس المرجعي لكل حسابات النسب: netRevenue (بعد خصم الضريبة إذا كانت مفعّلة)
+  const _revBase = netRevenue;
+
+  const netProfit = _revBase - totalExpenses;
+  const netMargin = parseFloat(pct(netProfit, _revBase));
+  const grossMargin = parseFloat(pct(_revBase - cogs, _revBase));
+  const rentPct = parseFloat(pct(rent, _revBase));
+  const salPct = parseFloat(pct(salaries, _revBase));
+  const cogsPct      = parseFloat(pct(cogs, _revBase));
+  const mktPct       = parseFloat(pct(marketing, _revBase));
+  const utilitiesPct = parseFloat(pct(utilities, _revBase));
+  const otherPct     = parseFloat(pct(other, _revBase));
 
   const bizName = document.getElementById('f-name').value || 'مشروعك';
   const bizType = document.getElementById('f-type').value || 'غير محدد';
@@ -76,21 +91,14 @@ async function runAnalysis() {
   const sectorKey = getSectorKey(bizType);
   console.log('[Tawakkad][runAnalysis] bizType=%s → sectorKey=%s', bizType, sectorKey);
 
-  // ── ضريبة القيمة المضافة (VAT) — يُقرأ من vat-config.js ─────────────────
-  // الأرباح لا تتغير: revenue و totalExpenses يمثلان الأسعار بدون ضريبة
-  // الضريبة تُتتبع بشكل منفصل فقط
-  const { vatEnabled, vatOutput, vatInput, netVAT } =
-    (typeof window.calcVAT === 'function')
-      ? window.calcVAT(revenue, totalExpenses)
-      : { vatEnabled: false, vatOutput: 0, vatInput: 0, netVAT: 0 };
-
-  const metrics = { revenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, utilitiesPct, otherPct,
+  const metrics = { revenue: _revBase, grossRevenue, cogs, rent, salaries, marketing, other, utilities, totalExpenses, netProfit, netMargin, grossMargin, rentPct, salPct, cogsPct, mktPct, utilitiesPct, otherPct,
     delTotal, delNet, delOrders, delCommission, delCommPct, delAvgOrder, hasDelivery,
-    // VAT fields — صفر إذا vatEnabled = false
-    vatEnabled, vatOutput, vatInput, netVAT };
+    // VAT fields — شامل الوضع الجديد (inclusive)
+    vatEnabled, vatInclusive, grossRevenue, netRevenue, vatAmount, vatPct: vatPctValue,
+    vatOutput, vatInput, netVAT };
   const scoreData = calcScore({ netMargin, grossMargin, rentPct, salPct, cogsPct });
   const alerts = generateAlerts({ ...metrics, netMargin, grossMargin, rentPct, salPct, cogsPct }, sectorKey);
-  const scenarios = buildScenarios({ revenue, totalExpenses, netProfit, cogs, salaries, rent });
+  const scenarios = buildScenarios({ revenue: _revBase, totalExpenses, netProfit, cogs, salaries, rent });
 
   const productsText = products.length ? products.map(p=>{const m=p.price>0?(((p.price-p.cost)/p.price)*100).toFixed(0):0;return `- ${p.name}: سعر ${p.price}ر تكلفة ${p.cost}ر كمية ${p.qty} هامش ${m}%`;}).join('\n') : 'لا توجد بيانات منتجات.';
 
@@ -113,7 +121,8 @@ async function runAnalysis() {
     business_name: bizName,
     period: period,
     team_size: employees,
-    revenue: revenue,
+    revenue: _revBase,
+    ...(vatEnabled ? { gross_revenue_inc_vat: grossRevenue, vat_amount: Math.round(vatAmount), vat_pct: vatPctValue } : {}),
     [_cogsKey]: cogs,
     [_cogsKey + '_percent']: cogsPct,          // نسبة COGS من الإيرادات (صحيحة — ليست grossMargin)
     gross_margin_percent: grossMargin,           // هامش الربح الإجمالي (مكمّل لـ cogsPct)
@@ -669,8 +678,14 @@ async function exportPDF() {
   if (!rep) { alert('لا يوجد تقرير للتصدير. يرجى إجراء تحليل أولاً.'); return; }
 
   const { bizName, bizType, period, metrics, scoreData, alerts, products, reportText, sectorKey, scenarios } = rep;
-  const { revenue, netProfit, netMargin, grossMargin,
+  const { netProfit, netMargin, grossMargin,
           rentPct, salPct, cogsPct, mktPct } = metrics;
+  // دعم التقارير القديمة (قبل إضافة VAT): grossRevenue و netRevenue قد تكون غير موجودة
+  const vatEnabled_pdf    = metrics.vatEnabled  === true;
+  const grossRevenue_pdf  = metrics.grossRevenue ?? metrics.revenue ?? 0;
+  const netRevenue_pdf    = metrics.netRevenue   ?? metrics.revenue ?? 0;
+  const vatAmount_pdf     = metrics.vatAmount    ?? 0;
+  const revenue           = netRevenue_pdf;   // أساس الحسابات (صافي الإيراد)
   // ?? 0 ensures old reports (before utilities was added to metrics) still render correctly
   const cogs          = metrics.cogs          ?? 0;
   const rent          = metrics.rent          ?? 0;
@@ -708,6 +723,7 @@ async function exportPDF() {
 
   // ── المصاريف (جميع البنود مع ?? 0 للتوافق مع التقارير القديمة) ──
   const expensesRows = [
+    ...(vatEnabled_pdf && vatAmount_pdf > 0 ? [{ label: 'ضريبة القيمة المضافة (15%)', val: Math.round(vatAmount_pdf), isVAT: true }] : []),
     { label: _pdfCogsLabel,                  val: cogs          },
     { label: 'الإيجار',                       val: rent          },
     { label: 'الرواتب والأجور',               val: salaries      },
@@ -717,20 +733,24 @@ async function exportPDF() {
     ...(delCommission > 0 ? [{ label: 'عمولة تطبيقات التوصيل', val: delCommission }] : []),
   ].filter(r => r.val > 0);
 
+  // استخدم الإيراد الإجمالي (شامل الضريبة) كأساس لعمود "% من الإيراد" في جدول المصاريف
+  const _pdfRevBase = vatEnabled_pdf ? grossRevenue_pdf : revenue;
   const expensesHtml = expensesRows.map((r, i) => {
-    const pRev = revenue       > 0 ? ((r.val / revenue)       * 100).toFixed(1) : '—';
+    const pRev = _pdfRevBase  > 0 ? ((r.val / _pdfRevBase)  * 100).toFixed(1) : '—';
     const pExp = totalExpenses > 0 ? ((r.val / totalExpenses) * 100).toFixed(1) : '—';
-    const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
+    const bg = r.isVAT ? '#fef9e7' : (i % 2 === 0 ? '#ffffff' : '#f9fafb');
+    const labelColor = r.isVAT ? '#b45309' : '#374151';
+    const valColor   = r.isVAT ? '#d97706'  : '#1a1a1a';
     return `<tr style="background:${bg};">
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#374151;font-size:12px;">${r.label}</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1a1a1a;font-size:12px;">${f(r.val)} ${SAR}</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;color:${labelColor};font-size:12px;${r.isVAT ? 'font-style:italic;' : ''}">${r.label}</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:${valColor};font-size:12px;">${f(r.val)} ${SAR}</td>
       <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#6b7280;font-size:12px;">${pRev}%</td>
-      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:600;">${pExp}%</td>
+      <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:600;">${r.isVAT ? '—' : pExp + '%'}</td>
     </tr>`;
   }).join('') + `<tr style="background:#f3f4f6;font-weight:700;">
     <td style="padding:7px 8px;border:1px solid #e5e7eb;color:#1a1a1a;font-size:12px;">إجمالي المصاريف</td>
     <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#1a1a1a;font-size:12px;">${f(totalExpenses)} ${SAR}</td>
-    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;">${revenue > 0 ? ((totalExpenses/revenue)*100).toFixed(1) : '—'}%</td>
+    <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;">${_pdfRevBase > 0 ? ((totalExpenses/_pdfRevBase)*100).toFixed(1) : '—'}%</td>
     <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;color:#374151;font-size:12px;font-weight:700;">100%</td>
   </tr>`;
 
@@ -876,14 +896,15 @@ async function exportPDF() {
     </div>
 
     <!-- KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:repeat(${vatEnabled_pdf ? 5 : 4},1fr);gap:12px;margin-bottom:20px;">
       ${[
-        { val: f(revenue)+' '+SAR, label: 'الإيرادات', color: '#1a1a1a' },
+        { val: f(vatEnabled_pdf ? grossRevenue_pdf : revenue)+' '+SAR, label: vatEnabled_pdf ? 'الإيرادات (شامل ض.ق.م)' : 'الإيرادات', color: '#1a1a1a' },
+        ...(vatEnabled_pdf ? [{ val: f(Math.round(vatAmount_pdf))+' '+SAR, label: 'ضريبة القيمة المضافة 15%', color: '#d97706' }] : []),
         { val: (netProfit>=0?'+':'')+f(netProfit)+' '+SAR, label: 'صافي الربح', color: profitColor },
         { val: netMargin+'% من الإيرادات', label: 'هامش الربح', color: marginColor },
         { val: f(totalExpenses)+' '+SAR, label: 'إجمالي المصاريف', color: '#1a1a1a' },
       ].map(k => `<div style="background:#ffffff;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb;">
-        <div style="font-size:15px;font-weight:700;color:${k.color};">${k.val}</div>
+        <div style="font-size:${vatEnabled_pdf ? '13px' : '15px'};font-weight:700;color:${k.color};">${k.val}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:5px;">${k.label}</div>
       </div>`).join('')}
     </div>
@@ -1146,6 +1167,12 @@ function getCFOContext() {
             delCommPct:    m.delCommPct,
             delAvgOrder:   m.delAvgOrder,
           } : {}),
+          // ضريبة القيمة المضافة
+          vatEnabled:    m.vatEnabled  ?? false,
+          vatInclusive:  m.vatInclusive ?? false,
+          grossRevenue:  m.grossRevenue ?? m.revenue,
+          vatAmount:     m.vatAmount   ?? 0,
+          vatPct:        m.vatPct      ?? 0,
         };
       })(),
       previous: previousReports,
@@ -1387,14 +1414,18 @@ ${basicLines}\n`;
 ══ آخر تحليل (المرجع الأساسي) ══
 - الفترة: ${latest.period}
 - النشاط: ${latest.bizType}
-- الإيرادات: ${fmtN(latest.revenue)} ريال
+${latest.vatEnabled
+  ? `- الإيرادات الإجمالية (شامل ض.ق.م 15%): ${fmtN(latest.grossRevenue)} ريال\n- ضريبة القيمة المضافة (15%): ${fmtN(Math.round(latest.vatAmount ?? 0))} ريال (${latest.vatPct ?? 0}% من الإجمالي)\n- صافي الإيرادات (بعد الضريبة): ${fmtN(latest.revenue)} ريال`
+  : `- الإيرادات: ${fmtN(latest.revenue)} ريال`}
 - صافي الربح: ${fmtN(latest.profit)} ريال (${latest.margin ?? '—'}% من الإيرادات)
 - هامش إجمالي: ${latest.grossMargin ?? '—'}% من الإيرادات
 - المصاريف الكلية: ${fmtN(latest.totalExpenses)} ريال
 
 ══ تفاصيل المصاريف — أرقام ثابتة لا تُعدَّل إلا بطلب صريح ══
 [⚠️ قاعدة إلزامية: هذه الأرقام هي المصدر الوحيد للحقيقة. عند أي سؤال يتعلق بتعديل بند واحد، عدّل ذلك البند فقط واحتفظ بباقي البنود كما هي بالضبط. لا تُقدّر ولا تُعيد توزيع أي رقم.]
-- الإيرادات:               ${fmtN(latest.revenue)} ريال  ← ثابت
+${latest.vatEnabled
+  ? `- الإيرادات الصافية (بعد ض.ق.م): ${fmtN(latest.revenue)} ريال  ← ثابت`
+  : `- الإيرادات:               ${fmtN(latest.revenue)} ريال  ← ثابت`}
 - ${_terms.cogsShort}:     ${fmtN(latest.cogs)} ريال  ← بند قابل للتعديل عند الطلب
 - الإيجار:                  ${fmtN(latest.rent)} ريال  ← ثابت
 - الرواتب:                  ${fmtN(latest.salaries)} ريال  ← ثابت
