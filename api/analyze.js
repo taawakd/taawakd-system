@@ -132,6 +132,21 @@ export default async function handler(req, res) {
       .eq('id', user.id);
   }
 
+  // ── حد التحليلات الإجمالي للخطة المجانية (1 تحليل فقط) ─────────────────
+  // يُطبَّق على مستخدمي التجربة والخطة المجانية — يمنع أي تحليل ثانٍ
+  if (!isAdmin && !isPaid && !isCFOReq && (profile?.analyses_used || 0) >= 1) {
+    return res.status(403).json({
+      error: 'limit_reached',
+      limit_reached: true,
+      free_limit: true,
+      used: profile?.analyses_used || 0,
+      limit: 1,
+      plan: profile?.plan || 'free',
+      trial_started_at: trialStartedAt,
+      one_time_price: ONE_TIME_PRICE_FREE,
+    });
+  }
+
   // ── إعادة تعيين عداد التحليلات الشهري (مشتركون فقط) ─────────────────────
   if (!isAdmin && isPaid && !isCFOReq) {
     const resetAt = profile?.analyses_reset_at ? new Date(profile.analyses_reset_at) : null;
