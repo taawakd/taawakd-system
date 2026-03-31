@@ -64,6 +64,9 @@ async function loadBusinessProfile() {
 
     calcBPFixed();
     renderBPProducts();
+
+    // ملء نموذج التحليل من ملف المشروع (إذا كان الحقل فارغاً)
+    if (typeof window._prefillFromBP === 'function') window._prefillFromBP();
   } catch(e) { console.warn('loadBusinessProfile:', e); }
 }
 

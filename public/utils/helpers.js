@@ -315,6 +315,8 @@ function _prefillFromBP() {
   setIfEmpty('f-rent',      bp.fixed_rent);
   setIfEmpty('f-sal',       bp.fixed_salaries);
   setIfEmpty('f-utilities', bp.fixed_utilities);
+  setIfEmpty('f-mkt',       bp.fixed_marketing);
+  setIfEmpty('f-other',     bp.fixed_other);
 
   // نوع النشاط (select)
   if (bp.biz_type) {
