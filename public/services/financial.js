@@ -1168,6 +1168,7 @@ function getCFOContext() {
           breakEven:     breakEven,
           score:         rep.scoreData?.total,
           period:        rep.reportPeriod || rep.period,
+          sectorKey:     rep.sectorKey || null,   // needed for benchmark lookup in buildCFOSystemPrompt
           alerts:        rep.alerts?.map(a => a.msg) || [],
           products,
           // تطبيقات التوصيل
@@ -1232,6 +1233,23 @@ function buildCFOSystemPrompt(ctx) {
     const totalFixed = (Number(bp.fixed_rent)||0) + (Number(bp.fixed_salaries)||0)
       + (Number(bp.fixed_utilities)||0) + (Number(bp.fixed_marketing)||0)
       + (Number(bp.fixed_subscriptions)||0) + (Number(bp.fixed_other)||0);
+
+    // ترتيب التكاليف الثابتة تنازلياً بالريال — لتحديد العامل #1 لـ "المشكلة الأساسية"
+    const _bpRows = [
+      (Number(bp.fixed_rent)||0)          > 0 ? { label: 'الإيجار',            sar: Number(bp.fixed_rent)          } : null,
+      (Number(bp.fixed_salaries)||0)      > 0 ? { label: 'الرواتب',            sar: Number(bp.fixed_salaries)      } : null,
+      (Number(bp.fixed_marketing)||0)     > 0 ? { label: 'التسويق الثابت',    sar: Number(bp.fixed_marketing)     } : null,
+      (Number(bp.fixed_utilities)||0)     > 0 ? { label: 'الكهرباء والمياه',  sar: Number(bp.fixed_utilities)     } : null,
+      (Number(bp.fixed_subscriptions)||0) > 0 ? { label: 'الاشتراكات',        sar: Number(bp.fixed_subscriptions) } : null,
+      (Number(bp.fixed_other)||0)         > 0 ? { label: 'مصاريف أخرى',       sar: Number(bp.fixed_other)         } : null,
+    ].filter(Boolean).sort((a, b) => b.sar - a.sar);
+    const _bpTop1 = _bpRows[0] || null;
+    const _bpImpactText = _bpRows.length > 0
+      ? _bpRows.slice(0, 5).map((x, i) =>
+          `  ${i + 1}. ${x.label} — **${x.sar.toLocaleString('en')} ريال/شهر**`
+        ).join('\n')
+      : '  لا توجد بيانات كافية للترتيب.';
+
     return `أنت AI CFO لمشروع "${bp.biz_name}" — مستشار مالي متخصص للمشاريع السعودية الصغيرة والمتوسطة.
 
 ══ ملف المشروع (البيانات الأساسية) ══
@@ -1246,10 +1264,16 @@ function buildCFOSystemPrompt(ctx) {
 - مصاريف أخرى: ${_fmtBP(bp.fixed_other)} ر.س/شهر
 - إجمالي التكاليف الثابتة: ${totalFixed > 0 ? totalFixed.toLocaleString('en') : '—'} ر.س/شهر
 
+══ التكاليف الثابتة مُرتَّبة تنازلياً (محسوب مسبقاً) ══
+[قاعدة إلزامية: "المشكلة الأساسية" يجب أن تكون البند #1 في هذا الجدول — لا بند آخر]
+${_bpImpactText}
+← البند #1: ${_bpTop1 ? `**${_bpTop1.label}** — **${_bpTop1.sar.toLocaleString('en')} ريال/شهر**` : 'يُحدَّد من البيانات المتوفرة'}
+← "المشكلة الأساسية" يجب أن تشرح هذا البند تحديداً.
+
 ══ هيكل الرد — إلزامي في كل رسالة (MAX 120 كلمة) ══
 
 ## المشكلة الأساسية
-سطر واحد — العامل #1 تأثيراً على الربح/الخسارة.
+${_bpTop1 ? `[إلزامي: يجب أن يكون عن **${_bpTop1.label}** (${_bpTop1.sar.toLocaleString('en')} ريال/شهر — البند #1 من جدول التكاليف أعلاه). لا تختر بنداً آخر.]` : 'سطر واحد — العامل #1 تأثيراً على الربح/الخسارة.'}
 
 ## لماذا حدثت
 1. [رقم من البيانات أعلاه] → [تأثيره على الربح بالريال]
@@ -1405,6 +1429,84 @@ ${basicLines}\n`;
     const d = Number(delta);
     return (d >= 0 ? '+' : '') + d.toFixed(1) + ' نقطة مئوية';
   };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── جدول تأثير العوامل المالية (مُرتَّب تنازلياً بالريال) ──
+  // يُحسَب مرة واحدة في JavaScript حتى لا يخطئ الـ AI في الترتيب
+  // ══════════════════════════════════════════════════════════════════════════
+  const _BENCH_ALL = (typeof window.BENCHMARKS !== 'undefined' ? window.BENCHMARKS : {});
+  const _benchSec  = _BENCH_ALL[latest.sectorKey || ''] || null;   // null → no benchmark
+  const _rev       = latest.revenue || 0;
+
+  // دالة: تأثير البند بالريال
+  // إذا يوجد معيار للقطاع → نستخدم التجاوز (actual - threshold)
+  // إذا لا يوجد معيار    → نستخدم المبلغ الكامل (كل ريال يُصرَف هو تأثير)
+  const _itemImpact = (actualSAR, benchMaxPct) => {
+    const abs = Math.round(actualSAR || 0);
+    if (abs <= 0) return 0;
+    if (_benchSec && benchMaxPct != null && _rev > 0) {
+      const threshold = Math.round((_rev * benchMaxPct) / 100);
+      return Math.max(0, abs - threshold);   // 0 if within benchmark
+    }
+    return abs;   // no benchmark → full amount is the impact
+  };
+
+  const _impactRows = [
+    // عمولة تطبيقات التوصيل — مبلغ مباشر (ليس تجاوزاً)
+    latest.delCommission > 0
+      ? { label: `عمولة التوصيل`, note: `${latest.delCommPct ?? '—'}% من مبيعات التطبيقات`,
+          sar: Math.round(latest.delCommission || 0) }
+      : null,
+    // إيجار
+    latest.rent > 0
+      ? { label: `الإيجار`, note: _benchSec?.rentPct ? `حد القطاع ≤ ${_benchSec.rentPct.max}% من الإيرادات` : 'مبلغ كامل',
+          sar: _itemImpact(latest.rent, _benchSec?.rentPct?.max) }
+      : null,
+    // رواتب
+    latest.salaries > 0
+      ? { label: `الرواتب`, note: _benchSec?.salPct ? `حد القطاع ≤ ${_benchSec.salPct.max}% من الإيرادات` : 'مبلغ كامل',
+          sar: _itemImpact(latest.salaries, _benchSec?.salPct?.max) }
+      : null,
+    // تكلفة البضاعة/الإنتاج
+    latest.cogs > 0
+      ? { label: _terms.cogsShort, note: _benchSec?.cogsPct ? `حد القطاع ≤ ${_benchSec.cogsPct.max}% من الإيرادات` : 'مبلغ كامل',
+          sar: _itemImpact(latest.cogs, _benchSec?.cogsPct?.max) }
+      : null,
+    // تسويق
+    latest.marketing > 0
+      ? { label: `التسويق`, note: _benchSec?.mktPct ? `حد القطاع ≤ ${_benchSec.mktPct.max}% من الإيرادات` : 'مبلغ كامل',
+          sar: _itemImpact(latest.marketing, _benchSec?.mktPct?.max) }
+      : null,
+    // كهرباء
+    latest.utilities > 0
+      ? { label: `الكهرباء والمياه`, note: 'مبلغ كامل',
+          sar: _itemImpact(latest.utilities, null) }
+      : null,
+    // أخرى
+    latest.other > 0
+      ? { label: `مصاريف أخرى`, note: 'مبلغ كامل',
+          sar: _itemImpact(latest.other, null) }
+      : null,
+  ]
+  .filter(x => x && x.sar > 0)
+  .sort((a, b) => b.sar - a.sar);
+
+  // إذا كل التجاوزات = 0 (كل بند ضمن المعيار) نرجع للمبلغ الكامل لكل بند
+  const _effectiveRows = _impactRows.length > 0 ? _impactRows : [
+    latest.rent      > 0 ? { label: 'الإيجار',            note: 'ضمن المعيار', sar: Math.round(latest.rent)      } : null,
+    latest.salaries  > 0 ? { label: 'الرواتب',            note: 'ضمن المعيار', sar: Math.round(latest.salaries)  } : null,
+    latest.cogs      > 0 ? { label: _terms.cogsShort,     note: 'ضمن المعيار', sar: Math.round(latest.cogs)      } : null,
+    latest.marketing > 0 ? { label: 'التسويق',            note: 'ضمن المعيار', sar: Math.round(latest.marketing) } : null,
+  ].filter(Boolean).sort((a, b) => b.sar - a.sar);
+
+  const _top1 = _effectiveRows[0] || null;
+  const _hasBench = !!_benchSec;
+
+  const _impactTableText = _effectiveRows.length > 0
+    ? _effectiveRows.slice(0, 5).map((x, i) =>
+        `  ${i + 1}. ${x.label} — **${fmtN(x.sar)} ريال** (${x.note})`
+      ).join('\n')
+    : '  لا توجد بيانات كافية للترتيب.';
 
   // Build previous-reports comparison table
   // — الفترة المباشرة السابقة (index 0): تُعرض مع deltas صريحة مقارنة بالحالي
@@ -1625,13 +1727,19 @@ ${trendText}
    ✅ مثال: "الإيرادات ارتفعت +X ر | ${_terms.cogsShort} ارتفع +Y ر | الإيجار ثابت → صافي الفرق +Z ر"
    ❌ لا تذكر البنود الثابتة (delta = 0) في تفسير التغيير — تُشوّش التحليل.
 
+══ تأثير العوامل المالية — مُرتَّب بالريال (محسوب مسبقاً) ══
+[قاعدة إلزامية: "المشكلة الأساسية" يجب أن تكون العامل #1 في هذا الجدول — لا عامل آخر]
+${_impactTableText}
+← العامل #1: ${_top1 ? `**${_top1.label}** — **${fmtN(_top1.sar)} ريال**` : 'يُحدَّد من البيانات المتوفرة'}
+← "المشكلة الأساسية" يجب أن تشرح هذا العامل تحديداً.
+
 ══ هيكل الرد — إلزامي في كل رسالة بدون استثناء (MAX 120 كلمة) ══
 
 أنت CFO — ردك قرارات وأثر مالي، لا تقرير ولا مقدمات.
 الأقسام الخمسة التالية إلزامية ومرتّبة — لا تحذف أياً منها ولا تغير ترتيبها:
 
 ## المشكلة الأساسية
-جملة واحدة — العامل الواحد الأكبر تأثيراً على الربح أو الخسارة الآن.
+${_top1 ? `[إلزامي: يجب أن يكون عن **${_top1.label}** (${fmtN(_top1.sar)} ريال — العامل #1 من جدول التأثير أعلاه). لا تختر عاملاً آخر.]` : 'جملة واحدة — العامل الواحد الأكبر تأثيراً على الربح أو الخسارة الآن.'}
 
 ## لماذا حدثت
 1. [رقم من البيانات] → [تأثيره المباشر على الربح بالريال]
