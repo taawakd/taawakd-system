@@ -1027,16 +1027,25 @@ function getCFOContext() {
   const m = rep.metrics || {};
 
   // Distil one saved report into a compact comparable summary
+  // Include expense line-items so buildCFOSystemPrompt can compute per-component deltas
   const summarize = r => {
     if (!r) return null;
     const rm = r.metrics || {};
     return {
-      bizName: r.bizName,
-      revenue: rm.revenue,
-      profit:  rm.netProfit,
-      margin:  rm.netMargin,
-      score:   r.scoreData?.total,
-      period:  r.reportPeriod || r.period || (r.createdAt ? r.createdAt.slice(0, 10) : '—')
+      bizName:       r.bizName,
+      revenue:       rm.revenue,
+      profit:        rm.netProfit,
+      margin:        rm.netMargin,
+      score:         r.scoreData?.total,
+      period:        r.reportPeriod || r.period || (r.createdAt ? r.createdAt.slice(0, 10) : '—'),
+      // expense line-items — needed for driver-level delta analysis
+      totalExpenses: rm.totalExpenses,
+      cogs:          rm.cogs       ?? 0,
+      rent:          rm.rent       ?? 0,
+      salaries:      rm.salaries   ?? 0,
+      marketing:     rm.marketing  ?? 0,
+      utilities:     rm.utilities  ?? 0,
+      other:         rm.other      ?? 0,
     };
   };
 
@@ -1066,15 +1075,18 @@ function getCFOContext() {
     const lastScore   = rep.scoreData?.total;
 
     if (first.revenue != null && lastRevenue != null) {
-      trend.revenueChange = lastRevenue - first.revenue;
-      trend.revenuePct    = first.revenue !== 0
+      trend.revenueChange  = lastRevenue - first.revenue;
+      trend._firstRevenue  = first.revenue;  // stored for safe % formatting (suppress on zero/negative base)
+      trend.revenuePct     = first.revenue > 0
         ? ((lastRevenue - first.revenue) / first.revenue) * 100
         : null;
     }
 
     if (first.profit != null && lastProfit != null) {
       trend.profitChange = lastProfit - first.profit;
-      trend.profitPct    = first.profit !== 0
+      trend._firstProfit = first.profit;     // stored for safe % formatting
+      // profitPct: null when base is ≤ 0 (zero-crossing or prior loss) — prevents misleading %
+      trend.profitPct    = first.profit > 0
         ? ((lastProfit - first.profit) / first.profit) * 100
         : null;
     }
@@ -1370,11 +1382,68 @@ ${basicLines}\n`;
     prodsSection = ''; // لا توجد بيانات منتجات — لا نضيف قسماً فارغاً
   }
 
-  // Build previous-reports comparison table with concrete numbers
+  // ── دالة تنسيق الفرق (delta) بين فترتين ─────────────────────────────────────
+  // تعالج 3 حالات: تقاطع الصفر (خسارة↔ربح) | تغيير عادي | قيمة غير متوفرة
+  const fmtDelta = (delta, prevVal, currVal) => {
+    if (delta == null || isNaN(Number(delta))) return '—';
+    const d = Number(delta);
+    const p = Number(prevVal ?? 0);
+    const c = Number(currVal ?? 0);
+    const sign = d >= 0 ? '+' : '';
+    // تقاطع الصفر: لا نُظهر نسبة مئوية — لأنها إما لا نهائية أو مضللة
+    if (p < 0 && c >= 0) return `تحوّل من خسارة (${fmtN(Math.round(p))} ر) إلى ربح (+${fmtN(Math.round(c))} ر) — فرق ${sign}${fmtN(Math.round(d))} ر`;
+    if (p >= 0 && c < 0) return `تحوّل من ربح (+${fmtN(Math.round(p))} ر) إلى خسارة (${fmtN(Math.round(c))} ر) — فرق ${sign}${fmtN(Math.round(d))} ر`;
+    // تغيير عادي: رقم + نسبة (فقط إذا القاعدة موجبة)
+    const pctStr = (p > 0)
+      ? ` (${sign}${((d / p) * 100).toFixed(1)}%)`
+      : '';
+    return `${sign}${fmtN(Math.round(d))} ر${pctStr}`;
+  };
+
+  // ── دالة تنسيق فرق الهامش (نقاط مئوية فقط — لا نسبة من نسبة) ───────────────
+  const fmtMarginDelta = delta => {
+    if (delta == null || isNaN(Number(delta))) return '—';
+    const d = Number(delta);
+    return (d >= 0 ? '+' : '') + d.toFixed(1) + ' نقطة مئوية';
+  };
+
+  // Build previous-reports comparison table
+  // — الفترة المباشرة السابقة (index 0): تُعرض مع deltas صريحة مقارنة بالحالي
+  // — الفترات الأقدم (index 1+): تُعرض كأرقام مرجعية فقط بدون deltas
   const prevText = previous.length
-    ? previous.map((r, i) =>
-        `  ${i + 1}. ${r.period || '—'}: إيرادات ${fmtN(r.revenue)} ر | ربح ${fmtN(r.profit)} ر | هامش ${r.margin ?? '—'}% | مؤشر الصحة ${r.score ?? '—'}/100`
-      ).join('\n')
+    ? previous.map((r, i) => {
+        if (i === 0) {
+          // الفترة السابقة المباشرة — نحسب كل delta صراحةً
+          const dRev  = (latest.revenue != null && r.revenue != null) ? latest.revenue - r.revenue : null;
+          const dProf = (latest.profit  != null && r.profit  != null) ? latest.profit  - r.profit  : null;
+          const dMarg = (latest.margin  != null && r.margin  != null) ? latest.margin  - r.margin  : null;
+          const dScr  = (latest.score   != null && r.score   != null) ? latest.score   - r.score   : null;
+          const dExp  = (latest.totalExpenses != null && r.totalExpenses != null) ? latest.totalExpenses - r.totalExpenses : null;
+          // deltas على مستوى بنود المصاريف (محرّكات التغيير)
+          const dCogs  = (r.cogs  != null) ? (latest.cogs  || 0) - r.cogs  : null;
+          const dRent  = (r.rent  != null) ? (latest.rent  || 0) - r.rent  : null;
+          const dSal   = (r.salaries != null) ? (latest.salaries || 0) - r.salaries : null;
+          const dMkt   = (r.marketing != null) ? (latest.marketing || 0) - r.marketing : null;
+
+          const expDrivers = [
+            dCogs != null && dCogs !== 0  ? `${_terms.cogsShort}: ${fmtDelta(dCogs, r.cogs, latest.cogs||0)}`           : null,
+            dRent != null && dRent !== 0  ? `إيجار: ${fmtDelta(dRent, r.rent, latest.rent||0)}`                        : null,
+            dSal  != null && dSal  !== 0  ? `رواتب: ${fmtDelta(dSal,  r.salaries, latest.salaries||0)}`                : null,
+            dMkt  != null && dMkt  !== 0  ? `تسويق: ${fmtDelta(dMkt,  r.marketing, latest.marketing||0)}`              : null,
+          ].filter(Boolean).join(' | ');
+
+          return `  1. الفترة السابقة المباشرة — ${r.period || '—'}:
+     الوضع: إيرادات ${fmtN(r.revenue)} ر | ربح ${fmtN(r.profit)} ر | هامش ${r.margin ?? '—'}% | مؤشر الصحة ${r.score ?? '—'}/100
+     ── الفرق مقارنة بالفترة الحالية (delta = حالي − سابق) ──
+     • delta الإيرادات:  ${fmtDelta(dRev,  r.revenue,  latest.revenue)}
+     • delta الربح:      ${fmtDelta(dProf, r.profit,   latest.profit)}
+     • delta الهامش:     ${fmtMarginDelta(dMarg)}
+     • delta المصاريف:   ${fmtDelta(dExp,  r.totalExpenses, latest.totalExpenses)}${expDrivers ? '\n     • محرّكات الفرق في المصاريف: ' + expDrivers : ''}
+     • delta مؤشر الصحة:${dScr != null ? (dScr >= 0 ? ' +' : ' ') + dScr.toFixed(0) + ' نقطة' : ' —'}`;
+        }
+        // الفترات الأقدم — أرقام مرجعية فقط
+        return `  ${i + 1}. ${r.period || '—'}: إيرادات ${fmtN(r.revenue)} ر | ربح ${fmtN(r.profit)} ر | هامش ${r.margin ?? '—'}% | مؤشر الصحة ${r.score ?? '—'}/100`;
+      }).join('\n')
     : '  لا توجد تقارير كافية للمقارنة.';
 
   // Build trend block — only rendered when previous reports exist and produced a diff
@@ -1382,14 +1451,18 @@ ${basicLines}\n`;
   const fmtChg  = v => (v != null && !isNaN(Number(v)))
     ? (Number(v) >= 0 ? '+' : '') + Number(v).toLocaleString('en', { maximumFractionDigits: 0 })
     : '—';
-  const fmtPct  = v => (v != null && !isNaN(Number(v)))
-    ? (Number(v) >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
-    : '—';
+  // fmtPct: يُرجع null (لا نسبة) عند تقاطع الصفر — لأن النسبة تكون مضللة أو لا نهائية
+  const fmtPctSafe = (change, baseVal) => {
+    if (change == null || isNaN(Number(change))) return null;
+    if (baseVal == null || Number(baseVal) <= 0) return null;  // zero/negative base → no pct
+    return (Number(change) >= 0 ? '+' : '') + Number(change).toFixed(1) + '%';
+  };
   const trendText = hasTrend
     ? `\n══ الاتجاه العام (آخر ${trend.reportsAnalyzed} تقارير) ══
 [اعتمد على جميع التقارير المذكورة لاكتشاف الاتجاه العام (صعود، هبوط، استقرار).]
-- الإيرادات: ${fmtChg(trend.revenueChange)} ريال (${fmtPct(trend.revenuePct)})
-- الربح: ${fmtChg(trend.profitChange)} ريال (${fmtPct(trend.profitPct)})
+[تحذير: هذه فروق إجمالية بين الأقدم والأحدث — لا تستخدمها كتفسير للتغيير بين فترتين متجاورتين.]
+- الإيرادات: ${fmtChg(trend.revenueChange)} ريال${fmtPctSafe(trend.revenueChange, trend._firstRevenue) ? ' (' + fmtPctSafe(trend.revenueChange, trend._firstRevenue) + ')' : ''}
+- الربح: ${fmtChg(trend.profitChange)} ريال${fmtPctSafe(trend.profitChange, trend._firstProfit) ? ' (' + fmtPctSafe(trend.profitChange, trend._firstProfit) + ')' : ' [لا نسبة — تقاطع صفر أو قاعدة سالبة]'}
 - مؤشر الصحة: ${trend.healthChange != null ? fmtChg(trend.healthChange) + ' نقطة' : '—'}\n`
     : '';
 
@@ -1521,6 +1594,38 @@ ${prodsSection}
 [تعليمات الاستخدام: استخدم الأرقام التالية فقط ولا تستخدم أمثلة افتراضية. إذا كانت قيمة "—" فهي غير متوفرة ولا تستبدلها بأرقام.]
 ${prevText}
 ${trendText}
+══ قواعد المقارنة بين الفترات — إلزامية صارمة ══
+[تُطبَّق عند وجود تقارير سابقة وعند أي مقارنة بين فترتين]
+
+📌 القاعدة 1 — احسب الفرق (delta) دائماً قبل أي تفسير:
+   delta_الإيرادات = إيرادات_الحالية − إيرادات_السابقة
+   delta_الربح     = ربح_الحالي − ربح_السابق
+   delta_المصاريف  = مصاريف_الحالية − مصاريف_السابقة
+   ❌ يُمنع منعاً باتاً: استخدام الأرقام الإجمالية (totals) كتفسير للتغيير
+   ❌ خطأ شائع ممنوع: "الربح تحسّن لأن الإيرادات كانت X في الفترة السابقة"
+   ✅ الصياغة الصحيحة: "الربح ارتفع بـ [delta_الربح] ريال — بسبب: [delta_الإيرادات + delta_المصاريف]"
+
+📌 القاعدة 2 — افصل بوضوح بين نوعين من المعلومات:
+   [أ] الوضع الحالي (totals فقط):
+       "الإيرادات الآن X ريال | الربح Y ريال | الهامش Z%"
+   [ب] تفسير التغيير (deltas فقط):
+       "ارتفعت الإيرادات بـ +delta_rev ريال | ارتفعت المصاريف بـ +delta_exp ريال → صافي الفرق في الربح: +delta_profit ريال"
+   ❌ يُمنع خلط النوعين: لا تستخدم رقماً إجمالياً كسبب لتغيير
+
+📌 القاعدة 3 — الانتقال من خسارة إلى ربح (أو العكس) — تقاطع الصفر:
+   ❌ يُمنع منعاً باتاً: استخدام نسبة مئوية عند تقاطع الصفر
+      (الأمثلة الخاطئة: "تحسّن بنسبة 200%" أو "تراجع بنسبة ∞%")
+   ✅ الصيغة الإلزامية عند الانتقال من خسارة إلى ربح:
+      "تحوّل من خسارة (−X ريال) إلى ربح (+Y ريال) — فرق إيجابي +Z ريال"
+   ✅ الصيغة الإلزامية عند الانتقال من ربح إلى خسارة:
+      "تحوّل من ربح (+X ريال) إلى خسارة (−Y ريال) — فرق سلبي −Z ريال"
+   ← الـ deltas أعلاه محسوبة مسبقاً في قسم "الفترة السابقة المباشرة" — استخدمها مباشرة.
+
+📌 القاعدة 4 — محرّكات الفرق (driver analysis):
+   لتفسير سبب تغيّر الربح، اذكر فقط البنود التي تغيّرت فعلاً (delta ≠ 0):
+   ✅ مثال: "الإيرادات ارتفعت +X ر | ${_terms.cogsShort} ارتفع +Y ر | الإيجار ثابت → صافي الفرق +Z ر"
+   ❌ لا تذكر البنود الثابتة (delta = 0) في تفسير التغيير — تُشوّش التحليل.
+
 ══ هيكل الرد — إلزامي وثابت في كل رسالة بدون استثناء ══
 
 أنت مدير مالي تنفيذي (CFO) — ردك تشخيص وأوامر، لا تقرير.
