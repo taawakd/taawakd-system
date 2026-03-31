@@ -748,6 +748,7 @@ function togglePeriod() {
   all.forEach(id => { const e = document.getElementById(id); if(e) e.style.display='none'; });
   const show = document.getElementById('pi-' + key);
   if(show) show.style.display = '';
+  if (typeof window._prefillFromBP === 'function') window._prefillFromBP({ force: true });
 }
 
 function updateCustomPeriodLabel() {

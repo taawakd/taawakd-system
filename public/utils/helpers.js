@@ -297,31 +297,61 @@ window.signOut = signOut;
 // ══════════════════════════════════════════
 // PRE-FILL — ملء نموذج التحليل من ملف المشروع
 // ══════════════════════════════════════════
-function _prefillFromBP() {
+
+// معامل تحويل الفترة: قيم ملف المشروع مخزّنة شهرياً دائماً
+// عند اختيار فترة أقصر/أطول نضرب في هذا المعامل
+function _getBPPeriodScale() {
+  const period = document.getElementById('f-period')?.value || 'شهري';
+  if (period === 'أسبوعي')   return 1 / 4.33;  // شهر ÷ 4.33 أسبوع
+  if (period === 'يومي')      return 1 / 30;     // شهر ÷ 30 يوم
+  if (period === 'ربع سنوي') return 3;           // 3 أشهر
+  if (period === 'نصف سنوي') return 6;           // 6 أشهر
+  if (period === 'سنوي')      return 12;          // 12 شهر
+  return 1;                                        // شهري / مخصص
+}
+window._getBPPeriodScale = _getBPPeriodScale;
+
+// opts.force = true  → يُعيد الكتابة حتى لو الحقل ممتلئ (عند تغيير الفترة)
+// opts.force = false → يملأ الحقل فقط إذا كان فارغاً (السلوك الافتراضي)
+function _prefillFromBP(opts) {
   const bp = window._businessProfile;
   if (!bp) return;
+  const force = opts?.force === true;
+  const scale = _getBPPeriodScale();
 
-  // يملأ الحقل فقط إذا كان فارغاً
-  const setIfEmpty = (id, val) => {
+  // حقل نصي — لا يُعيد الكتابة إذا ممتلئ (إلا عند force)
+  const setTxt = (id, val) => {
     const el = document.getElementById(id);
-    if (!el || el.value) return; // لا تُعيد الكتابة إذا كان ممتلئاً
+    if (!el) return;
+    if (!force && el.value) return;
+    if (val) el.value = val;
+  };
+
+  // حقل رقمي type="number" — يُخزّن رقماً خاماً بدون فواصل
+  // ⚠️ toLocaleString('en') مرفوض هنا: يُنتج "10,000" غير صالح لـ type="number"
+  const setNum = (id, val, applyScale) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!force && el.value) return;
     const n = Number(val);
     if (n > 0) {
-      el.value = Math.round(n).toLocaleString('en');
+      el.value = String(Math.round(applyScale ? n * scale : n));
       el.dispatchEvent(new Event('input'));
     }
   };
 
-  setIfEmpty('f-rent',      bp.fixed_rent);
-  setIfEmpty('f-sal',       bp.fixed_salaries);
-  setIfEmpty('f-utilities', bp.fixed_utilities);
-  setIfEmpty('f-mkt',       bp.fixed_marketing);
-  setIfEmpty('f-other',     bp.fixed_other);
-
-  // نوع النشاط (select)
+  // ── اسم المشروع ونوع النشاط ──────────────────────────────────────────────
+  setTxt('f-name', bp.biz_name);
   if (bp.biz_type) {
     const typeEl = document.getElementById('f-type');
-    if (typeEl && !typeEl.value) typeEl.value = bp.biz_type;
+    if (typeEl && (force || !typeEl.value)) typeEl.value = bp.biz_type;
   }
+
+  // ── التكاليف الثابتة — تُطبَّق نسبة الفترة (مخزّنة شهرياً في ملف المشروع) ─
+  setNum('f-rent',      bp.fixed_rent,       true);
+  setNum('f-sal',       bp.fixed_salaries,   true);
+  setNum('f-utilities', bp.fixed_utilities,  true);
+  setNum('f-mkt',       bp.fixed_marketing,  true);
+  setNum('f-other',     bp.fixed_other,      true);
 }
 window._prefillFromBP = _prefillFromBP;
