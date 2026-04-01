@@ -286,8 +286,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'ANTHROPIC_API_KEY غير مضبوط في متغيرات البيئة — أضفه في Vercel Dashboard' });
     }
 
-    // CFO calls: 2000 tokens — banner + 5-section structure needs room to breathe
-    const maxTokens = isCFO ? 2000 : 1024;
+    // CFO calls: 4000 tokens — full analysis with tables + 3 detailed actions needs room
+    const maxTokens = isCFO ? 4000 : 1024;
 
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
