@@ -284,9 +284,10 @@ function benchStatus(value, min, max, lowerIsBetter) {
     if (value <= max) return 'good';           // أقل من الحد الأعلى = ممتاز
     return value > max * 1.5 ? 'bad' : 'warn'; // أعلى بكثير = سيء
   }
+  // higher is better (netMargin, grossMargin…)
   if (value >= min && value <= max) return 'good';
   if (value < min) return value < min * 0.7 ? 'bad' : 'warn';
-  return value > max * 1.3 ? 'bad' : 'warn';
+  return 'excellent';  // فوق النطاق الطبيعي = إيجابي ✨
 }
 
 function renderBenchmarkItems(metrics, bench, container) {
@@ -297,15 +298,16 @@ function renderBenchmarkItems(metrics, bench, container) {
       const val = metrics[k];
       const {min,max,label,lowerIsBetter} = bench[k];
       const status = benchStatus(val, min, max, lowerIsBetter);
-      const badgeText = status==='good'?'ضمن الطبيعي':status==='warn'?'قريب من الحد':'خارج النطاق';
-      const badgeClass = status==='good'?'badge-good':status==='warn'?'badge-warn':'badge-bad';
+      const badgeText  = status==='excellent'?'✨ فوق المعدل':status==='good'?'✓ ضمن الطبيعي':status==='warn'?'⚠ قريب من الحد':'✗ خارج النطاق';
+      const badgeClass = status==='excellent'||status==='good'?'badge-good':status==='warn'?'badge-warn':'badge-bad';
+      const valColor   = status==='excellent'||status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)';
       html += `<div class="bench-item ${status}">
         <div style="flex:1;">
           <div class="bench-label">${label}</div>
           <div class="bench-range">المعدل الطبيعي: ${min}%–${max}%</div>
         </div>
         <div style="text-align:center;margin:0 12px;">
-          <div class="bench-yours" style="color:${status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)'};">${parseFloat(val).toFixed(1)}%</div>
+          <div class="bench-yours" style="color:${valColor};">${parseFloat(val).toFixed(1)}%</div>
           <div style="font-size:10px;color:var(--gray);">من الإيرادات</div>
         </div>
         <div class="bench-badge ${badgeClass}">${badgeText}</div>
@@ -335,7 +337,9 @@ function renderBenchmarkPage() {
     const val = metrics[k];
     const hasData = val !== undefined;
     const status = hasData ? benchStatus(val, min, max, lowerIsBetter) : 'none';
-    const badgeClass = status==='good'?'badge-good':status==='warn'?'badge-warn':status==='bad'?'badge-bad':'';
+    const badgeClass = status==='excellent'||status==='good'?'badge-good':status==='warn'?'badge-warn':status==='bad'?'badge-bad':'';
+    const valColor   = status==='excellent'||status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)';
+    const badgeLabel = status==='excellent'?'✨ فوق المعدل':status==='good'?'✓ طبيعي':status==='warn'?'⚠ قريب':'✗ خارج النطاق';
 
     html += `<div class="bench-item ${hasData?status:''}">
       <div style="flex:1;">
@@ -344,10 +348,10 @@ function renderBenchmarkPage() {
       </div>
       ${hasData ? `
       <div style="text-align:center;margin:0 16px;">
-        <div class="bench-yours" style="color:${status==='good'?'var(--green)':status==='warn'?'var(--warn)':'var(--red)'};">${parseFloat(val).toFixed(1)}%</div>
+        <div class="bench-yours" style="color:${valColor};">${parseFloat(val).toFixed(1)}%</div>
         <div style="font-size:10px;color:var(--gray);">من الإيرادات</div>
       </div>
-      <div class="bench-badge ${badgeClass}">${status==='good'?'✓ طبيعي':status==='warn'?'⚠ قريب':'✗ خارج النطاق'}</div>
+      <div class="bench-badge ${badgeClass}">${badgeLabel}</div>
       ` : `<div style="font-size:12px;color:var(--gray);">أجرِ تحليلاً لرؤية مقارنة مشروعك</div>`}
     </div>`;
   });

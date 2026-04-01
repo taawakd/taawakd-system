@@ -780,10 +780,12 @@ async function exportPDF() {
     if (lowerIsBetter) {
       status = val <= max ? 'good' : val > max * 1.5 ? 'bad' : 'warn';
     } else {
-      status = (val >= min && val <= max) ? 'good' : (val < min * 0.7 || val > max * 1.3) ? 'bad' : 'warn';
+      if (val >= min && val <= max)      status = 'good';
+      else if (val < min)                status = val < min * 0.7 ? 'bad' : 'warn';
+      else                               status = 'excellent'; // فوق النطاق = إيجابي
     }
-    statusColor = status === 'good' ? '#16a34a' : status === 'warn' ? '#d97706' : '#dc2626';
-    statusText  = status === 'good' ? '✅ ضمن الطبيعي' : status === 'warn' ? '⚠️ قريب من الحد' : '❌ خارج النطاق';
+    statusColor = (status === 'good' || status === 'excellent') ? '#16a34a' : status === 'warn' ? '#d97706' : '#dc2626';
+    statusText  = status === 'excellent' ? '✨ فوق المعدل' : status === 'good' ? '✅ ضمن الطبيعي' : status === 'warn' ? '⚠️ قريب من الحد' : '❌ خارج النطاق';
     const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
     return `<tr style="background:${bg};">
       <td style="padding:7px 8px;border:1px solid #e5e7eb;font-size:12px;color:#374151;">${label}</td>
