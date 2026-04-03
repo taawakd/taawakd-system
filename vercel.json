@@ -1,4 +1,8 @@
 {
+  "functions": {
+    "api/analyze.js": { "maxDuration": 60 },
+    "api/menu-ocr.js": { "maxDuration": 60 }
+  },
   "headers": [
     {
       "source": "/public/(.*\\.html)",
