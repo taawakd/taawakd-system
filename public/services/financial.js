@@ -868,9 +868,14 @@ async function exportPDF() {
   // نُزيل SECTION tags أولاً ثم نُمرر النص عبر _cleanAIText لإزالة Markdown
   const _rawAI  = (reportText || '').replace(/\[SECTION:[^\]]+\]/g,'').replace(/\[\/SECTION\]/g,'').trim();
   const cleanAI = (typeof window._cleanAIText === 'function') ? window._cleanAIText(_rawAI) : _rawAI;
-  const aiHtml = cleanAI ? `
+  // html2canvas لا يتعامل بشكل صحيح مع unicode-bidi:embed + white-space:pre-wrap للعربية
+  // الحل: كل سطر في <div> منفصل — يمنع تشويه الحروف في PDF
+  const _aiLines = cleanAI
+    ? cleanAI.split('\n').map(l => `<div style="min-height:1em;">${l.trim() || ''}</div>`).join('')
+    : '';
+  const aiHtml = _aiLines ? `
     <h3 style="font-size:15px;font-weight:700;color:#1e40af;margin:0 0 10px 0;direction:rtl;text-align:right;">🤖 تحليل الذكاء الاصطناعي</h3>
-    <p style="font-size:12px;color:#374151;line-height:1.9;white-space:pre-wrap;margin:0;direction:rtl;text-align:right;unicode-bidi:embed;">${cleanAI}</p>` : '';
+    <div style="font-size:12px;color:#374151;line-height:1.9;direction:rtl;text-align:right;">${_aiLines}</div>` : '';
 
   // ══════════════════════════════
   // HTML الكامل للتقرير
