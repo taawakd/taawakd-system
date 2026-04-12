@@ -661,6 +661,10 @@ window.__SUPABASE_ANON__ = window.__SUPABASE_ANON__ || '';
       window.bpContext = '';
       window.CFO_HISTORY = [];
       window.location.href = '/auth.html';
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      // ✅ تجديد تلقائي للتوكن — يحدث كل ~55 دقيقة بدون تدخل المستخدم
+      window.__AUTH_TOKEN__ = session.access_token;
+      window.__USER__ = session.user;
     } else if (event === 'SIGNED_IN' && session) {
       const prev = localStorage.getItem('tw_user_id');
       if (prev && prev !== session.user.id) {

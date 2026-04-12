@@ -88,8 +88,15 @@ async function saveBusinessProfile() {
   if (statusEl) statusEl.textContent = 'جاري الحفظ...';
   try {
     if (!window.sb) { toast('خطأ: الاتصال غير جاهز'); return; }
-    const { data: { user } } = await window.sb.auth.getUser();
-    if (!user) { toast('يجب تسجيل الدخول أولاً'); return; }
+    // getSession يجدد الـ token تلقائياً إذا انتهى — أأمن من getUser
+    const { data: { session: _sess } } = await window.sb.auth.getSession();
+    if (!_sess) { toast('انتهت جلستك — يرجى تسجيل الدخول مجدداً'); setTimeout(() => window.location.href = '/auth.html', 1500); return; }
+    const user = _sess.user;
+    // تحديث التوكن العالمي إذا تغيّر
+    if (_sess.access_token && _sess.access_token !== window.__AUTH_TOKEN__) {
+      window.__AUTH_TOKEN__ = _sess.access_token;
+      window.__USER__ = user;
+    }
 
     // ── مشاريع غير الافتراضي تُحفظ في localStorage ──────────────
     const projId = window.__CURRENT_PROJECT_ID__ || 'default';
@@ -180,8 +187,13 @@ async function saveOnboarding() {
 
   try {
     if (!window.sb) throw new Error('الاتصال غير جاهز');
-    const { data: { user } } = await window.sb.auth.getUser();
-    if (!user) throw new Error('يجب تسجيل الدخول أولاً');
+    const { data: { session: _sess2 } } = await window.sb.auth.getSession();
+    if (!_sess2) { setTimeout(() => window.location.href = '/auth.html', 1500); throw new Error('انتهت جلستك — يرجى تسجيل الدخول مجدداً'); }
+    const user = _sess2.user;
+    if (_sess2.access_token && _sess2.access_token !== window.__AUTH_TOKEN__) {
+      window.__AUTH_TOKEN__ = _sess2.access_token;
+      window.__USER__ = user;
+    }
 
     const g = id => parseNum(document.getElementById(id)?.value || '');
     const profile = {
